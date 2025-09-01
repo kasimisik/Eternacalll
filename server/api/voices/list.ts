@@ -13,7 +13,9 @@ export async function handleGetVoices(req: Request, res: Response) {
     //   return res.status(401).json({ error: "Unauthorized" });
     // }
 
-    const voicesData = await elevenLabsService.getVoices();
+    // Türkçe sesler için parametre al
+    const language = req.query.language as string || 'tr'; // Varsayılan olarak Türkçe sesler
+    const voicesData = await elevenLabsService.getVoices(language);
     
     // Return formatted voice data
     const formattedVoices = voicesData.voices.map(voice => ({

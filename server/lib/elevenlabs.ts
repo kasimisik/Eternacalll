@@ -135,14 +135,21 @@ class ElevenLabsService {
   /**
    * Get all available voices from ElevenLabs
    */
-  async getVoices(): Promise<{ voices: ElevenLabsVoice[] }> {
+  async getVoices(language?: string): Promise<{ voices: ElevenLabsVoice[] }> {
     if (this.mockMode) {
       console.log('🎭 ElevenLabs Mock: Returning mock voices');
       return {
         voices: [
           {
             voice_id: 'mock-voice-1',
-            name: 'Mock Voice 1',
+            name: 'Mock Voice 1 (Türkçe)',
+            samples: [],
+            category: 'mock',
+            settings: { stability: 0.5, similarity_boost: 0.5 }
+          },
+          {
+            voice_id: 'mock-voice-2',
+            name: 'Mock Voice 2 (Türkçe)',
             samples: [],
             category: 'mock',
             settings: { stability: 0.5, similarity_boost: 0.5 }
@@ -151,7 +158,16 @@ class ElevenLabsService {
       };
     }
 
-    const response = await fetch(`${this.baseUrl}/voices`, {
+    // Türkçe sesler için filtreleme
+    const searchParams = new URLSearchParams();
+    if (language === 'tr' || language === 'turkish') {
+      searchParams.append('search', 'Turkish');
+    }
+    searchParams.append('page_size', '100'); // Daha fazla ses almak için
+    
+    const url = `${this.baseUrl}/voices${searchParams.toString() ? '?' + searchParams.toString() : ''}`;
+    
+    const response = await fetch(url, {
       method: 'GET',
       headers: this.getHeaders(),
     });
@@ -211,8 +227,8 @@ class ElevenLabsService {
           prompt: {
             prompt: request.prompt,
           },
-          first_message: request.first_message || "Hello! How can I help you today?",
-          language: request.language || "en",
+          first_message: request.first_message || "Merhaba! Size nasıl yardımcı olabilirim?",
+          language: request.language || "tr",
         },
         tts: {
           voice_id: request.voice_id,
@@ -228,7 +244,7 @@ class ElevenLabsService {
       },
     };
 
-    const response = await fetch(`${this.baseUrl}/agents`, {
+    const response = await fetch(`${this.baseUrl}/conversational-ai/agents`, {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(agentData),
@@ -265,7 +281,7 @@ class ElevenLabsService {
       };
     }
 
-    const response = await fetch(`${this.baseUrl}/agents/${agentId}`, {
+    const response = await fetch(`${this.baseUrl}/conversational-ai/agents/${agentId}`, {
       method: 'GET',
       headers: this.getHeaders(),
     });
@@ -307,7 +323,7 @@ class ElevenLabsService {
       platform_settings: currentAgent.platform_settings,
     };
 
-    const response = await fetch(`${this.baseUrl}/agents/${agentId}`, {
+    const response = await fetch(`${this.baseUrl}/conversational-ai/agents/${agentId}`, {
       method: 'PATCH',
       headers: this.getHeaders(),
       body: JSON.stringify(updatedData),
@@ -325,7 +341,7 @@ class ElevenLabsService {
       return;
     }
 
-    const response = await fetch(`${this.baseUrl}/agents/${agentId}`, {
+    const response = await fetch(`${this.baseUrl}/conversational-ai/agents/${agentId}`, {
       method: 'DELETE',
       headers: this.getHeaders(),
     });
@@ -339,7 +355,7 @@ class ElevenLabsService {
    * Get the phone call endpoint URL for an agent
    */
   getAgentPhoneEndpoint(agentId: string): string {
-    return `https://api.elevenlabs.io/v1/agents/${agentId}/answer`;
+    return `https://api.elevenlabs.io/v1/conversational-ai/agents/${agentId}/answer`;
   }
 }
 
