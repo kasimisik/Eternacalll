@@ -7,6 +7,7 @@ import crypto from 'crypto';
 import Twilio from 'twilio';
 import { textToSpeech } from './azure';
 import { getAIResponse } from './anthropic';
+import { withSubscriptionCheck } from '../client/src/lib/subscription-check';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // put application routes here
@@ -528,6 +529,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.set('Content-Type', 'text/xml');
     res.send(twiml.toString());
   });
+
+  // Main Twilio Call Handler with Subscription Protection
+  const callHandler = async (req: any, res: any, userId: string) => {
+    const twiml = new Twilio.twiml.VoiceResponse();
+    
+    // TODO: Dokümanda belirtilen WebSocket, STT, LLM, TTS döngüsü buraya inşa edilecek.
+    // Şimdilik sadece abonelik kontrolünün çalıştığını test etmek için bir karşılama mesajı ekliyoruz.
+    
+    twiml.say({ voice: 'alice', language: 'tr-TR' }, 
+      'Abonelik kontrolü başarılı. Yapay zeka asistanı şimdi devreye giriyor.'
+    );
+    twiml.hangup();
+
+    res.set('Content-Type', 'text/xml');
+    res.send(twiml.toString());
+  };
+
+  // Protected call handler endpoint
+  app.post('/api/twilio/call-handler', withSubscriptionCheck(callHandler));
 
   const httpServer = createServer(app);
 

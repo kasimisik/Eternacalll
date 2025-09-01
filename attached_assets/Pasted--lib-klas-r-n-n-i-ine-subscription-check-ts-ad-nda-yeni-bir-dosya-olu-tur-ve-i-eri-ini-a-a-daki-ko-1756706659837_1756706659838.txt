@@ -1,0 +1,79 @@
+" lib klasörünün içine subscription-check.ts adında yeni bir dosya oluştur ve içeriğini aşağıdaki kodla doldur:"
+
+TypeScript
+
+import { auth } from '@clerk/nextjs/server';
+import { PrismaClient } from '@prisma/client';
+import { NextRequest, NextResponse } from 'next/server';
+
+const prisma = new PrismaClient();
+
+// Bu, API endpoint'lerimizi sarmalayacak olan güvenlik fonksiyonudur
+export async function withSubscriptionCheck(
+  handler: (req: NextRequest, { userId }: { userId: string }) => Promise<NextResponse>
+) {
+  return async (req: NextRequest): Promise<NextResponse> => {
+    try {
+      // 1. Adım: Kullanıcının kimliğini doğrula
+      const { userId } = auth();
+      if (!userId) {
+        return new NextResponse("Unauthorized", { status: 401 });
+      }
+
+      // 2. Adım: Veritabanından abonelik durumunu kontrol et
+      const userSubscription = await prisma.user.findUnique({
+        where: { clerkUserId: userId },
+        select: {
+          subscription: {
+            select: { status: true }
+          }
+        }
+      });
+
+      // 3. Adım: Yetkilendirme kontrolü
+      if (userSubscription?.subscription?.status !== 'AKTIF') {
+        return new NextResponse("Forbidden - Active subscription required", { status: 403 });
+      }
+
+      // Tüm kontrollerden geçerse, asıl API kodunu çalıştır
+      return handler(req, { userId });
+
+    } catch (error) {
+      console.error("Subscription check middleware error:", error);
+      return new NextResponse("Internal Server Error", { status: 500 });
+    }
+  };
+}
+Talimat 2: Ana Telefon Orkestratörünü (Call Handler) Yaz
+Şimdi, dokümanda detaylandırılan ve projemizin kalbi olan gerçek zamanlı çağrı akışını yönetecek ana API kodunu yazıyoruz.
+
+
+"app/api/twilio/call-handler/route.ts adında bir yol ve dosya oluştur. İçeriğini aşağıdaki kodla doldur:"
+
+TypeScript
+
+import { NextRequest, NextResponse } from 'next/server';
+import Twilio from 'twilio';
+import { withSubscriptionCheck } from '@/lib/subscription-check'; // Güvenlik kontrolümüzü import ediyoruz
+// Not: Henüz Azure ve Anthropic modüllerini bağlamıyoruz, sadece iskeleti kuruyoruz.
+
+// Bu fonksiyon, abonelik kontrolünden geçtikten sonra çalışacak
+const callHandler = async (req: NextRequest, { userId }: { userId: string }) => {
+  const twiml = new Twilio.twiml.VoiceResponse();
+  
+  // TODO: Dokümanda belirtilen WebSocket, STT, LLM, TTS döngüsü buraya inşa edilecek.
+  // Şimdilik sadece abonelik kontrolünün çalıştığını test etmek için bir karşılama mesajı ekliyoruz.
+  
+  twiml.say({ voice: 'alice', language: 'tr-TR' }, 
+    'Abonelik kontrolü başarılı. Yapay zeka asistanı şimdi devreye giriyor.'
+  );
+  twiml.hangup();
+
+  return new NextResponse(twiml.toString(), {
+    headers: { 'Content-Type': 'text/xml' },
+  });
+};
+
+// Ana POST isteğini güvenlik sarmalayıcımızla dışarıya açıyoruz
+export const POST = withSubscriptionCheck(callHandler);
+
