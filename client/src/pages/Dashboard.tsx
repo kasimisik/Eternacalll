@@ -2,14 +2,43 @@ import { useUser, useAuth } from '@clerk/clerk-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { UserProfile } from '@/components/UserProfile';
 import PaymentButton from '@/components/PaymentButton';
-import { useState } from 'react';
-import { CheckCircle, Dock, Clock } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { CheckCircle, Dock, Clock, Crown, Zap } from 'lucide-react';
 
 export default function Dashboard() {
   const { user } = useUser();
   const { signOut } = useAuth();
   const [showProfile, setShowProfile] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [subscription, setSubscription] = useState<{
+    hasSubscription: boolean;
+    plan: string;
+    email?: string;
+    createdAt?: string;
+  } | null>(null);
+  const [loadingSubscription, setLoadingSubscription] = useState(true);
+
+  // Kullanıcının abonelik durumunu kontrol et
+  useEffect(() => {
+    const checkSubscription = async () => {
+      if (!user?.id) return;
+      
+      try {
+        setLoadingSubscription(true);
+        const response = await fetch(`/api/user/subscription/${user.id}`);
+        const data = await response.json();
+        
+        console.log('Subscription data:', data);
+        setSubscription(data);
+      } catch (error) {
+        console.error('Subscription check failed:', error);
+      } finally {
+        setLoadingSubscription(false);
+      }
+    };
+
+    checkSubscription();
+  }, [user?.id]);
 
   const getInitials = (firstName?: string, lastName?: string) => {
     return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
@@ -105,14 +134,57 @@ export default function Dashboard() {
           <p className="text-muted-foreground">Here's what's happening with your account today.</p>
         </div>
 
-        {/* Payment Section */}
+        {/* Subscription Status Section */}
         <Card className="mb-8 shadow-sm">
           <CardContent className="p-6">
-            <h3 className="text-xl font-semibold text-foreground mb-4">Abonelik Yükseltme</h3>
-            <p className="text-muted-foreground mb-4">
-              Profesyonel Plan ile daha fazla özellik ve avantajlara sahip olun.
-            </p>
-            <PaymentButton />
+            <div className="flex items-center gap-2 mb-4">
+              {subscription?.hasSubscription ? (
+                <Crown className="text-yellow-500 h-6 w-6" />
+              ) : (
+                <Zap className="text-blue-500 h-6 w-6" />
+              )}
+              <h3 className="text-xl font-semibold text-foreground">
+                Abonelik Durumunuz
+              </h3>
+            </div>
+            
+            {loadingSubscription ? (
+              <p className="text-muted-foreground">Abonelik durumu kontrol ediliyor...</p>
+            ) : subscription?.hasSubscription ? (
+              // KULLANICI PREMIUM İSE BURASI GÖRÜNÜR
+              <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                <div className="flex items-center gap-2 mb-2">
+                  <Crown className="text-yellow-600 h-5 w-5" />
+                  <p className="text-lg font-semibold text-yellow-800 dark:text-yellow-200">
+                    Planınız: {subscription.plan}
+                  </p>
+                </div>
+                <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                  Tüm premium özelliklerine erişiminiz bulunmaktadır. Hoş geldiniz! 🎉
+                </p>
+              </div>
+            ) : (
+              // KULLANICI ÜCRETSİZ PLANDA İSE BURASI GÖRÜNÜR
+              <div>
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800 mb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Zap className="text-blue-600 h-5 w-5" />
+                    <p className="text-lg font-semibold text-blue-800 dark:text-blue-200">
+                      Planınız: {subscription?.plan || 'Ücretsiz Plan'}
+                    </p>
+                  </div>
+                  <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
+                    Tüm özelliklere erişmek için planınızı yükseltin ve sınırsız avantajlardan yararlanın.
+                  </p>
+                </div>
+                
+                <h4 className="text-lg font-semibold text-foreground mb-3">Profesyonel Plan'a Yükselt</h4>
+                <p className="text-muted-foreground mb-4">
+                  Profesyonel Plan ile daha fazla özellik ve avantajlara sahip olun.
+                </p>
+                <PaymentButton />
+              </div>
+            )}
           </CardContent>
         </Card>
 

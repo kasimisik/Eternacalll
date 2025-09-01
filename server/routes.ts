@@ -426,6 +426,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get User Subscription Status API
+  app.get('/api/user/subscription/:userId', async (req, res) => {
+    console.log('=== CHECKING USER SUBSCRIPTION ===');
+    
+    try {
+      const { userId } = req.params;
+      
+      if (!userId) {
+        return res.status(400).json({ error: 'User ID gerekli' });
+      }
+
+      // Kullanıcının veritabanındaki abonelik bilgisini çek
+      const user = await prisma.user.findFirst({
+        where: { clerkUserId: userId }
+      });
+
+      if (!user) {
+        return res.json({ 
+          hasSubscription: false, 
+          plan: 'Ücretsiz Plan',
+          message: 'Kullanıcı bulunamadı' 
+        });
+      }
+
+      // Abonelik durumunu kontrol et
+      const hasSubscription = user.subscription && user.subscription !== 'Ücretsiz Plan';
+      
+      console.log(`User ${userId} subscription: ${user.subscription || 'None'}`);
+
+      res.json({
+        hasSubscription,
+        plan: user.subscription || 'Ücretsiz Plan',
+        email: user.email,
+        createdAt: user.createdAt
+      });
+
+    } catch (error) {
+      console.error('Subscription check error:', error);
+      res.status(500).json({ error: 'Abonelik kontrolü başarısız', details: String(error) });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

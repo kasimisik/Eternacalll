@@ -1,0 +1,98 @@
+Kesinlikle, çok daha güvenli ve doğru bir yaklaşım. Mevcut kodu koruyarak, sadece gerekli eklemeleri ve değişiklikleri yapalım. Bu şekilde neyin değiştiğini daha net görmüş oluruz.
+
+Replit'teki ajana vermen gereken talimatları adım adım, net bir şekilde hazırladım.
+
+-----
+
+### Replit Agent'ına Verilecek Talimatlar
+
+#### **Talimat 1: Gerekli Araçları İçe Aktar (Import Et)**
+
+" `app/page.tsx` dosyasının en üstüne, diğer `import` satırlarının yanına, veritabanına erişmek için **PrismaClient**'ı ve linkli buton oluşturmak için **Link**'i ekle."
+
+**Eklenecek Kod:**
+
+```typescript
+import { PrismaClient } from '@prisma/client';
+import Link from 'next/link';
+```
+
+#### **Talimat 2: Veritabanı Kontrol Fonksiyonunu Oluştur**
+
+" `export default async function DashboardPage...` satırından hemen önce, veritabanından kullanıcının abonelik durumunu sorgulayacak olan şu fonksiyon bloğunu ekle."
+
+**Eklenecek Kod:**
+
+```typescript
+const prisma = new PrismaClient();
+
+// Bu fonksiyon, veritabanından kullanıcının abonelik durumunu kontrol eder
+async function getSubscriptionStatus(userId: string) {
+  const subscription = await prisma.subscription.findUnique({
+    where: {
+      userId: userId,
+    },
+  });
+
+  // Eğer aktif bir abonelik varsa ve bitiş tarihi gelecekteyse, plan bilgilerini döner
+  if (subscription && subscription.status === 'AKTIF' && subscription.expiresAt && subscription.expiresAt > new Date()) {
+    return { plan: subscription.plan, expiresAt: subscription.expiresAt };
+  }
+
+  return null;
+}
+```
+
+#### **Talimat 3: Abonelik Bilgisini Çek**
+
+" `DashboardPage` fonksiyonunun içinde, `const user = await currentUser();` satırının hemen altına, az önce oluşturduğumuz `getSubscriptionStatus` fonksiyonunu çağırarak abonelik bilgisini alacak şu satırı ekle."
+
+**Eklenecek Kod:**
+
+```typescript
+  if (!user) return null; // Kullanıcı yoksa devam etme
+  const subscription = await getSubscriptionStatus(user.id);
+```
+
+#### **Talimat 4: Arayüzü Dinamik Hale Getir**
+
+"Dosyanın içindeki mevcut `<main>...</main>` etiketleri arasındaki her şeyi sil ve yerine, kullanıcının abonelik durumuna göre farklı mesajlar ve butonlar gösterecek olan bu yeni `<main>` bloğunu ekle."
+
+**Değiştirilecek Alanın Yeni Hali:**
+
+```html
+<main className="mt-10 p-6 bg-gray-800 rounded-lg">
+  <h2 className="text-2xl font-semibold mb-4">Abonelik Durumunuz</h2>
+  
+  {subscription ? (
+    // KULLANICI PREMIUM İSE BURASI GÖRÜNÜR
+    <div>
+      <p className="text-lg text-green-400">
+        Planınız: <span className="font-bold">{subscription.plan}</span>
+      </p>
+      <p className="text-md text-gray-400 mt-2">
+        Aboneliğinizin Bitiş Tarihi: {subscription.expiresAt.toLocaleDateString('tr-TR')}
+      </p>
+    </div>
+  ) : (
+    // KULLANICI ÜCRETSİZ PLANDA İSE BURASI GÖRÜNÜR
+    <div>
+      <p className="text-lg text-yellow-400">
+        Şu anda ücretsiz plandasınız.
+      </p>
+      <p className="text-md text-gray-400 mt-2">
+        Tüm özelliklere erişmek için planınızı yükseltin.
+      </p>
+      <Link href="/abonelik">
+        <button className="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg">
+          Hemen Yükselt
+        </button>
+      </Link>
+    </div>
+  )}
+</main>
+```
+
+-----
+
+Bu talimatları sırayla uyguladığında, dosyanın tamamını silmeden sadece gerekli güncellemeleri yapmış olacak ve sistem istediğimiz gibi çalışacaktır.
