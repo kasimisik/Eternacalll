@@ -1,6 +1,7 @@
 import { useUser, useAuth } from '@clerk/clerk-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { UserProfile } from '@/components/UserProfile';
+import PaymentButton from '@/components/PaymentButton';
 import { useState } from 'react';
 import { CheckCircle, Dock, Clock } from 'lucide-react';
 
@@ -103,6 +104,17 @@ export default function Dashboard() {
           </h2>
           <p className="text-muted-foreground">Here's what's happening with your account today.</p>
         </div>
+
+        {/* Payment Section */}
+        <Card className="mb-8 shadow-sm">
+          <CardContent className="p-6">
+            <h3 className="text-xl font-semibold text-foreground mb-4">Abonelik Yükseltme</h3>
+            <p className="text-muted-foreground mb-4">
+              Profesyonel Plan ile daha fazla özellik ve avantajlara sahip olun.
+            </p>
+            <PaymentButton />
+          </CardContent>
+        </Card>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
