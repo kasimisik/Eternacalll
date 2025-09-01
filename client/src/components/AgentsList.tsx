@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useUser } from '@clerk/clerk-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -23,25 +24,38 @@ interface Agent {
 
 interface AgentsListProps {
   onAgentUpdated?: () => void;
+  onCreateAgentClick?: () => void;
   className?: string;
 }
 
-export function AgentsList({ onAgentUpdated, className }: AgentsListProps) {
+export function AgentsList({ onAgentUpdated, onCreateAgentClick, className }: AgentsListProps) {
+  const { user } = useUser();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deletingAgentId, setDeletingAgentId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchAgents();
-  }, []);
+    if (user?.id) {
+      fetchAgents();
+    }
+  }, [user?.id]);
 
   const fetchAgents = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const response = await fetch('/api/agents/list');
+      if (!user?.id) {
+        setError('Kullanıcı kimlik doğrulaması gereklidir');
+        return;
+      }
+
+      const response = await fetch('/api/agents/list', {
+        headers: {
+          'x-user-id': user.id,
+        },
+      });
       const data = await response.json();
 
       if (!response.ok) {
@@ -63,6 +77,9 @@ export function AgentsList({ onAgentUpdated, className }: AgentsListProps) {
 
       const response = await fetch(`/api/agents/delete/${agentId}`, {
         method: 'DELETE',
+        headers: {
+          'x-user-id': user?.id || '',
+        },
       });
 
       const data = await response.json();
@@ -162,7 +179,7 @@ export function AgentsList({ onAgentUpdated, className }: AgentsListProps) {
             <p className="text-muted-foreground mb-4">
               İlk AI telefon ajanınızı oluşturun ve çağrıları otomatikleştirmeye başlayın.
             </p>
-            <Button onClick={() => window.location.href = '/create-agent'}>
+            <Button onClick={onCreateAgentClick} data-testid="button-create-first-agent">
               İlk Ajanı Oluştur
             </Button>
           </div>

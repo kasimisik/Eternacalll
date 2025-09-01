@@ -2,7 +2,9 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { Webhook } from 'svix';
-import { PrismaClient } from '@prisma/client';
+import { db } from './db';
+import { users } from '../shared/schema';
+import { eq } from 'drizzle-orm';
 import crypto from 'crypto';
 import Twilio from 'twilio';
 import { textToSpeech } from './azure';
@@ -22,7 +24,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // use storage to perform CRUD operations on the storage interface
   // e.g. storage.insertUser(user) or storage.getUserByUsername(username)
 
-  const prisma = new PrismaClient();
+  // Using Drizzle ORM instead of Prisma
 
   // Clerk Webhook endpoint
   app.post('/api/webhooks/clerk', async (req, res) => {
@@ -75,11 +77,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const { id, email_addresses } = evt.data;
         
         // Kullanıcıyı veritabanına ekle
-        await prisma.user.create({
-          data: {
-            clerkUserId: id,
-            email: email_addresses[0]?.email_address || '',
-          }
+        await db.insert(users).values({
+          clerkUserId: id,
+          email: email_addresses[0]?.email_address || '',
         });
 
         console.log(`User ${id} added to database`);
@@ -251,22 +251,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (payment_status === 'finished') {
         try {
           // Find user by order_id (in this case it's the user ID)
-          const user = await prisma.user.findFirst({
-            where: {
-              clerkUserId: order_id
-            }
-          });
+          const [user] = await db.select().from(users).where(eq(users.clerkUserId, order_id)).limit(1);
 
           if (user) {
             // Update user subscription to Professional Plan
-            await prisma.user.update({
-              where: {
-                id: user.id
-              },
-              data: {
-                subscription: 'Profesyonel Plan'
-              } as any
-            });
+            await db.update(users)
+              .set({ subscription: 'Profesyonel Plan' })
+              .where(eq(users.id, user.id));
 
             console.log(`User ${order_id} subscription updated to Profesyonel Plan`);
           } else {
@@ -409,15 +400,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const userId = platform_order_id.split('_').pop();
           
           // Kullanıcı aboneliğini güncelle
-          const user = await prisma.user.findFirst({
-            where: { clerkUserId: userId }
-          });
+          const [user] = await db.select().from(users).where(eq(users.clerkUserId, userId)).limit(1);
 
           if (user) {
-            await prisma.user.update({
-              where: { id: user.id },
-              data: { subscription: 'Profesyonel Plan' } as any
-            });
+            await db.update(users)
+              .set({ subscription: 'Profesyonel Plan' })
+              .where(eq(users.id, user.id));
             
             console.log(`User ${userId} upgraded to Profesyonel Plan via Shopier`);
           } else {
@@ -448,9 +436,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Kullanıcının veritabanındaki abonelik bilgisini çek
-      const user = await prisma.user.findFirst({
-        where: { clerkUserId: userId }
-      });
+      const [user] = await db.select().from(users).where(eq(users.clerkUserId, userId)).limit(1);
 
       if (!user) {
         return res.json({ 
