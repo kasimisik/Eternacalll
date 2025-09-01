@@ -86,19 +86,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/payment/create-crypto-payment', async (req, res) => {
     console.log('=== CRYPTO PAYMENT REQUEST STARTED ===');
     
+    const API_KEY = 'WK9A0E8-N2C435K-PC4PQA7-ZJ2E7CH';
+    
+    console.log('Using NOWPayments API Key from user');
+
     try {
-      // Mock response for testing purposes
-      // Replace this with real NOWPayments API call when you have a valid API key
-      const orderId = `ORDER_${Date.now()}`;
+      const paymentData = {
+        price_amount: 60,
+        price_currency: 'usd',
+        pay_currency: 'btc',
+        order_id: `USER_${Date.now()}`,
+        order_description: 'Profesyonel Plan Üyeliği',
+        success_url: `${req.protocol}://${req.get('host')}/dashboard`,
+        ipn_callback_url: `${req.protocol}://${req.get('host')}/api/payment/crypto-webhook`
+      };
+
+      console.log('Trying SANDBOX environment first...');
+      console.log('Request data:', JSON.stringify(paymentData, null, 2));
+
+      // Try sandbox first
+      let response = await fetch('https://api-sandbox.nowpayments.io/v1/invoice', {
+        method: 'POST',
+        headers: {
+          'x-api-key': API_KEY,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(paymentData)
+      });
+
+      console.log('Sandbox Response status:', response.status);
+
+      if (response.status === 403) {
+        console.log('Sandbox failed, trying PRODUCTION...');
+        // If sandbox fails, try production
+        response = await fetch('https://api.nowpayments.io/v1/invoice', {
+          method: 'POST',
+          headers: {
+            'x-api-key': API_KEY,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(paymentData)
+        });
+        console.log('Production Response status:', response.status);
+      }
+
+      let result;
+      try {
+        result = await response.json();
+      } catch (parseError) {
+        console.log('JSON parse error:', parseError);
+        const text = await response.text();
+        console.log('Raw response text:', text);
+        return res.status(500).json({ error: 'Invalid JSON response from NOWPayments' });
+      }
       
-      console.log('Creating test crypto payment with order:', orderId);
+      console.log('Final response:', JSON.stringify(result, null, 2));
       
-      // Simulate NOWPayments hosted checkout URL
-      const mockPaymentUrl = `https://nowpayments.io/payment/${orderId}`;
-      
-      console.log('Generated test payment URL:', mockPaymentUrl);
-      
-      res.json({ paymentUrl: mockPaymentUrl });
+      if (!response.ok) {
+        console.log('Both sandbox and production failed');
+        return res.status(400).json({ error: 'Payment creation failed', details: result });
+      }
+
+      // Check for invoice_url 
+      if (result.invoice_url) {
+        console.log('SUCCESS: Invoice URL found:', result.invoice_url);
+        return res.json({ paymentUrl: result.invoice_url });
+      } else {
+        console.log('Available fields:', Object.keys(result));
+        return res.status(400).json({ 
+          error: 'No payment URL received', 
+          response: result 
+        });
+      }
     } catch (error) {
       console.log('CATCH ERROR:', error);
       res.status(500).json({ error: 'Internal server error', details: String(error) });
