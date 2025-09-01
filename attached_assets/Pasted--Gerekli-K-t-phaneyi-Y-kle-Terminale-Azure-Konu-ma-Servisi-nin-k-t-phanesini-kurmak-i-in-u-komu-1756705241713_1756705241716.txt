@@ -1,0 +1,89 @@
+) Gerekli Kütüphaneyi Yükle:
+"Terminale, Azure Konuşma Servisi'nin kütüphanesini kurmak için şu komutu yaz:"
+
+Bash
+
+npm install microsoft-cognitiveservices-speech-sdk
+B) Dosyayı Oluştur ve Kodu Ekle:
+"lib klasöründeki (varsa) google.ts dosyasını sil. lib klasörünün içine azure.ts adında yeni bir dosya oluştur ve içeriğini aşağıdaki kodla doldur:"
+
+TypeScript
+
+import * as sdk from "microsoft-cognitiveservices-speech-sdk";
+
+// Bu fonksiyon, metni sese dönüştürüp ses verisini Buffer olarak döndürür
+export async function textToSpeech(text: string): Promise<Buffer> {
+  const speechConfig = sdk.SpeechConfig.fromSubscription(
+    process.env.AZURE_API_KEY!,
+    process.env.AZURE_REGION!
+  );
+  
+  // Türkiye için yüksek kaliteli, doğal kadın sesi
+  speechConfig.speechSynthesisVoiceName = "tr-TR-EmelNeural"; 
+
+  // Ses sentezleyiciyi oluştur
+  const speechSynthesizer = new sdk.SpeechSynthesizer(speechConfig);
+
+  return new Promise((resolve, reject) => {
+    speechSynthesizer.speakTextAsync(
+      text,
+      (result) => {
+        if (result.reason === sdk.ResultReason.SynthesizingAudioCompleted) {
+          // Ses verisini Buffer'a çevirip geri döndür
+          const audioData = Buffer.from(result.audioData);
+          resolve(audioData);
+        } else {
+          console.error("Speech synthesis canceled, " + result.errorDetails);
+          reject(new Error(result.errorDetails));
+        }
+        speechSynthesizer.close();
+      },
+      (err) => {
+        console.trace("err - " + err);
+        speechSynthesizer.close();
+        reject(err);
+      }
+    );
+  });
+}
+Talimat 2: Orkestranın 'Beyni' - Anthropic Modülünü Yaz
+Şimdi, gelen metinlere akıllıca cevaplar üretecek olan "beyin" modülümüzü yazıyoruz.
+
+A) Gerekli Kütüphaneyi Yükle:
+"Terminale, Anthropic'in kütüphanesini kurmak için şu komutu yaz:"
+
+Bash
+
+npm install @anthropic-ai/sdk
+B) Dosyanın Kodunu Ekle:
+"lib/anthropic.ts dosyasının içini boşalt ve içeriğini aşağıdaki kodla doldur:"
+
+TypeScript
+
+import Anthropic from '@anthropic-ai/sdk';
+
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
+
+// Bu fonksiyon, bir metin istemine Anthropic'ten cevap alır
+export async function getAIResponse(prompt: string): Promise<string> {
+  try {
+    const msg = await anthropic.messages.create({
+      model: "claude-3-5-sonnet-20240620", // En yeni ve en iyi fiyat/performans modeli
+      max_tokens: 256,
+      messages: [{ role: 'user', content: prompt }],
+    });
+    
+    // Gelen cevabın içindeki metni ayıklayıp geri döndür
+    if (msg.content[0].type === "text") {
+        return msg.content[0].text;
+    } else {
+        return "Üzgünüm, şu an cevap veremiyorum.";
+    }
+
+  } catch (error) {
+    console.error("Error getting AI response from Anthropic:", error);
+    return "Bir hata oluştu, lütfen daha sonra tekrar deneyin.";
+  }
+}
