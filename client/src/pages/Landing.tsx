@@ -1,17 +1,18 @@
 import { Link } from 'wouter';
-import { useAuth } from '@clerk/clerk-react';
+import { CLERK_CONFIG } from '@/lib/clerk';
 
 export default function Landing() {
-  const { isSignedIn } = useAuth();
+  const isClerkConfigured = !!CLERK_CONFIG.publishableKey;
+  const isSignedIn = false; // Default to not signed in when Clerk is not configured
 
   return (
     <div className="auth-container min-h-screen flex items-center justify-center p-4">
       <div className="max-w-4xl mx-auto text-center text-white">
         <h1 className="text-5xl md:text-6xl font-bold mb-6">
-          Secure Authentication
+          Voice Agent System
         </h1>
         <p className="text-xl md:text-2xl mb-8 opacity-90">
-          React application with Clerk integration for seamless user management
+          AI-powered voice communication with SIP integration and real-time speech processing
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           {isSignedIn ? (

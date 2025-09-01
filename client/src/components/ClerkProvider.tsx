@@ -6,6 +6,11 @@ interface ClerkProviderProps {
 }
 
 export function ClerkProvider({ children }: ClerkProviderProps) {
+  // If no Clerk key is configured, render without authentication
+  if (!CLERK_CONFIG.publishableKey) {
+    return <>{children}</>;
+  }
+
   return (
     <BaseClerkProvider
       publishableKey={CLERK_CONFIG.publishableKey}
