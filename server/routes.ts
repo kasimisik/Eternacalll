@@ -110,11 +110,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const result = await response.json();
       
+      console.log('NOWPayments API response:', JSON.stringify(result, null, 2));
+      
       if (!response.ok) {
         console.error('NOWPayments API error:', result);
         return res.status(400).json({ error: 'Payment creation failed', details: result });
       }
 
+      console.log('Payment URL:', result.payment_url);
       res.json({ paymentUrl: result.payment_url });
     } catch (error) {
       console.error('Error creating crypto payment:', error);
