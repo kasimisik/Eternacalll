@@ -16,8 +16,12 @@ export default function PaymentButton() {
       });
       if (!response.ok) throw new Error('Kripto ödeme linki oluşturulamadı.');
       const data = await response.json();
+      console.log('API Response:', data);
       if (data.paymentUrl) {
         window.location.href = data.paymentUrl;
+      } else {
+        alert('Ödeme linki alınamadı. Lütfen tekrar deneyin.');
+        setIsLoadingCrypto(false);
       }
     } catch (error) {
       console.error(error);
