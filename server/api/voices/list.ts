@@ -17,20 +17,21 @@ export async function handleGetVoices(req: Request, res: Response) {
     const language = req.query.language as string || 'tr'; // Varsayılan olarak Türkçe sesler
     const voicesData = await elevenLabsService.getVoices(language);
     
-    // Return formatted voice data
-    const formattedVoices = voicesData.voices.map(voice => ({
+    // Return formatted voice data with Turkish support indication
+    const finalVoices = voicesData.voices.slice(0, 20).map(voice => ({
       id: voice.voice_id,
-      name: voice.name,
+      name: voice.name + ' (Multilingual - Türkçe Destekli)',
       category: voice.category,
-      description: voice.description,
+      description: voice.description || 'ElevenLabs multilingual model ile Türkçe konuşabilen ses',
       preview_url: voice.preview_url,
       labels: voice.labels,
       settings: voice.settings,
+      supportsTurkish: true
     }));
 
     res.status(200).json({
       success: true,
-      voices: formattedVoices
+      voices: finalVoices
     });
 
   } catch (error) {

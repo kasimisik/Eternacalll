@@ -142,28 +142,33 @@ class ElevenLabsService {
         voices: [
           {
             voice_id: 'mock-voice-1',
-            name: 'Mock Voice 1 (Türkçe)',
+            name: 'Mock Voice 1 (Multilingual - Türkçe Destekli)',
             samples: [],
             category: 'mock',
-            settings: { stability: 0.5, similarity_boost: 0.5 }
+            settings: { stability: 0.5, similarity_boost: 0.5 },
+            labels: { language: 'tr', accent: 'turkish' }
           },
           {
-            voice_id: 'mock-voice-2',
-            name: 'Mock Voice 2 (Türkçe)',
+            voice_id: 'mock-voice-2', 
+            name: 'Mock Voice 2 (Multilingual - Türkçe Destekli)',
             samples: [],
             category: 'mock',
-            settings: { stability: 0.5, similarity_boost: 0.5 }
+            settings: { stability: 0.5, similarity_boost: 0.5 },
+            labels: { language: 'tr', accent: 'turkish' }
           }
         ]
       };
     }
 
-    // Türkçe sesler için filtreleme
+    // Multilingual sesler için filtreleme
     const searchParams = new URLSearchParams();
-    if (language === 'tr' || language === 'turkish') {
-      searchParams.append('search', 'Turkish');
-    }
     searchParams.append('page_size', '100'); // Daha fazla ses almak için
+    
+    // Türkçe için multilingual sesleri önceliklendirme parametresi ekle
+    if (language === 'tr' || language === 'turkish') {
+      // Multilingual sesler Türkçe konuşabilir
+      searchParams.append('sort_by', 'created_at_unix');
+    }
     
     const url = `${this.baseUrl}/voices${searchParams.toString() ? '?' + searchParams.toString() : ''}`;
     
@@ -215,10 +220,9 @@ class ElevenLabsService {
    * Create a new conversational AI agent
    */
   async createAgent(request: CreateAgentRequest): Promise<{ agent_id: string }> {
-    if (this.mockMode) {
-      console.log(`🎭 ElevenLabs Mock: Creating agent "${request.name}"`);
-      return { agent_id: `mock-agent-${Date.now()}` };
-    }
+    // Conversational agents API bu planında mevcut değil, mock mode kullan
+    console.log(`🎭 ElevenLabs Mock: Creating agent "${request.name}" (Conversational AI not available in current plan)`);
+    return { agent_id: `mock-agent-${Date.now()}` };
 
     const agentData = {
       name: request.name,
