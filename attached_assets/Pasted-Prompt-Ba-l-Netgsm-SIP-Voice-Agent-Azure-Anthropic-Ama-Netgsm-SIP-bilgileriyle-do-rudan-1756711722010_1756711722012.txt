@@ -1,0 +1,95 @@
+Prompt Başlığı: “Netgsm SIP Voice Agent (Azure + Anthropic)”
+
+Amaç:
+Netgsm SIP bilgileriyle doğrudan register olan, gelen çağrıyı karşılayıp gerçek zamanlı konuşan bir AI asistan geliştirmek.
+
+Adımlar:
+
+SIP Register:
+
+SIP host, username, password bilgilerini config dosyasından al.
+
+sip.js veya drachtio kullanarak Netgsm’e REGISTER ol.
+
+REGISTER başarılıysa logla.
+
+Gelen Çağrı (INVITE):
+
+INVITE alındığında otomatik cevapla (200 OK).
+
+RTP media stream’ini aç.
+
+STT (Azure):
+
+RTP’den gelen sesi PCM’e çevir.
+
+Azure Speech SDK ile anlık olarak text’e dönüştür.
+
+LLM (Anthropic):
+
+Kullanıcının text’ini Anthropic API’ye gönder.
+
+Context: “Sen Kasım’ın kişisel sesli asistanısın. Telefonda karşılıklı konuşma yapıyorsun.”
+
+Yanıtı al.
+
+TTS (Azure):
+
+Anthropic yanıtını Azure TTS ile sese çevir.
+
+RTP üzerinden arayana geri gönder.
+
+Loop:
+
+Kullanıcı konuştu → STT → LLM → TTS → Ses geri gönder → Devam et.
+
+Notlar:
+
+Ses codec: Netgsm genelde PCMA (G711A) veya PCMU kullanıyor.
+
+STT/TTS için wav veya pcm16 formatı kullan.
+
+Replit’te UDP açmak zor olabilir → o yüzden sip.js WebSocket SIP proxy (ör: wss) gerekebilir.
+
+Eğer UDP engellenirse → drachtio
+ veya pjsip tabanlı küçük bir server kullan.
+
+🧑‍💻 Örnek Node.js Kod İskeleti
+
+(SIP register + çağrı karşılama için sip.js)
+
+import SIP from "sip";
+import { AzureSTT, AzureTTS } from "./azure.js";
+import { askAnthropic } from "./anthropic.js";
+
+const config = {
+  uri: "sip:905xxxxxxx@sip.netgsm.com.tr",
+  ws_servers: "wss://sip.netgsm.com.tr",
+  authorizationUser: "905xxxxxxx",
+  password: "SIP_PASSWORD",
+  displayName: "AI Agent"
+};
+
+// 1. Register
+const ua = new SIP.UA(config);
+
+ua.on("invite", async (session) => {
+  console.log("📞 Gelen çağrı!");
+  session.accept();
+
+  // 2. Media stream yakala
+  session.on("trackAdded", () => {
+    const pc = session.sessionDescriptionHandler.peerConnection;
+    const remoteStream = new MediaStream();
+    pc.getReceivers().forEach(r => remoteStream.addTrack(r.track));
+
+    // Burada remoteStream → Azure STT
+  });
+
+  // 3. Kullanıcıdan text geldiğinde → Anthropic → Azure TTS → ses gönder
+  async function handleConversation(text) {
+    const reply = await askAnthropic(text);
+    const audioBuffer = await AzureTTS(reply);
+    session.sessionDescriptionHandler.send(audioBuffer);
+  }
+});

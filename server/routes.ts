@@ -8,6 +8,7 @@ import Twilio from 'twilio';
 import { textToSpeech } from './azure';
 import { getAIResponse } from './anthropic';
 import { withSubscriptionCheck } from '../client/src/lib/subscription-check';
+import { NetgsmVoiceAgent } from './sip-voice-agent';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // put application routes here
@@ -581,6 +582,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Protected call handler endpoint
   app.post('/api/twilio/call-handler', withSubscriptionCheck(callHandler));
+
+  // SIP Voice Agent kontrolü
+  let sipAgent: NetgsmVoiceAgent | null = null;
+
+  // SIP Agent'ı başlat
+  app.post('/api/sip/start-agent', async (req, res) => {
+    try {
+      if (sipAgent) {
+        return res.json({ success: false, message: 'SIP Agent zaten çalışıyor' });
+      }
+
+      console.log("🚀 SIP Voice Agent başlatılıyor...");
+      sipAgent = new NetgsmVoiceAgent();
+      await sipAgent.start();
+      
+      res.json({ success: true, message: 'Netgsm SIP Voice Agent başarıyla başlatıldı' });
+    } catch (error) {
+      console.error('SIP Agent başlatma hatası:', error);
+      res.status(500).json({ success: false, error: 'SIP Agent başlatılamadı' });
+    }
+  });
+
+  // SIP Agent'ı durdur
+  app.post('/api/sip/stop-agent', (req, res) => {
+    try {
+      if (sipAgent) {
+        sipAgent.stop();
+        sipAgent = null;
+        res.json({ success: true, message: 'SIP Voice Agent durduruldu' });
+      } else {
+        res.json({ success: false, message: 'SIP Agent zaten durdurumuş' });
+      }
+    } catch (error) {
+      console.error('SIP Agent durdurma hatası:', error);
+      res.status(500).json({ success: false, error: 'SIP Agent durdurulamadı' });
+    }
+  });
+
+  // SIP Agent durumu
+  app.get('/api/sip/status', (req, res) => {
+    res.json({ 
+      running: sipAgent !== null,
+      message: sipAgent ? 'SIP Agent aktif' : 'SIP Agent pasif'
+    });
+  });
 
   const httpServer = createServer(app);
 
