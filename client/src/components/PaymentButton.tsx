@@ -30,7 +30,7 @@ export default function PaymentButton() {
     }
   };
 
-  const handleCardPayment = () => {
+  const handleCardPayment = async () => {
     if (!user) {
       alert("Lütfen önce giriş yapın.");
       return;
@@ -38,14 +38,42 @@ export default function PaymentButton() {
     
     setIsLoadingCard(true);
 
-    // DİKKAT: Shopier panelinden aldığınız ürün linkini buraya yapıştırın!
-    const shopierProductUrl = "https://www.shopier.com/ShowProductNew/PRODÜCT_ID_BURAYA"; 
-    
-    // Kullanıcının kimliğini (Clerk User ID) linke özel bir parametre olarak ekliyoruz
-    const finalUrl = `${shopierProductUrl}?platform_order_id=${user.id}`;
-    
-    // Kullanıcıyı bu akıllı linke yönlendiriyoruz
-    window.location.href = finalUrl;
+    try {
+      const response = await fetch('/api/payment/create-shopier-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          userEmail: user.emailAddresses[0]?.emailAddress || '',
+          userName: user.fullName || 'Kullanıcı'
+        })
+      });
+
+      if (!response.ok) throw new Error('Shopier ödeme oluşturulamadı.');
+      
+      const data = await response.json();
+      console.log('Shopier API Response:', data);
+
+      if (data.success && data.paymentFormHTML) {
+        // Yeni pencerede Shopier ödeme formunu aç
+        const paymentWindow = window.open('', '_blank');
+        if (paymentWindow) {
+          paymentWindow.document.write(data.paymentFormHTML);
+          paymentWindow.document.close();
+        } else {
+          alert('Pop-up engellenmiş olabilir. Lütfen pop-up izinlerini etkinleştirin.');
+        }
+      } else {
+        alert('Ödeme linki oluşturulamadı. Lütfen tekrar deneyin.');
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Bir hata oluştu. Lütfen tekrar deneyin.');
+    } finally {
+      setIsLoadingCard(false);
+    }
   };
 
   return (

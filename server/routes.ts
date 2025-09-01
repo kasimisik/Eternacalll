@@ -275,6 +275,157 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Shopier Create Payment API
+  app.post('/api/payment/create-shopier-payment', async (req, res) => {
+    console.log('=== SHOPIER PAYMENT REQUEST STARTED ===');
+    
+    const API_KEY = '7311fcb8508b668d72df3f1fd22c0451';
+    const API_SECRET = 'abc8145ed90f69218c7402a70cf490d0';
+    
+    try {
+      const { userId, userEmail, userName } = req.body;
+      
+      if (!userId || !userEmail || !userName) {
+        return res.status(400).json({ 
+          error: 'Kullanıcı bilgileri eksik', 
+          required: ['userId', 'userEmail', 'userName'] 
+        });
+      }
+
+      // Shopier ödeme parametreleri
+      const paymentData = {
+        API_key: API_KEY,
+        website_index: 1,
+        platform_order_id: `ORDER_${Date.now()}_${userId}`,
+        product_name: 'Profesyonel Plan Üyeliği',
+        product_type: 2, // Dijital ürün
+        buyer_name: userName.split(' ')[0] || 'Ad',
+        buyer_surname: userName.split(' ').slice(1).join(' ') || 'Soyad',
+        buyer_email: userEmail,
+        buyer_phone: '5555555555', // Varsayılan telefon
+        buyer_account_age: 1,
+        buyer_id_nr: userId,
+        buyer_address: 'Türkiye',
+        buyer_city: 'İstanbul',
+        buyer_country: 'Turkey',
+        buyer_postcode: '34000',
+        shipping_address: 'Türkiye',
+        shipping_city: 'İstanbul', 
+        shipping_country: 'Turkey',
+        shipping_postcode: '34000',
+        total_order_value: '60.00',
+        currency: 'TRY',
+        platform_order_url: `${req.protocol}://${req.get('host')}/dashboard`,
+        callback_url: `${req.protocol}://${req.get('host')}/api/payment/shopier-callback`,
+        random_nr: Math.random().toString(36).substring(2, 15)
+      };
+
+      console.log('Shopier Payment Data:', JSON.stringify(paymentData, null, 2));
+
+      // Shopier imza oluşturma
+      const signatureString = `${paymentData.random_nr}${paymentData.platform_order_id}${paymentData.total_order_value}${paymentData.currency}`;
+      const signature = crypto
+        .createHmac('sha256', API_SECRET)
+        .update(signatureString)
+        .digest('base64');
+
+      (paymentData as any).signature = signature;
+
+      // Shopier ödeme formu HTML'i oluştur
+      const formHTML = `
+        <html>
+          <head>
+            <title>Shopier Ödeme</title>
+            <meta charset="utf-8">
+          </head>
+          <body>
+            <form method="POST" action="https://www.shopier.com/ShowProduct/api_pay4.php" id="shopier_payment_form">
+              ${Object.entries(paymentData).map(([key, value]) => 
+                `<input type="hidden" name="${key}" value="${value}">`
+              ).join('\n')}
+              <script>document.getElementById('shopier_payment_form').submit();</script>
+            </form>
+          </body>
+        </html>
+      `;
+
+      console.log('Shopier form generated successfully');
+      res.json({ 
+        success: true,
+        paymentFormHTML: formHTML,
+        orderId: paymentData.platform_order_id
+      });
+
+    } catch (error) {
+      console.error('Shopier payment error:', error);
+      res.status(500).json({ error: 'Shopier ödeme oluşturulamadı', details: String(error) });
+    }
+  });
+
+  // Shopier Payment Callback
+  app.post('/api/payment/shopier-callback', async (req, res) => {
+    console.log('=== SHOPIER CALLBACK RECEIVED ===');
+    console.log('Callback data:', JSON.stringify(req.body, null, 2));
+    
+    const API_SECRET = 'abc8145ed90f69218c7402a70cf490d0';
+    
+    try {
+      const { 
+        status, 
+        platform_order_id, 
+        payment_id, 
+        total_order_value,
+        currency,
+        random_nr,
+        signature 
+      } = req.body;
+
+      // Shopier imza doğrulama
+      const expectedSignature = crypto
+        .createHmac('sha256', API_SECRET)
+        .update(`${random_nr}${platform_order_id}${total_order_value}${currency}`)
+        .digest('base64');
+
+      if (signature !== expectedSignature) {
+        console.error('Invalid Shopier signature');
+        return res.status(400).json({ error: 'Invalid signature' });
+      }
+
+      console.log(`Shopier Payment Status: ${status} for Order: ${platform_order_id}`);
+
+      if (status === 'success') {
+        try {
+          // platform_order_id'den user ID'sini çıkar
+          const userId = platform_order_id.split('_').pop();
+          
+          // Kullanıcı aboneliğini güncelle
+          const user = await prisma.user.findFirst({
+            where: { clerkUserId: userId }
+          });
+
+          if (user) {
+            await prisma.user.update({
+              where: { id: user.id },
+              data: { subscription: 'Profesyonel Plan' } as any
+            });
+            
+            console.log(`User ${userId} upgraded to Profesyonel Plan via Shopier`);
+          } else {
+            console.log(`User ${userId} not found in database`);
+          }
+        } catch (dbError) {
+          console.error('Database update error:', dbError);
+          return res.status(500).json({ error: 'Database update failed' });
+        }
+      }
+
+      res.status(200).json({ status: 'success' });
+    } catch (error) {
+      console.error('Shopier callback error:', error);
+      res.status(500).json({ error: 'Callback processing failed' });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
