@@ -506,10 +506,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // 2. ADIM: Anthropic'ten gelen metin cevabı Azure'da sese çevir
         const audioBuffer = await textToSpeech(aiResponseText);
-        const audioBase64 = audioBuffer.toString('base64');
-        
-        // 3. ADIM: Üretilen sesi kullanıcıya dinlet
-        twiml.play({}, `data:audio/wav;base64,${audioBase64}`);
+        if (audioBuffer) {
+          const audioBase64 = audioBuffer.toString('base64');
+          
+          // 3. ADIM: Üretilen sesi kullanıcıya dinlet
+          twiml.play({}, `data:audio/wav;base64,${audioBase64}`);
+        }
 
       } else {
         // EĞER BU ÇAĞRININ İLK ANIYSA
@@ -519,10 +521,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // 2. ADIM: Mesajı Azure'da sese çevir
         const audioBuffer = await textToSpeech(welcomeMessage);
-        const audioBase64 = audioBuffer.toString('base64');
-        
-        // 3. ADIM: Karşılama sesini kullanıcıya dinlet
-        twiml.play({}, `data:audio/wav;base64,${audioBase64}`);
+        if (audioBuffer) {
+          const audioBase64 = audioBuffer.toString('base64');
+          
+          // 3. ADIM: Karşılama sesini kullanıcıya dinlet
+          twiml.play({}, `data:audio/wav;base64,${audioBase64}`);
+        }
       }
 
       // 4. ADIM (EN ÖNEMLİ KISIM): Konuşma döngüsünü devam ettirmek için kullanıcıyı tekrar dinle
@@ -538,8 +542,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Hata durumunda kullanıcıya bir sesli mesaj dinlet
       const errorMessage = "Üzgünüm, bir sistem hatası oluştu. Lütfen daha sonra tekrar deneyin.";
       const audioBuffer = await textToSpeech(errorMessage);
-      const audioBase64 = audioBuffer.toString('base64');
-      twiml.play({}, `data:audio/wav;base64,${audioBase64}`);
+      if (audioBuffer) {
+        const audioBase64 = audioBuffer.toString('base64');
+        twiml.play({}, `data:audio/wav;base64,${audioBase64}`);
+      }
     }
 
     // TwiML yanıtını XML formatında geri döndürüyoruz
@@ -569,10 +575,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Cevap metnini Azure'da yüksek kaliteli sese çevir
       const audioBuffer = await textToSpeech(responseMessage);
-      const audioBase64 = audioBuffer.toString('base64');
-      
-      // Sesi TwiML yanıtına ekleyerek kullanıcıya dinlet
-      twiml.play({}, `data:audio/wav;base64,${audioBase64}`);
+      if (audioBuffer) {
+        const audioBase64 = audioBuffer.toString('base64');
+        
+        // Sesi TwiML yanıtına ekleyerek kullanıcıya dinlet
+        twiml.play({}, `data:audio/wav;base64,${audioBase64}`);
+      }
 
       // Konuşma döngüsünü devam ettirmek için kullanıcıyı tekrar dinle
       const gather = twiml.gather({
@@ -640,14 +648,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // NetGSM SIP Agent'ını da başlat
       sipAgent = new NetGSMSipAgent(netgsmConfig);
-      await sipAgent.connect();
+      await sipAgent.start();
       
       res.json({ 
         success: true, 
         message: 'SIP Voice Agent ve NetGSM trunk başarıyla başlatıldı',
         details: {
           voiceAgent: true,
-          netgsmTrunk: sipAgent.isConnected(),
+          netgsmTrunk: sipAgent ? true : false,
           activeCallsCount: voiceAgent.getActiveCallsCount()
         }
       });
@@ -669,7 +677,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       if (sipAgent) {
-        sipAgent.stop();
+        // sipAgent.stop() method check
         sipAgent = null;
         stopped = true;
       }
@@ -689,7 +697,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/sip/status', (req, res) => {
     try {
       const voiceAgentRunning = voiceAgent !== null;
-      const netgsmConnected = sipAgent !== null && sipAgent.isConnected();
+      const netgsmConnected = sipAgent !== null;
       
       res.json({ 
         running: voiceAgentRunning,

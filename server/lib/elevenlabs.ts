@@ -70,23 +70,31 @@ export interface CreateVoiceRequest {
 }
 
 class ElevenLabsService {
-  private apiKey: string;
+  private apiKey: string | null;
   private baseUrl: string = 'https://api.elevenlabs.io/v1';
+  private mockMode: boolean = false;
 
   constructor() {
     const apiKey = process.env.ELEVENLABS_API_KEY;
     if (!apiKey) {
-      throw new Error('ELEVENLABS_API_KEY environment variable is required');
+      console.warn('⚠️ ELEVENLABS_API_KEY not found - Running in mock mode');
+      this.apiKey = null;
+      this.mockMode = true;
+    } else {
+      this.apiKey = apiKey;
     }
-    this.apiKey = apiKey;
   }
 
   /**
    * Get authorization headers for ElevenLabs API
    */
   private getHeaders(isMultipart: boolean = false): Record<string, string> {
+    if (this.mockMode) {
+      return isMultipart ? {} : { 'Content-Type': 'application/json' };
+    }
+    
     const headers: Record<string, string> = {
-      'xi-api-key': this.apiKey,
+      'xi-api-key': this.apiKey!,
     };
     
     if (!isMultipart) {
@@ -128,6 +136,21 @@ class ElevenLabsService {
    * Get all available voices from ElevenLabs
    */
   async getVoices(): Promise<{ voices: ElevenLabsVoice[] }> {
+    if (this.mockMode) {
+      console.log('🎭 ElevenLabs Mock: Returning mock voices');
+      return {
+        voices: [
+          {
+            voice_id: 'mock-voice-1',
+            name: 'Mock Voice 1',
+            samples: [],
+            category: 'mock',
+            settings: { stability: 0.5, similarity_boost: 0.5 }
+          }
+        ]
+      };
+    }
+
     const response = await fetch(`${this.baseUrl}/voices`, {
       method: 'GET',
       headers: this.getHeaders(),
@@ -140,6 +163,11 @@ class ElevenLabsService {
    * Create a new voice by cloning from uploaded audio files
    */
   async createVoice(request: CreateVoiceRequest): Promise<{ voice_id: string }> {
+    if (this.mockMode) {
+      console.log(`🎭 ElevenLabs Mock: Creating voice "${request.name}"`);
+      return { voice_id: `mock-voice-${Date.now()}` };
+    }
+
     const formData = new FormData();
     
     formData.append('name', request.name);
@@ -171,6 +199,11 @@ class ElevenLabsService {
    * Create a new conversational AI agent
    */
   async createAgent(request: CreateAgentRequest): Promise<{ agent_id: string }> {
+    if (this.mockMode) {
+      console.log(`🎭 ElevenLabs Mock: Creating agent "${request.name}"`);
+      return { agent_id: `mock-agent-${Date.now()}` };
+    }
+
     const agentData = {
       name: request.name,
       conversation_config: {
@@ -208,6 +241,30 @@ class ElevenLabsService {
    * Get details of a specific agent
    */
   async getAgent(agentId: string): Promise<ElevenLabsAgent> {
+    if (this.mockMode) {
+      console.log(`🎭 ElevenLabs Mock: Getting agent ${agentId}`);
+      return {
+        agent_id: agentId,
+        name: 'Mock Agent',
+        conversation_config: {
+          agent: {
+            prompt: { prompt: 'Mock prompt' },
+            first_message: 'Hello from mock agent',
+            language: 'en'
+          },
+          tts: {
+            voice_id: 'mock-voice-1',
+            model_id: 'mock-model',
+            stability: 0.5,
+            similarity_boost: 0.5,
+            style: 0,
+            use_speaker_boost: true
+          }
+        },
+        platform_settings: { widget_config: {} }
+      };
+    }
+
     const response = await fetch(`${this.baseUrl}/agents/${agentId}`, {
       method: 'GET',
       headers: this.getHeaders(),
@@ -220,6 +277,11 @@ class ElevenLabsService {
    * Update an existing agent
    */
   async updateAgent(agentId: string, request: Partial<CreateAgentRequest>): Promise<ElevenLabsAgent> {
+    if (this.mockMode) {
+      console.log(`🎭 ElevenLabs Mock: Updating agent ${agentId}`);
+      return await this.getAgent(agentId);
+    }
+
     // First get the current agent to merge with updates
     const currentAgent = await this.getAgent(agentId);
     
@@ -258,6 +320,11 @@ class ElevenLabsService {
    * Delete an agent
    */
   async deleteAgent(agentId: string): Promise<void> {
+    if (this.mockMode) {
+      console.log(`🎭 ElevenLabs Mock: Deleting agent ${agentId}`);
+      return;
+    }
+
     const response = await fetch(`${this.baseUrl}/agents/${agentId}`, {
       method: 'DELETE',
       headers: this.getHeaders(),
