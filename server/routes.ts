@@ -84,11 +84,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // NOWPayments Create Crypto Payment API
   app.post('/api/payment/create-crypto-payment', async (req, res) => {
+    console.log('=== CRYPTO PAYMENT REQUEST STARTED ===');
+    
     const API_KEY = process.env.NOWPAYMENTS_API_KEY;
     
     if (!API_KEY) {
+      console.log('ERROR: NOWPAYMENTS_API_KEY not found');
       return res.status(500).json({ error: 'NOWPAYMENTS_API_KEY not found' });
     }
+
+    console.log('API_KEY exists:', !!API_KEY);
 
     try {
       const paymentData = {
@@ -100,7 +105,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success_url: `${req.protocol}://${req.get('host')}/dashboard`
       };
 
-      console.log('Sending to NOWPayments:', JSON.stringify(paymentData, null, 2));
+      console.log('Request data:', JSON.stringify(paymentData, null, 2));
 
       const response = await fetch('https://api.nowpayments.io/v1/invoice', {
         method: 'POST',
@@ -112,40 +117,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       console.log('Response status:', response.status);
-      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+      console.log('Response OK:', response.ok);
 
-      const result = await response.json();
+      let result;
+      try {
+        result = await response.json();
+      } catch (parseError) {
+        console.log('JSON parse error:', parseError);
+        const text = await response.text();
+        console.log('Raw response text:', text);
+        return res.status(500).json({ error: 'Invalid JSON response from NOWPayments' });
+      }
       
-      console.log('NOWPayments API response:', JSON.stringify(result, null, 2));
+      console.log('Parsed response:', JSON.stringify(result, null, 2));
       
       if (!response.ok) {
-        console.error('NOWPayments API error:', result);
+        console.log('API Error - Status:', response.status);
+        console.log('API Error - Response:', result);
         return res.status(400).json({ error: 'Payment creation failed', details: result });
       }
 
-      // Check all possible URL fields from the response
-      const possibleUrls = [
-        result.invoice_url,
-        result.payment_url, 
-        result.hosted_url,
-        result.checkout_url,
-        result.url
-      ];
-
-      console.log('Possible URLs in response:', possibleUrls);
-
-      const paymentUrl = possibleUrls.find(url => url && typeof url === 'string');
-      
-      if (paymentUrl) {
-        console.log('Using payment URL:', paymentUrl);
-        res.json({ paymentUrl });
+      // Check for invoice_url specifically (NOWPayments invoice endpoint)
+      if (result.invoice_url) {
+        console.log('SUCCESS: Invoice URL found:', result.invoice_url);
+        return res.json({ paymentUrl: result.invoice_url });
       } else {
-        console.error('No payment URL found in response');
-        res.status(400).json({ error: 'No payment URL received from NOWPayments', response: result });
+        console.log('ERROR: No invoice_url in response');
+        console.log('Available fields:', Object.keys(result));
+        return res.status(400).json({ 
+          error: 'No payment URL received from NOWPayments', 
+          availableFields: Object.keys(result),
+          response: result 
+        });
       }
     } catch (error) {
-      console.error('Error creating crypto payment:', error);
-      res.status(500).json({ error: 'Internal server error' });
+      console.log('CATCH ERROR:', error);
+      res.status(500).json({ error: 'Internal server error', details: error.message });
     }
   });
 
