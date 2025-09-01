@@ -1,9 +1,8 @@
 import { Link } from 'wouter';
-import { CLERK_CONFIG } from '@/lib/clerk';
+import { useAuth } from '@clerk/clerk-react';
 
 export default function Landing() {
-  const isClerkConfigured = !!CLERK_CONFIG.publishableKey;
-  const isSignedIn = false; // Default to not signed in when Clerk is not configured
+  const { isSignedIn } = useAuth();
 
   return (
     <div className="auth-container min-h-screen flex items-center justify-center p-4">

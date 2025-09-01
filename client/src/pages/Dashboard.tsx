@@ -1,9 +1,16 @@
+import { useUser, useAuth } from '@clerk/clerk-react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Phone, MessageSquare, Settings, Mic, PhoneCall, Activity } from 'lucide-react';
-import { CLERK_CONFIG } from '@/lib/clerk';
+import { Phone, MessageSquare, Settings, Mic, PhoneCall, Activity, User } from 'lucide-react';
+import { useState } from 'react';
 
 export default function Dashboard() {
-  const isClerkConfigured = !!CLERK_CONFIG.publishableKey;
+  const { user } = useUser();
+  const { signOut } = useAuth();
+  const [showUserMenu, setShowUserMenu] = useState(false);
+
+  const getInitials = (firstName?: string, lastName?: string) => {
+    return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -15,8 +22,37 @@ export default function Dashboard() {
               <h1 className="text-xl font-bold text-primary" data-testid="text-dashboard-title">Voice Agent Dashboard</h1>
             </div>
             <div className="flex items-center space-x-4">
-              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground text-sm font-medium">
-                D
+              <div className="relative">
+                <button 
+                  onClick={() => setShowUserMenu(!showUserMenu)} 
+                  className="flex items-center space-x-2 text-foreground hover:text-primary transition-colors"
+                  data-testid="button-user-menu"
+                >
+                  <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                    <span className="text-primary-foreground font-semibold text-sm" data-testid="text-user-initials">
+                      {getInitials(user?.firstName || undefined, user?.lastName || undefined) || 'U'}
+                    </span>
+                  </div>
+                  <span className="hidden md:block font-medium">{user?.firstName || 'Kullanıcı'}</span>
+                </button>
+                
+                {showUserMenu && (
+                  <div className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg z-50">
+                    <div className="p-3 border-b border-border">
+                      <p className="font-medium text-foreground">{user?.fullName || 'Kullanıcı'}</p>
+                      <p className="text-sm text-muted-foreground">{user?.primaryEmailAddress?.emailAddress || 'email@example.com'}</p>
+                    </div>
+                    <div className="p-1">
+                      <button
+                        onClick={() => signOut()}
+                        className="w-full text-left px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded transition-colors"
+                        data-testid="button-signout"
+                      >
+                        Çıkış Yap
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -25,14 +61,12 @@ export default function Dashboard() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {!isClerkConfigured && (
-          <div className="mb-8 bg-amber-50 border border-amber-200 rounded-lg p-4">
-            <h3 className="text-amber-800 font-semibold mb-2">Demo Mode</h3>
-            <p className="text-amber-700 text-sm">
-              You're viewing the application in demo mode. To enable full authentication features, configure your Clerk API keys.
-            </p>
-          </div>
-        )}
+        <div className="mb-8 bg-green-50 border border-green-200 rounded-lg p-4">
+          <h3 className="text-green-800 font-semibold mb-2">Hoş geldiniz, {user?.firstName || 'Kullanıcı'}!</h3>
+          <p className="text-green-700 text-sm">
+            Voice Agent sisteminiz aktif ve kullanıma hazır. Aşağıdaki panellerden sistem durumunu takip edebilirsiniz.
+          </p>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {/* Voice Agent Status */}

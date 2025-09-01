@@ -1,10 +1,6 @@
-import { Link } from 'wouter';
-import { AlertCircle } from 'lucide-react';
-import { CLERK_CONFIG } from '@/lib/clerk';
+import { SignUp as ClerkSignUp } from '@clerk/clerk-react';
 
 export default function SignUp() {
-  const isClerkConfigured = !!CLERK_CONFIG.publishableKey;
-
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-card rounded-lg shadow-xl p-8">
@@ -13,37 +9,44 @@ export default function SignUp() {
           <p className="text-muted-foreground">Yeni hesap oluşturun</p>
         </div>
 
-        {!isClerkConfigured ? (
-          <div className="space-y-6">
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start space-x-3">
-              <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
-              <div>
-                <h3 className="text-amber-800 font-semibold text-sm mb-1">Demo Modu</h3>
-                <p className="text-amber-700 text-sm">
-                  Clerk kimlik doğrulama yapılandırılmamış. Demo modunda dashboard'a erişebilirsiniz.
-                </p>
-              </div>
-            </div>
-            
-            <Link href="/dashboard">
-              <button className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors">
-                Dashboard'a Git (Demo)
-              </button>
-            </Link>
-            
-            <div className="text-center">
-              <Link href="/sign-in">
-                <span className="text-primary hover:underline text-sm">
-                  Zaten hesabınız var mı? Giriş yapın
-                </span>
-              </Link>
-            </div>
-          </div>
-        ) : (
-          <div className="text-center">
-            <p className="text-muted-foreground mb-4">Clerk kimlik doğrulama yükleniyor...</p>
-          </div>
-        )}
+        <ClerkSignUp
+          appearance={{
+            elements: {
+              formButtonPrimary: "bg-primary text-primary-foreground hover:bg-primary/90 w-full py-3 rounded-lg font-semibold transition-colors",
+              card: "shadow-none border-none p-0",
+              headerTitle: "hidden",
+              headerSubtitle: "hidden",
+              socialButtonsBlockButton: "social-button w-full flex items-center justify-center px-4 py-3 border border-border rounded-lg hover:bg-accent transition-colors mb-3",
+              socialButtonsBlockButtonText: "font-medium",
+              formFieldInput: "w-full px-3 py-3 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring",
+              formFieldLabel: "text-muted-foreground text-sm font-medium mb-2 block",
+              footer: "mt-6 text-center",
+              footerActionText: "text-muted-foreground",
+              footerActionLink: "text-primary hover:underline font-semibold ml-1",
+              dividerLine: "bg-border",
+              dividerText: "text-muted-foreground text-sm",
+              formResendCodeLink: "text-primary hover:underline text-sm",
+              identityPreviewText: "text-foreground",
+              identityPreviewEditButton: "text-primary hover:underline",
+              formHeaderTitle: "text-foreground text-lg font-semibold",
+              formHeaderSubtitle: "text-muted-foreground text-sm",
+              otpCodeFieldInput: "border border-input rounded focus:ring-2 focus:ring-ring",
+              formButtonReset: "text-primary hover:underline",
+              formFieldInputShowPasswordButton: "text-muted-foreground hover:text-foreground",
+              formFieldSuccessText: "text-green-600 text-sm",
+              formFieldErrorText: "text-destructive text-sm"
+            },
+            variables: {
+              colorPrimary: "hsl(221.2, 83.2%, 53.3%)",
+              colorBackground: "hsl(0, 0%, 100%)",
+              colorInputBackground: "hsl(0, 0%, 100%)",
+              colorInputText: "hsl(222.2, 84%, 4.9%)",
+              borderRadius: "0.5rem",
+              spacingUnit: "1rem"
+            }
+          }}
+          redirectUrl="/dashboard"
+        />
       </div>
     </div>
   );

@@ -1,33 +1,35 @@
-import { CLERK_CONFIG } from '@/lib/clerk';
+import { useAuth } from '@clerk/clerk-react';
+import { useLocation } from 'wouter';
+import { useEffect } from 'react';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const isClerkConfigured = !!CLERK_CONFIG.publishableKey;
+  const { isSignedIn, isLoaded } = useAuth();
+  const [, setLocation] = useLocation();
 
-  // If Clerk is not configured, allow access to all routes
-  if (!isClerkConfigured) {
-    return <>{children}</>;
-  }
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) {
+      setLocation('/sign-in');
+    }
+  }, [isLoaded, isSignedIn, setLocation]);
 
-  // If Clerk is configured but user is not authenticated, show auth required message
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center max-w-md mx-auto p-6">
-        <h2 className="text-2xl font-bold text-foreground mb-4">Authentication Required</h2>
-        <p className="text-muted-foreground mb-6">
-          This application requires Clerk authentication to be configured. Please set up your Clerk keys in the environment variables.
-        </p>
-        <div className="bg-muted p-4 rounded-lg text-sm text-left">
-          <p className="font-semibold mb-2">Required environment variables:</p>
-          <ul className="space-y-1 text-muted-foreground">
-            <li>• VITE_CLERK_PUBLISHABLE_KEY</li>
-            <li>• CLERK_SECRET_KEY</li>
-          </ul>
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="loading-spinner w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4 animate-spin"></div>
+          <p className="text-muted-foreground">Yükleniyor...</p>
         </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  if (!isSignedIn) {
+    return null;
+  }
+
+  return <>{children}</>;
 }

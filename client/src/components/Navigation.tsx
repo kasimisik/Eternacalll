@@ -1,9 +1,9 @@
+import { useAuth, UserButton } from '@clerk/clerk-react';
 import { Link, useLocation } from 'wouter';
-import { CLERK_CONFIG } from '@/lib/clerk';
 
 export function Navigation() {
+  const { isSignedIn } = useAuth();
   const [location] = useLocation();
-  const isClerkConfigured = !!CLERK_CONFIG.publishableKey;
 
   return (
     <nav className="bg-card border-b border-border shadow-sm">
@@ -19,11 +19,7 @@ export function Navigation() {
             </div>
           </div>
           <div className="flex items-center space-x-4">
-            {isClerkConfigured ? (
-              <div className="text-sm text-muted-foreground">
-                Authentication not configured
-              </div>
-            ) : (
+            {isSignedIn ? (
               <div className="flex items-center space-x-4">
                 <Link href="/dashboard">
                   <button 
@@ -37,10 +33,24 @@ export function Navigation() {
                     Dashboard
                   </button>
                 </Link>
-                <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground text-sm font-medium">
-                  U
-                </div>
+                <UserButton 
+                  afterSignOutUrl="/"
+                  appearance={{
+                    elements: {
+                      avatarBox: "w-8 h-8"
+                    }
+                  }}
+                />
               </div>
+            ) : (
+              <Link href="/sign-in">
+                <button 
+                  className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-colors"
+                  data-testid="button-signin"
+                >
+                  Giriş Yap
+                </button>
+              </Link>
             )}
           </div>
         </div>
