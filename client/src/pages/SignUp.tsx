@@ -1,6 +1,22 @@
 import { SignUp as ClerkSignUp } from '@clerk/clerk-react';
+import { CLERK_CONFIG } from '../lib/clerk';
 
 export default function SignUp() {
+  // If Clerk is not configured, show a fallback message
+  if (!CLERK_CONFIG.publishableKey) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-card rounded-lg shadow-xl p-8 text-center">
+          <h2 className="text-3xl font-bold text-foreground mb-4">Authentication Setup Required</h2>
+          <p className="text-muted-foreground mb-4">
+            Clerk authentication needs to be configured to enable sign-up functionality.
+          </p>
+          <a href="/" className="text-primary hover:underline">← Back to Home</a>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-card rounded-lg shadow-xl p-8">

@@ -1,12 +1,20 @@
+import { useAuth, useUser } from '@clerk/clerk-react';
 import { useMockAuth, useMockUser } from './auth-fallback';
 import { CLERK_CONFIG } from './clerk';
 
-// For now, always use mock auth since Clerk is not configured
-// When CLERK_CONFIG.publishableKey is properly set, this can be updated to use real Clerk hooks
+// Always call hooks consistently to avoid rules of hooks violations
 export function useAuthHook() {
-  return useMockAuth();
+  const clerkAuth = useAuth();
+  const mockAuth = useMockAuth();
+  
+  // Return the appropriate auth based on configuration
+  return CLERK_CONFIG.publishableKey ? clerkAuth : mockAuth;
 }
 
 export function useUserHook() {
-  return useMockUser();
+  const clerkUser = useUser();
+  const mockUser = useMockUser();
+  
+  // Return the appropriate user based on configuration
+  return CLERK_CONFIG.publishableKey ? clerkUser : mockUser;
 }
