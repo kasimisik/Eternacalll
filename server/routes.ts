@@ -96,10 +96,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         price_currency: 'USD',
         pay_currency: 'btc',
         order_id: 'USER123',
-        order_description: 'Profesyonel Plan Üyeliği'
+        order_description: 'Profesyonel Plan Üyeliği',
+        success_url: `${req.protocol}://${req.get('host')}/dashboard`
       };
 
-      const response = await fetch('https://api.nowpayments.io/v1/payment', {
+      const response = await fetch('https://api.nowpayments.io/v1/invoice', {
         method: 'POST',
         headers: {
           'x-api-key': API_KEY,
@@ -117,8 +118,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Payment creation failed', details: result });
       }
 
-      console.log('Payment URL:', result.payment_url);
-      res.json({ paymentUrl: result.payment_url });
+      console.log('Invoice URL:', result.invoice_url);
+      res.json({ paymentUrl: result.invoice_url });
     } catch (error) {
       console.error('Error creating crypto payment:', error);
       res.status(500).json({ error: 'Internal server error' });
