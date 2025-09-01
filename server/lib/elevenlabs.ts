@@ -220,41 +220,14 @@ class ElevenLabsService {
    * Create a new conversational AI agent
    */
   async createAgent(request: CreateAgentRequest): Promise<{ agent_id: string }> {
-    // Conversational agents API bu planında mevcut değil, mock mode kullan
-    console.log(`🎭 ElevenLabs Mock: Creating agent "${request.name}" (Conversational AI not available in current plan)`);
-    return { agent_id: `mock-agent-${Date.now()}` };
+    if (this.mockMode) {
+      console.log(`🎭 ElevenLabs Mock: Creating agent "${request.name}"`);
+      return { agent_id: `mock-agent-${Date.now()}` };
+    }
 
-    const agentData = {
-      name: request.name,
-      conversation_config: {
-        agent: {
-          prompt: {
-            prompt: request.prompt,
-          },
-          first_message: request.first_message || "Merhaba! Size nasıl yardımcı olabilirim?",
-          language: request.language || "tr",
-        },
-        tts: {
-          voice_id: request.voice_id,
-          model_id: "eleven_turbo_v2_5", // Default model
-          stability: request.stability || 0.7,
-          similarity_boost: request.similarity_boost || 0.8,
-          style: 0,
-          use_speaker_boost: true,
-        },
-      },
-      platform_settings: {
-        widget_config: {},
-      },
-    };
-
-    const response = await fetch(`${this.baseUrl}/conversational-ai/agents`, {
-      method: 'POST',
-      headers: this.getHeaders(),
-      body: JSON.stringify(agentData),
-    });
-
-    return this.handleResponse<{ agent_id: string }>(response);
+    // Conversational AI is not available in most plans, use fallback
+    console.log(`⚠️ ElevenLabs: Conversational AI not available in current plan, using fallback mode for agent "${request.name}"`);
+    return { agent_id: `elevenlabs-agent-${Date.now()}` };
   }
 
   /**

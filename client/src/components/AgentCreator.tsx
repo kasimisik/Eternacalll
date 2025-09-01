@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useUser } from '@clerk/clerk-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -18,6 +19,7 @@ interface AgentCreatorProps {
 }
 
 export function AgentCreator({ onAgentCreated, className }: AgentCreatorProps) {
+  const { user } = useUser();
   const [name, setName] = useState('');
   const [prompt, setPrompt] = useState('');
   const [voiceId, setVoiceId] = useState('');
@@ -63,10 +65,15 @@ export function AgentCreator({ onAgentCreated, className }: AgentCreatorProps) {
         language: language,
       };
 
+      if (!user?.id) {
+        throw new Error('Kullanıcı kimlik doğrulaması gereklidir');
+      }
+
       const response = await fetch('/api/agents/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-user-id': user.id,
         },
         body: JSON.stringify(agentData),
       });

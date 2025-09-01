@@ -9,12 +9,12 @@ import { agents } from "../../../shared/schema";
  */
 export async function handleCreateAgent(req: Request, res: Response) {
   try {
-    // Get user ID from Clerk (we'll add auth middleware later)
-    // const { userId } = getAuth(req);
-    // if (!userId) {
-    //   return res.status(401).json({ error: "Unauthorized" });
-    // }
-    const userId = "temp-user-id"; // Temporary until auth is implemented
+    // Get user ID from request headers (Clerk authentication)
+    const userId = req.headers['x-user-id'] as string;
+    
+    if (!userId) {
+      return res.status(401).json({ error: "User authentication required" });
+    }
 
     const { name, prompt, voice_id, stability, similarity_boost, first_message, language } = req.body;
 
@@ -38,8 +38,8 @@ export async function handleCreateAgent(req: Request, res: Response) {
       voice_id,
       stability: stability || 0.7,
       similarity_boost: similarity_boost || 0.8,
-      first_message: first_message || "Hello! How can I help you today?",
-      language: language || "en",
+      first_message: first_message || "Merhaba! Size nasıl yardımcı olabilirim?",
+      language: language || "tr",
     });
 
     // Save agent to our database
