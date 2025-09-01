@@ -68,16 +68,16 @@ export class NetGSMSipAgent extends EventEmitter {
           resolve(true);
         });
 
-        this.ws.on('message', (data: WebSocket.RawData) => {
+        this.ws!.on('message', (data: WebSocket.RawData) => {
           this.handleSIPMessage(data.toString());
         });
 
-        this.ws.on('error', (error: Error) => {
+        this.ws!.on('error', (error: Error) => {
           console.error("❌ WebSocket hatası:", error);
           reject(error);
         });
 
-        this.ws.on('close', () => {
+        this.ws!.on('close', () => {
           console.log("🔌 WebSocket bağlantısı kapandı");
           this.isRegistered = false;
         });
@@ -212,7 +212,7 @@ a=rtpmap:0 PCMU/8000\r
         }]
       });
 
-      const aiResponse = response.content[0].text;
+      const aiResponse = response.content[0]?.type === 'text' ? response.content[0].text : 'Anlayamadım, tekrar söyler misiniz?';
       console.log(`🤖 AI Cevabı: "${aiResponse}"`);
 
       // AI cevabını sese çevir
@@ -254,4 +254,5 @@ a=rtpmap:0 PCMU/8000\r
   }
 }
 
-export { SimpleSIPAgent as NetgsmVoiceAgent };
+// Export the NetGSMSipAgent class
+export { NetGSMSipAgent as NetgsmVoiceAgent };

@@ -10,6 +10,10 @@ import { getAIResponse } from './anthropic';
 import { withSubscriptionCheck } from '../client/src/lib/subscription-check';
 import { NetGSMSipAgent, NetGSMConfig } from './netgsm-sip-agent';
 import { SipVoiceAgent } from './sip-voice-agent';
+import { TwilioVoiceAgent } from './twilio-voice-agent';
+
+// Voice Agent'ları global olarak tanımla
+let twilioAgent: TwilioVoiceAgent | null = null;
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // put application routes here
@@ -474,7 +478,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Twilio Voice API endpoint
+  // Twilio Voice API endpoint (yeni)
+  app.post('/api/twilio/voice', async (req, res) => {
+    if (!twilioAgent) {
+      return res.status(500).send('Twilio Voice Agent not initialized');
+    }
+    
+    const twimlResponse = twilioAgent.generateTwiML(req);
+    res.set('Content-Type', 'text/xml');
+    res.send(twimlResponse);
+  });
+
+  // Twilio Voice API endpoint (eski)
   app.post('/api/voice', async (req, res) => {
     // Gelen isteğin içeriğini alıyoruz (Twilio'dan)
     const speechResult = req.body.SpeechResult as string | null; // Kullanıcının konuşması (varsa)
@@ -591,6 +606,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // HTTP Server oluşturma
   const httpServer = createServer(app);
 
+  // Twilio Voice Agent'ı başlat
+  try {
+    console.log("🎤 Twilio Voice Agent başlatılıyor...");
+    twilioAgent = new TwilioVoiceAgent();
+    twilioAgent.initializeWithServer(httpServer);
+    console.log("✅ Twilio Voice Agent başarıyla başlatıldı");
+  } catch (error) {
+    console.error("❌ Twilio Voice Agent başlatma hatası:", error);
+  }
+
   // SIP Voice Agent'ı başlat
   app.post('/api/sip/start-agent', async (req, res) => {
     try {
@@ -615,14 +640,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // NetGSM SIP Agent'ını da başlat
       sipAgent = new NetGSMSipAgent(netgsmConfig);
-      await sipAgent.register();
+      await sipAgent.connect();
       
       res.json({ 
         success: true, 
         message: 'SIP Voice Agent ve NetGSM trunk başarıyla başlatıldı',
         details: {
           voiceAgent: true,
-          netgsmTrunk: sipAgent.isRegisteredToNetGSM(),
+          netgsmTrunk: sipAgent.isConnected(),
           activeCallsCount: voiceAgent.getActiveCallsCount()
         }
       });
@@ -662,17 +687,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // SIP Agent durumu ve aktif çağrılar
   app.get('/api/sip/status', (req, res) => {
-    const voiceAgentRunning = voiceAgent !== null;
-    const netgsmConnected = sipAgent !== null && sipAgent.isRegisteredToNetGSM();
-    
-    res.json({ 
-      running: voiceAgentRunning,
-      netgsmConnected: netgsmConnected,
-      activeCallsCount: voiceAgent ? voiceAgent.getActiveCallsCount() : 0,
-      activeCalls: voiceAgent ? voiceAgent.getAllActiveCalls() : [],
-      message: voiceAgentRunning ? 'SIP Voice Agent aktif' : 'SIP Voice Agent pasif',
-      websocketEndpoint: voiceAgentRunning ? 'ws://localhost:5000/sip-voice' : null
-    });
+    try {
+      const voiceAgentRunning = voiceAgent !== null;
+      const netgsmConnected = sipAgent !== null && sipAgent.isConnected();
+      
+      res.json({ 
+        running: voiceAgentRunning,
+        netgsmConnected,
+        activeCallsCount: voiceAgent ? voiceAgent.getActiveCallsCount() : 0,
+        activeCalls: voiceAgent ? voiceAgent.getAllActiveCalls() : [],
+        message: voiceAgentRunning ? 'SIP Voice Agent aktif' : 'SIP Voice Agent pasif',
+        websocketEndpoint: voiceAgentRunning ? 'ws://localhost:5000/sip-voice' : null,
+        twilioAgent: twilioAgent !== null ? 'aktif' : 'pasif'
+      });
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
   });
 
   // Test için speech simulation endpoint

@@ -1,0 +1,294 @@
+Görev: Replit'te bir AI telefon ajanı oluşturmanızı istiyorum. Bu ajan, gelen telefon çağrılarını işleyecek, konuşmayı metne çevirecek, AI ile yanıt oluşturacak ve metni sese dönüştürerek arayana iletecek. Aşağıdaki servisleri entegre etmeniz gerekiyor:
+
+Twilio: Sesli aramalar için WebSocket bağlantısı kurulacak.
+
+Azure Speech Services: Ses-metin ve metin-ses dönüşümleri için kullanılacak.
+
+Anthropic Claude: AI yanıtlarını oluşturmak için kullanılacak.
+
+NetGSM SIP Trunk: Gerçek telefon aramalarını yönlendirmek için kullanılacak.
+
+Adım Adım Talimatlar:
+
+1. Ortam Değişkenlerini Ayarlayın
+Replit'teki secrets kısmına aşağıdaki değişkenleri ekleyin:
+
+TWILIO_ACCOUNT_SID: Twilio hesap SID'niz
+
+TWILIO_AUTH_TOKEN: Twilio auth token'ınız
+
+AZURE_SPEECH_KEY: Azure Speech servis anahtarınız
+
+AZURE_SPEECH_REGION: Azure bölgeniz (örn: westeurope)
+
+ANTHROPIC_API_KEY: Anthropic API anahtarınız
+
+NETGSM_USERNAME: NetGSM kullanıcı adınız
+
+NETGSM_PASSWORD: NetGSM şifreniz
+
+NETGSM_SIP_SERVER: NetGSM SIP sunucu adresi (örn: sip.netgsm.com.tr)
+
+2. Gerekli Kütüphaneleri Yükleyin
+Replit shell'inde aşağıdaki komutları çalıştırın:
+
+bash
+pip install twilio azure-cognitiveservices-speech anthropic websockets flask
+3. Ana Uygulama Kodunu Oluşturun
+Aşağıdaki kodu main.py dosyasına yazın:
+
+python
+import os
+from flask import Flask, request, Response
+from twilio.twiml.voice_response import VoiceResponse, Connect
+from twilio.rest import Client
+import azure.cognitiveservices.speech as speechsdk
+import anthropic
+import asyncio
+import websockets
+import json
+from threading import Thread
+
+app = Flask(__name__)
+
+# Ortam değişkenlerini yükle
+twilio_account_sid = os.environ['TWILIO_ACCOUNT_SID']
+twilio_auth_token = os.environ['TWILIO_AUTH_TOKEN']
+azure_speech_key = os.environ['AZURE_SPEECH_KEY']
+azure_speech_region = os.environ['AZURE_SPEECH_REGION']
+anthropic_api_key = os.environ['ANTHROPIC_API_KEY']
+netgsm_username = os.environ['NETGSM_USERNAME']
+netgsm_password = os.environ['NETGSM_PASSWORD']
+netgsm_sip_server = os.environ['NETGSM_SIP_SERVER']
+
+# İstemcileri başlat
+twilio_client = Client(twilio_account_sid, twilio_auth_token)
+claude_client = anthropic.Anthropic(api_key=anthropic_api_key)
+
+# Azure Speech konfigürasyonu
+speech_config = speechsdk.SpeechConfig(
+    subscription=azure_speech_key, 
+    region=azure_speech_region
+)
+speech_config.speech_recognition_language = "tr-TR"
+speech_config.speech_synthesis_language = "tr-TR"
+speech_config.speech_synthesis_voice_name = "tr-TR-AhmetNeural"
+
+class VoiceAgent:
+    def __init__(self):
+        self.websocket = None
+        self.call_status = "idle"
+
+    async def handle_audio_stream(self, websocket):
+        """Ses akışını işle"""
+        self.websocket = websocket
+        self.call_status = "active"
+        
+        # Azure ses tanıma için ayarlar
+        audio_config = speechsdk.audio.AudioConfig(stream=websocket)
+        speech_recognizer = speechsdk.SpeechRecognizer(
+            speech_config=speech_config, 
+            audio_config=audio_config
+        )
+        
+        def recognized_callback(evt):
+            if evt.result.reason == speechsdk.ResultReason.RecognizedSpeech:
+                user_text = evt.result.text
+                print(f"Kullanıcı: {user_text}")
+                
+                # AI yanıtı oluştur
+                ai_response = self.generate_ai_response(user_text)
+                print(f"AI: {ai_response}")
+                
+                # Metni sese dönüştür ve gönder
+                self.text_to_speech(ai_response)
+        
+        speech_recognizer.recognized.connect(recognized_callback)
+        speech_recognizer.start_continuous_recognition()
+        
+        # Bağlantıyı açık tut
+        while self.call_status == "active":
+            await asyncio.sleep(1)
+        
+        speech_recognizer.stop_continuous_recognition()
+
+    def generate_ai_response(self, user_input):
+        """Anthropic Claude ile yanıt oluştur"""
+        try:
+            message = claude_client.messages.create(
+                model="claude-3-sonnet-20240229",
+                max_tokens=1000,
+                temperature=0.7,
+                system="Sen bir telefon asistanısın. Kısa, net ve yardımsever yanıtlar ver.",
+                messages=[
+                    {"role": "user", "content": user_input}
+                ]
+            )
+            return message.content[0].text
+        except Exception as e:
+            print(f"Claude hatası: {str(e)}")
+            return "Üzgünüm, şu anda yardım edemiyorum. Lütfen daha sonra tekrar arayın."
+
+    def text_to_speech(self, text):
+        """Metni sese dönüştür ve WebSocket üzerinden gönder"""
+        try:
+            synthesizer = speechsdk.SpeechSynthesizer(speech_config=speech_config)
+            result = synthesizer.speak_text_async(text).get()
+            
+            if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
+                print("Ses sentezleme tamamlandı")
+                # Ses verisini WebSocket üzerinden gönder
+                if self.websocket:
+                    asyncio.run(self.websocket.send(result.audio_data))
+            else:
+                print(f"Ses sentezleme hatası: {result.reason}")
+        except Exception as e:
+            print(f"TTS hatası: {str(e)}")
+
+# Global agent instance
+agent = VoiceAgent()
+
+@app.route('/answer', methods=['POST'])
+def answer_call():
+    """Gelen çağrıyı yanıtla"""
+    response = VoiceResponse()
+    
+    # WebSocket bağlantısı kur
+    connect = Connect()
+    connect.stream(url=f"wss://{request.host}/stream")
+    response.append(connect)
+    
+    return str(response)
+
+@app.route('/stream', methods=['POST'])
+async def stream():
+    """WebSocket ses akışını işle"""
+    # Bu endpoint WebSocket bağlantıları için özel olarak yapılandırılmalı
+    # Replit'te WebSocket desteği için özel ayarlar gerekebilir
+    return "WebSocket endpoint'i"
+
+# NetGSM SIP entegrasyonu için yardımcı fonksiyonlar
+def make_call(to_number):
+    """NetGSM üzerinden arama yap"""
+    # NetGSM API'sini kullanarak arama başlat
+    # Bu kısım NetGSM API dokümantasyonuna göre doldurulmalı
+    pass
+
+def setup_sip_trunk():
+    """SIP trunk bağlantısını kur"""
+    # NetGSM SIP yapılandırması
+    # Bu kısım NetGSM dokümantasyonuna göre yapılmalı
+    pass
+
+if __name__ == '__main__':
+    # NetGSM SIP trunk kurulumu
+    setup_sip_trunk()
+    
+    # Flask uygulamasını başlat
+    app.run(host='0.0.0.0', port=5000)
+4. NetGSM Entegrasyonu için Ek Kod
+NetGSM entegrasyonu için aşağıdaki kodu netgsm_integration.py dosyasına ekleyin:
+
+python
+import requests
+from requests.auth import HTTPBasicAuth
+
+class NetGSMClient:
+    def __init__(self, username, password, sip_server):
+        self.username = username
+        self.password = password
+        self.sip_server = sip_server
+        self.base_url = f"https://{sip_server}/api"
+    
+    def make_call(self, from_number, to_number):
+        """NetGSM üzerinden arama başlat"""
+        url = f"{self.base_url}/call"
+        data = {
+            "username": self.username,
+            "password": self.password,
+            "from": from_number,
+            "to": to_number,
+            "action": "call"
+        }
+        
+        try:
+            response = requests.post(url, data=data, auth=HTTPBasicAuth(self.username, self.password))
+            if response.status_code == 200:
+                print("Arama başlatıldı")
+                return response.json()
+            else:
+                print(f"Arama hatası: {response.status_code}")
+                return None
+        except Exception as e:
+            print(f"Arama başlatma hatası: {str(e)}")
+            return None
+    
+    def get_call_status(self, call_id):
+        """Arama durumunu sorgula"""
+        url = f"{self.base_url}/call_status"
+        data = {
+            "username": self.username,
+            "password": self.password,
+            "callid": call_id
+        }
+        
+        try:
+            response = requests.post(url, data=data)
+            if response.status_code == 200:
+                return response.json()
+            else:
+                print(f"Durum sorgulama hatası: {response.status_code}")
+                return None
+        except Exception as e:
+            print(f"Durum sorgulama hatası: {str(e)}")
+            return None
+
+# NetGSM istemcisini başlat
+netgsm_client = NetGSMClient(
+    username=os.environ['NETGSM_USERNAME'],
+    password=os.environ['NETGSM_PASSWORD'],
+    sip_server=os.environ['NETGSM_SIP_SERVER']
+)
+5. Twilio WebSocket Entegrasyonu
+Twilio WebSocket entegrasyonu için Replit'te WebSocket desteği gerekir. Aşağıdaki kodu twilio_websocket.py dosyasına ekleyin:
+
+python
+from twilio.twiml.voice_response import VoiceResponse, Connect
+from flask import request, Response
+import asyncio
+import websockets
+
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    """Twilio webhook endpoint'i"""
+    response = VoiceResponse()
+    connect = Connect()
+    connect.stream(url=f"wss://{request.host}/stream")
+    response.append(connect)
+    return str(response)
+
+async def handle_stream(websocket, path):
+    """WebSocket bağlantısını işle"""
+    print("WebSocket bağlantısı kuruldu")
+    
+    # Ses verisini işle
+    async for message in websocket:
+        # Ses verisini Azure Speech Services'e gönder
+        # Bu kısımda ses işleme mantığı uygulanacak
+        pass
+
+# WebSocket sunucusunu başlat
+start_server = websockets.serve(handle_stream, "0.0.0.0", 8765)
+
+asyncio.get_event_loop().run_until_complete(start_server)
+asyncio.get_event_loop().run_forever()
+6. Çalıştırma Talimatları
+Tüm kod dosyalarını Replit'te oluşturun.
+
+Gerekli ortam değişkenlerini Replit secrets'a ekleyin.
+
+Terminalde python main.py komutunu çalıştırın.
+
+Twilio'yu webhook URL'sini https://your-replit-url.web.replit.dev/webhook olarak ayarlayın.
+
+NetGSM SIP trunk yapılandırmasını tamamlayın.

@@ -1,7 +1,7 @@
 import Srf from 'drachtio-srf';
 import { WebSocketServer } from 'ws';
 import Anthropic from '@anthropic-ai/sdk';
-import * as wav from 'node-wav';
+// import * as wav from 'node-wav'; // Not needed for basic voice agent
 import * as sdk from "microsoft-cognitiveservices-speech-sdk";
 import { textToSpeech } from './azure';
 import { EventEmitter } from 'events';
@@ -410,10 +410,10 @@ class CallSession {
         max_tokens: 200,
         system: `Sen yardımsever bir telefon asistanısın. Kısa, net ve samimi yanıtlar ver. 
         Türkçe konuş ve telefon görüşmesi için uygun ol. Uzun açıklamalar yapma.`,
-        messages: this.conversationHistory.slice(-10) // Son 10 mesajı tut
+        messages: this.conversationHistory.slice(-10) as Array<{role: 'user' | 'assistant', content: string}> // Son 10 mesajı tut
       });
 
-      const aiMessage = response.content[0].text;
+      const aiMessage = response.content[0]?.type === 'text' ? response.content[0].text : 'Anlayamadım, tekrar söyler misiniz?';
       
       // Konuşma geçmişine AI yanıtını ekle
       this.conversationHistory.push({
