@@ -6,6 +6,7 @@ import { PrismaClient } from '@prisma/client';
 import crypto from 'crypto';
 import Twilio from 'twilio';
 import { textToSpeech } from './azure';
+import { getAIResponse } from './anthropic';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // put application routes here
@@ -472,45 +473,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Twilio Voice API endpoint
   app.post('/api/voice', async (req, res) => {
+    // Gelen isteğin içeriğini alıyoruz (Twilio'dan)
+    const speechResult = req.body.SpeechResult as string | null; // Kullanıcının konuşması (varsa)
+    
+    // TwiML (Twilio Markup Language) yanıtı oluşturuyoruz
+    const twiml = new Twilio.twiml.VoiceResponse();
+
     try {
-      // Gelen isteğin içeriğini alıyoruz (Twilio'dan)
-      const speechResult = req.body.SpeechResult as string | null; // Kullanıcının konuşması (varsa)
+      if (speechResult && speechResult.trim() !== '') {
+        // EĞER KULLANICI KONUŞTUYSA (Görüşmenin 2. ve sonraki adımları)
 
-      // TwiML (Twilio Markup Language) yanıtı oluşturuyoruz
-      const twiml = new Twilio.twiml.VoiceResponse();
+        // 1. ADIM: Kullanıcının konuşmasını Anthropic'e gönderip cevap al
+        const aiResponseText = await getAIResponse(speechResult);
 
-      if (speechResult) {
-        // ŞİMDİLİK BU KISMI BOŞ BIRAKIYORUZ
-        // TODO: Kullanıcının konuşmasını Anthropic'e gönderip cevap alacağız
-        twiml.say('Cevabınız işleniyor.'); 
+        // 2. ADIM: Anthropic'ten gelen metin cevabı Azure'da sese çevir
+        const audioBuffer = await textToSpeech(aiResponseText);
+        const audioBase64 = audioBuffer.toString('base64');
+        
+        // 3. ADIM: Üretilen sesi kullanıcıya dinlet
+        twiml.play({}, `data:audio/wav;base64,${audioBase64}`);
+
       } else {
-        // Bu, çağrının ilk anıdır. Karşılama mesajı oynatacağız.
+        // EĞER BU ÇAĞRININ İLK ANIYSA
+
+        // 1. ADIM: Karşılama mesajını belirle
         const welcomeMessage = "Merhaba, EternaCall hizmetine hoş geldiniz. Size nasıl yardımcı olabilirim?";
         
-        try {
-          // Mesajı Azure'da sese çeviriyoruz
-          const audioBuffer = await textToSpeech(welcomeMessage);
-          const audioBase64 = audioBuffer.toString('base64');
-          
-          // Sesi TwiML yanıtına ekliyoruz
-          twiml.play({}, `data:audio/wav;base64,${audioBase64}`);
-
-        } catch (error) {
-          console.error("Error generating speech:", error);
-          twiml.say("Üzgünüm, bir hata oluştu. Lütfen daha sonra tekrar deneyin.");
-        }
+        // 2. ADIM: Mesajı Azure'da sese çevir
+        const audioBuffer = await textToSpeech(welcomeMessage);
+        const audioBase64 = audioBuffer.toString('base64');
+        
+        // 3. ADIM: Karşılama sesini kullanıcıya dinlet
+        twiml.play({}, `data:audio/wav;base64,${audioBase64}`);
       }
 
-      // TODO: Kullanıcının cevabını dinlemek için TwiML'e <Gather> ekleyeceğiz
+      // 4. ADIM (EN ÖNEMLİ KISIM): Konuşma döngüsünü devam ettirmek için kullanıcıyı tekrar dinle
+      twiml.gather({
+        input: ['speech'],
+        speechTimeout: 'auto', // Kullanıcı sustuğunda otomatik olarak algıla
+        language: 'tr-TR',     // Türkçe konuşmayı dinle
+        action: '/api/voice',  // Konuşma bittiğinde sonucu bu adrese geri gönder
+      });
 
-      // TwiML yanıtını XML formatında geri döndürüyoruz
-      res.set('Content-Type', 'text/xml');
-      res.send(twiml.toString());
-      
     } catch (error) {
-      console.error('Twilio voice endpoint error:', error);
-      res.status(500).json({ error: 'Voice processing failed' });
+      console.error("Bir hata oluştu:", error);
+      // Hata durumunda kullanıcıya bir sesli mesaj dinlet
+      const errorMessage = "Üzgünüm, bir sistem hatası oluştu. Lütfen daha sonra tekrar deneyin.";
+      const audioBuffer = await textToSpeech(errorMessage);
+      const audioBase64 = audioBuffer.toString('base64');
+      twiml.play({}, `data:audio/wav;base64,${audioBase64}`);
     }
+
+    // TwiML yanıtını XML formatında geri döndürüyoruz
+    res.set('Content-Type', 'text/xml');
+    res.send(twiml.toString());
   });
 
   const httpServer = createServer(app);

@@ -1,0 +1,69 @@
+pılacak İş: app/api/voice/route.ts dosyasının içeriğini, aşağıdaki tam ve nihai kodla tamamen değiştir. Bu kod, projemizin telefon görüşmesi mantığının tamamını içerir.
+
+TypeScript
+
+import { NextRequest, NextResponse } from 'next/server';
+import Twilio from 'twilio';
+import { textToSpeech } from '@/lib/azure';      // Azure ses modülümüz
+import { getAIResponse } from '@/lib/anthropic'; // Anthropic beyin modülümüz
+
+export async function POST(req: NextRequest) {
+  // Gelen isteğin içeriğini alıyoruz (Twilio'dan)
+  const body = await req.formData();
+  const speechResult = body.get('SpeechResult') as string | null; // Kullanıcının konuşması (varsa)
+  
+  // TwiML (Twilio Markup Language) yanıtı oluşturuyoruz
+  const twiml = new Twilio.twiml.VoiceResponse();
+
+  try {
+    if (speechResult && speechResult.trim() !== '') {
+      // EĞER KULLANICI KONUŞTUYSA (Görüşmenin 2. ve sonraki adımları)
+
+      // 1. ADIM: Kullanıcının konuşmasını Anthropic'e gönderip cevap al
+      const aiResponseText = await getAIResponse(speechResult);
+
+      // 2. ADIM: Anthropic'ten gelen metin cevabı Azure'da sese çevir
+      const audioBuffer = await textToSpeech(aiResponseText);
+      const audioBase64 = audioBuffer.toString('base64');
+      
+      // 3. ADIM: Üretilen sesi kullanıcıya dinlet
+      twiml.play({}, `data:audio/wav;base64,${audioBase64}`);
+
+    } else {
+      // EĞER BU ÇAĞRININ İLK ANIYSA
+
+      // 1. ADIM: Karşılama mesajını belirle
+      const welcomeMessage = "Merhaba, EternaCall hizmetine hoş geldiniz. Size nasıl yardımcı olabilirim?";
+      
+      // 2. ADIM: Mesajı Azure'da sese çevir
+      const audioBuffer = await textToSpeech(welcomeMessage);
+      const audioBase64 = audioBuffer.toString('base64');
+      
+      // 3. ADIM: Karşılama sesini kullanıcıya dinlet
+      twiml.play({}, `data:audio/wav;base64,${audioBase64}`);
+    }
+
+    // 4. ADIM (EN ÖNEMLİ KISIM): Konuşma döngüsünü devam ettirmek için kullanıcıyı tekrar dinle
+    twiml.gather({
+      input: 'speech',
+      speechTimeout: 'auto', // Kullanıcı sustuğunda otomatik olarak algıla
+      language: 'tr-TR',     // Türkçe konuşmayı dinle
+      action: '/api/voice',  // Konuşma bittiğinde sonucu bu adrese geri gönder
+    });
+
+  } catch (error) {
+    console.error("Bir hata oluştu:", error);
+    // Hata durumunda kullanıcıya bir sesli mesaj dinlet
+    const errorMessage = "Üzgünüm, bir sistem hatası oluştu. Lütfen daha sonra tekrar deneyin.";
+    const audioBuffer = await textToSpeech(errorMessage);
+    const audioBase64 = audioBuffer.toString('base64');
+    twiml.play({}, `data:audio/wav;base64,${audioBase64}`);
+  }
+
+  // TwiML yanıtını XML formatında geri döndürüyoruz
+  return new NextResponse(twiml.toString(), {
+    headers: {
+      'Content-Type': 'text/xml',
+    },
+  });
+}
