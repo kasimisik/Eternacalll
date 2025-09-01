@@ -10,12 +10,12 @@ import { eq, and } from "drizzle-orm";
  */
 export async function handleUpdateAgent(req: Request, res: Response) {
   try {
-    // Get user ID from Clerk (we'll add auth middleware later)
-    // const { userId } = getAuth(req);
-    // if (!userId) {
-    //   return res.status(401).json({ error: "Unauthorized" });
-    // }
-    const userId = "temp-user-id"; // Temporary until auth is implemented
+    // Get user ID from request headers (Clerk authentication)
+    const userId = req.headers['x-user-id'] as string;
+    
+    if (!userId) {
+      return res.status(401).json({ error: "User authentication required" });
+    }
 
     const agentId = req.params.id;
     const { name, prompt, voice_id, stability, similarity_boost, first_message, language } = req.body;

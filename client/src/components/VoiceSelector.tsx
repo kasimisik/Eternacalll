@@ -124,7 +124,7 @@ export function VoiceSelector({ selectedVoiceId, onVoiceSelect, className }: Voi
       <CardHeader>
         <CardTitle>Ses Seçimi</CardTitle>
         <CardDescription>
-          AI ajanınız için bir ses seçin. Önizleme dinleyebilir ve ses ayarlarını görüntüleyebilirsiniz.
+          AI ajanınız için bir ses seçin ve ses ayarlarını görüntüleyin.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -176,30 +176,6 @@ export function VoiceSelector({ selectedVoiceId, onVoiceSelect, className }: Voi
                 )}
               </div>
               
-              {/* Preview Button */}
-              {selectedVoice.preview_url && (
-                <div>
-                  {playingPreview === selectedVoice.id ? (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={stopPreview}
-                    >
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      Durduruluyor
-                    </Button>
-                  ) : (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => playPreview(selectedVoice)}
-                    >
-                      <Volume2 className="h-4 w-4 mr-2" />
-                      Önizleme
-                    </Button>
-                  )}
-                </div>
-              )}
             </div>
 
             {/* Voice Settings */}

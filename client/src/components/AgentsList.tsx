@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Bot, Phone, Copy, Edit, Trash2, Loader2, AlertCircle, ExternalLink } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { VoiceSelector } from '@/components/VoiceSelector';
 
 interface Agent {
   id: string;
@@ -34,6 +35,14 @@ export function AgentsList({ onAgentUpdated, onCreateAgentClick, className }: Ag
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deletingAgentId, setDeletingAgentId] = useState<string | null>(null);
+  const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    prompt: '',
+    voiceId: '',
+    voiceName: ''
+  });
+  const [savingAgent, setSavingAgent] = useState(false);
 
   useEffect(() => {
     if (user?.id) {
@@ -120,6 +129,71 @@ export function AgentsList({ onAgentUpdated, onCreateAgentClick, className }: Ag
     });
   };
 
+  const handleEditAgent = (agent: Agent) => {
+    setEditingAgent(agent);
+    setEditForm({
+      name: agent.name,
+      prompt: agent.prompt,
+      voiceId: agent.voice_id,
+      voiceName: agent.voice_id
+    });
+  };
+
+  const handleSaveAgent = async () => {
+    if (!editingAgent || !user?.id) return;
+
+    try {
+      setSavingAgent(true);
+
+      const response = await fetch(`/api/agents/update/${editingAgent.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': user.id,
+        },
+        body: JSON.stringify({
+          name: editForm.name,
+          prompt: editForm.prompt,
+          voice_id: editForm.voiceId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.details || data.error || 'Ajan güncellenemedi');
+      }
+
+      // Update local state
+      setAgents(prev => prev.map(agent => 
+        agent.id === editingAgent.id 
+          ? { ...agent, name: editForm.name, prompt: editForm.prompt, voice_id: editForm.voiceId }
+          : agent
+      ));
+
+      setEditingAgent(null);
+      
+      toast({
+        title: "Başarılı!",
+        description: "Ajan başarıyla güncellendi.",
+      });
+
+      if (onAgentUpdated) {
+        onAgentUpdated();
+      }
+
+    } catch (error) {
+      console.error('Agent update error:', error);
+      toast({
+        title: "Hata!",
+        description: error instanceof Error ? error.message : 'Ajan güncellenirken hata oluştu',
+        variant: "destructive",
+      });
+    } finally {
+      setSavingAgent(false);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('tr-TR', {
       year: 'numeric',
@@ -199,7 +273,7 @@ export function AgentsList({ onAgentUpdated, onCreateAgentClick, className }: Ag
       <CardContent>
         <div className="space-y-4">
           {agents.map((agent) => (
-            <div key={agent.id} className="border rounded-lg p-4 space-y-4">
+            <div key={agent.id} className="border rounded-lg p-4 hover:bg-accent/50 transition-colors">
               {/* Agent Header */}
               <div className="flex items-start justify-between">
                 <div className="flex-1">
@@ -214,67 +288,88 @@ export function AgentsList({ onAgentUpdated, onCreateAgentClick, className }: Ag
                 
                 {/* Action Buttons */}
                 <div className="flex space-x-2">
-                  {/* View Details Dialog */}
-                  <Dialog>
+                  {/* Edit Dialog */}
+                  <Dialog open={editingAgent?.id === agent.id} onOpenChange={(open) => {
+                    if (!open) setEditingAgent(null);
+                  }}>
                     <DialogTrigger asChild>
-                      <Button size="sm" variant="outline">
-                        <ExternalLink className="h-4 w-4" />
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        data-testid={`button-edit-agent-${agent.id}`}
+                        onClick={() => handleEditAgent(agent)}
+                      >
+                        <Edit className="h-4 w-4" />
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="max-w-2xl">
                       <DialogHeader>
-                        <DialogTitle>{agent.name} - Detaylar</DialogTitle>
+                        <DialogTitle>{agent.name} - Düzenle</DialogTitle>
                         <DialogDescription>
-                          Ajan detayları ve telefon endpoint bilgileri
+                          Ajan ayarlarını düzenleyin
                         </DialogDescription>
                       </DialogHeader>
                       <div className="space-y-4">
-                        {/* Phone Endpoint */}
+                        {/* Agent Name */}
                         <div>
-                          <label className="text-sm font-medium">Telefon Endpoint URL</label>
-                          <div className="flex items-center space-x-2 mt-1">
-                            <Input
-                              value={agent.phone_endpoint}
-                              readOnly
-                              className="font-mono text-xs"
-                            />
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => copyToClipboard(agent.phone_endpoint)}
-                            >
-                              <Copy className="h-4 w-4" />
-                            </Button>
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Bu URL'yi SIP trunk ayarlarında kullanın
-                          </p>
-                        </div>
-
-                        {/* Voice Settings */}
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="text-sm font-medium">Kararlılık</label>
-                            <p className="text-sm text-muted-foreground">{agent.stability}</p>
-                          </div>
-                          <div>
-                            <label className="text-sm font-medium">Benzerlik</label>
-                            <p className="text-sm text-muted-foreground">{agent.similarity_boost}</p>
-                          </div>
+                          <label className="text-sm font-medium">Ajan İsmi</label>
+                          <Input
+                            value={editForm.name}
+                            onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                            className="mt-1"
+                            data-testid="input-edit-agent-name"
+                          />
                         </div>
 
                         {/* System Prompt */}
                         <div>
                           <label className="text-sm font-medium">Sistem Promptu</label>
-                          <div className="mt-1 p-3 border rounded-lg bg-muted/30 max-h-40 overflow-y-auto">
-                            <p className="text-xs whitespace-pre-wrap">{agent.prompt}</p>
-                          </div>
+                          <textarea
+                            className="w-full mt-1 p-3 border rounded-lg bg-background resize-none h-32"
+                            value={editForm.prompt}
+                            onChange={(e) => setEditForm(prev => ({ ...prev, prompt: e.target.value }))}
+                            placeholder="Ajanınızın nasıl davranacağını tanımlayın..."
+                            data-testid="textarea-edit-agent-prompt"
+                          />
                         </div>
 
-                        {/* ElevenLabs ID */}
+                        {/* Voice Selection */}
                         <div>
-                          <label className="text-sm font-medium">ElevenLabs Agent ID</label>
-                          <p className="text-xs font-mono text-muted-foreground mt-1">{agent.elevenlabs_agent_id}</p>
+                          <label className="text-sm font-medium mb-2 block">Ses Seçimi</label>
+                          <VoiceSelector
+                            selectedVoiceId={editForm.voiceId}
+                            onVoiceSelect={(voiceId, voiceName) => {
+                              setEditForm(prev => ({ 
+                                ...prev, 
+                                voiceId, 
+                                voiceName 
+                              }));
+                            }}
+                          />
+                        </div>
+
+                        {/* Save Button */}
+                        <div className="flex justify-end space-x-2 pt-4">
+                          <Button 
+                            variant="outline" 
+                            onClick={() => setEditingAgent(null)}
+                          >
+                            İptal
+                          </Button>
+                          <Button 
+                            data-testid="button-save-agent-changes"
+                            onClick={handleSaveAgent}
+                            disabled={savingAgent}
+                          >
+                            {savingAgent ? (
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                Kaydediliyor...
+                              </>
+                            ) : (
+                              'Kaydet'
+                            )}
+                          </Button>
                         </div>
                       </div>
                     </DialogContent>
@@ -317,45 +412,6 @@ export function AgentsList({ onAgentUpdated, onCreateAgentClick, className }: Ag
                 </div>
               </div>
 
-              {/* Agent Settings Summary */}
-              <div className="flex items-center space-x-4 text-sm">
-                <Badge variant="secondary">
-                  Kararlılık: {agent.stability}
-                </Badge>
-                <Badge variant="secondary">
-                  Benzerlik: {agent.similarity_boost}
-                </Badge>
-                <Badge variant="outline">
-                  <Phone className="h-3 w-3 mr-1" />
-                  Aktif
-                </Badge>
-              </div>
-
-              {/* Quick Copy Endpoint */}
-              <div className="flex items-center space-x-2">
-                <Input
-                  value={agent.phone_endpoint}
-                  readOnly
-                  className="font-mono text-xs"
-                />
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => copyToClipboard(agent.phone_endpoint)}
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
-              </div>
-
-              {/* Short Prompt Preview */}
-              <div>
-                <p className="text-xs text-muted-foreground">
-                  {agent.prompt.length > 100 
-                    ? `${agent.prompt.substring(0, 100)}...` 
-                    : agent.prompt
-                  }
-                </p>
-              </div>
             </div>
           ))}
         </div>
