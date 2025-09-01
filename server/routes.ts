@@ -93,12 +93,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const paymentData = {
         price_amount: 60,
-        price_currency: 'USD',
+        price_currency: 'usd',
         pay_currency: 'btc',
         order_id: 'USER123',
         order_description: 'Profesyonel Plan Üyeliği',
         success_url: `${req.protocol}://${req.get('host')}/dashboard`
       };
+
+      console.log('Sending to NOWPayments:', JSON.stringify(paymentData, null, 2));
 
       const response = await fetch('https://api.nowpayments.io/v1/invoice', {
         method: 'POST',
@@ -109,6 +111,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         body: JSON.stringify(paymentData)
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
       const result = await response.json();
       
       console.log('NOWPayments API response:', JSON.stringify(result, null, 2));
@@ -118,8 +123,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Payment creation failed', details: result });
       }
 
-      console.log('Invoice URL:', result.invoice_url);
-      res.json({ paymentUrl: result.invoice_url });
+      // Check all possible URL fields from the response
+      const possibleUrls = [
+        result.invoice_url,
+        result.payment_url, 
+        result.hosted_url,
+        result.checkout_url,
+        result.url
+      ];
+
+      console.log('Possible URLs in response:', possibleUrls);
+
+      const paymentUrl = possibleUrls.find(url => url && typeof url === 'string');
+      
+      if (paymentUrl) {
+        console.log('Using payment URL:', paymentUrl);
+        res.json({ paymentUrl });
+      } else {
+        console.error('No payment URL found in response');
+        res.status(400).json({ error: 'No payment URL received from NOWPayments', response: result });
+      }
     } catch (error) {
       console.error('Error creating crypto payment:', error);
       res.status(500).json({ error: 'Internal server error' });
