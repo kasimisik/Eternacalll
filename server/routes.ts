@@ -86,20 +86,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/payment/create-crypto-payment', async (req, res) => {
     console.log('=== CRYPTO PAYMENT REQUEST STARTED ===');
     
-    // For testing purposes, create a mock payment URL
-    // In production, you would use a real NOWPayments API key
+    const API_KEY = 'WK9A0E8-N2C435K-PC4PQA7-ZJ2E7CH';
+    
+    console.log('Using new API_KEY');
+
     try {
-      console.log('Creating mock crypto payment for testing...');
+      const paymentData = {
+        price_amount: 60,
+        price_currency: 'usd',
+        pay_currency: 'btc',
+        order_id: 'USER123',
+        order_description: 'Profesyonel Plan Üyeliği',
+        success_url: `${req.protocol}://${req.get('host')}/dashboard`
+      };
+
+      console.log('Request data:', JSON.stringify(paymentData, null, 2));
+
+      const response = await fetch('https://api.nowpayments.io/v1/invoice', {
+        method: 'POST',
+        headers: {
+          'x-api-key': API_KEY,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(paymentData)
+      });
+
+      console.log('Response status:', response.status);
+      console.log('Response OK:', response.ok);
+
+      let result;
+      try {
+        result = await response.json();
+      } catch (parseError) {
+        console.log('JSON parse error:', parseError);
+        const text = await response.text();
+        console.log('Raw response text:', text);
+        return res.status(500).json({ error: 'Invalid JSON response from NOWPayments' });
+      }
       
-      // Generate a unique order ID
-      const orderId = `ORDER_${Date.now()}`;
+      console.log('Parsed response:', JSON.stringify(result, null, 2));
       
-      // For demo purposes, redirect to a demo NOWPayments page
-      const mockPaymentUrl = `https://nowpayments.io/payment/demo?amount=60&currency=usd&order=${orderId}`;
-      
-      console.log('Generated mock payment URL:', mockPaymentUrl);
-      
-      res.json({ paymentUrl: mockPaymentUrl });
+      if (!response.ok) {
+        console.log('API Error - Status:', response.status);
+        console.log('API Error - Response:', result);
+        return res.status(400).json({ error: 'Payment creation failed', details: result });
+      }
+
+      // Check for invoice_url specifically (NOWPayments invoice endpoint)
+      if (result.invoice_url) {
+        console.log('SUCCESS: Invoice URL found:', result.invoice_url);
+        return res.json({ paymentUrl: result.invoice_url });
+      } else {
+        console.log('ERROR: No invoice_url in response');
+        console.log('Available fields:', Object.keys(result));
+        return res.status(400).json({ 
+          error: 'No payment URL received from NOWPayments', 
+          availableFields: Object.keys(result),
+          response: result 
+        });
+      }
     } catch (error) {
       console.log('CATCH ERROR:', error);
       res.status(500).json({ error: 'Internal server error', details: String(error) });
