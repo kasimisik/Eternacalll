@@ -1,6 +1,6 @@
 import { useUser, useAuth } from '@clerk/clerk-react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Phone, MessageSquare, Settings, Mic, PhoneCall, Activity, User, CreditCard, Crown } from 'lucide-react';
+import { Phone, MessageSquare, Settings, Mic, PhoneCall, Activity, User, CreditCard, Crown, Play, Square, Radio, Zap } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import PaymentButton from '@/components/PaymentButton';
 
@@ -15,6 +15,17 @@ export default function Dashboard() {
     createdAt?: string;
   } | null>(null);
   const [loadingSubscription, setLoadingSubscription] = useState(true);
+  const [sipStatus, setSipStatus] = useState<{
+    running: boolean;
+    netgsmConnected: boolean;
+    activeCallsCount: number;
+    activeCalls: any[];
+    message: string;
+    websocketEndpoint: string | null;
+  } | null>(null);
+  const [sipLoading, setSipLoading] = useState(false);
+  const [testInput, setTestInput] = useState('');
+  const [testResponse, setTestResponse] = useState('');
 
   // Kullanıcının abonelik durumunu kontrol et
   useEffect(() => {
@@ -37,6 +48,92 @@ export default function Dashboard() {
 
     checkSubscription();
   }, [user?.id]);
+
+  // SIP Agent durumunu kontrol et
+  useEffect(() => {
+    const checkSipStatus = async () => {
+      try {
+        const response = await fetch('/api/sip/status');
+        const data = await response.json();
+        setSipStatus(data);
+      } catch (error) {
+        console.error('SIP status check failed:', error);
+      }
+    };
+
+    checkSipStatus();
+    // Her 10 saniyede bir durumu kontrol et
+    const interval = setInterval(checkSipStatus, 10000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  // SIP Agent'ı başlat
+  const startSipAgent = async () => {
+    setSipLoading(true);
+    try {
+      const response = await fetch('/api/sip/start-agent', {
+        method: 'POST'
+      });
+      const data = await response.json();
+      
+      if (data.success) {
+        setSipStatus(prev => prev ? { ...prev, running: true, message: data.message } : null);
+      } else {
+        alert(data.message);
+      }
+    } catch (error) {
+      console.error('SIP start error:', error);
+      alert('SIP Agent başlatılamadı');
+    } finally {
+      setSipLoading(false);
+    }
+  };
+
+  // SIP Agent'ı durdur
+  const stopSipAgent = async () => {
+    setSipLoading(true);
+    try {
+      const response = await fetch('/api/sip/stop-agent', {
+        method: 'POST'
+      });
+      const data = await response.json();
+      
+      if (data.success) {
+        setSipStatus(prev => prev ? { ...prev, running: false, message: data.message } : null);
+      } else {
+        alert(data.message);
+      }
+    } catch (error) {
+      console.error('SIP stop error:', error);
+      alert('SIP Agent durdurulamadı');
+    } finally {
+      setSipLoading(false);
+    }
+  };
+
+  // Test konuşma simülasyonu
+  const testSpeech = async () => {
+    if (!testInput.trim()) return;
+    
+    try {
+      const response = await fetch('/api/sip/simulate-speech', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: testInput })
+      });
+      const data = await response.json();
+      
+      if (data.success) {
+        setTestResponse(data.aiResponse);
+      } else {
+        setTestResponse('Hata: ' + data.error);
+      }
+    } catch (error) {
+      console.error('Speech test error:', error);
+      setTestResponse('Test başarısız oldu');
+    }
+  };
 
   const getInitials = (firstName?: string, lastName?: string) => {
     return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
@@ -153,25 +250,56 @@ export default function Dashboard() {
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {/* Voice Agent Status */}
+          {/* SIP Voice Agent Status */}
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-foreground">Voice Agent</h3>
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                <h3 className="text-lg font-semibold text-foreground">SIP Voice Agent</h3>
+                <div className="flex items-center space-x-2">
+                  {sipStatus?.running ? (
+                    <Radio className="w-6 h-6 text-green-500 animate-pulse" />
+                  ) : (
+                    <Radio className="w-6 h-6 text-gray-400" />
+                  )}
+                </div>
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Status:</span>
-                  <span className="text-green-600 font-medium">Active</span>
+                  <span className="text-muted-foreground">Durum:</span>
+                  <span className={`font-medium ${sipStatus?.running ? 'text-green-600' : 'text-red-600'}`}>
+                    {sipStatus?.running ? 'Aktif' : 'Pasif'}
+                  </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Calls Today:</span>
-                  <span className="font-medium">12</span>
+                  <span className="text-muted-foreground">NetGSM:</span>
+                  <span className={`font-medium ${sipStatus?.netgsmConnected ? 'text-green-600' : 'text-yellow-600'}`}>
+                    {sipStatus?.netgsmConnected ? 'Bağlı' : 'Test Modu'}
+                  </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Average Duration:</span>
-                  <span className="font-medium">2:34</span>
+                  <span className="text-muted-foreground">Aktif Çağrı:</span>
+                  <span className="font-medium">{sipStatus?.activeCallsCount || 0}</span>
+                </div>
+              </div>
+              
+              <div className="mt-4 space-y-2">
+                <div className="flex space-x-2">
+                  <button
+                    onClick={startSipAgent}
+                    disabled={sipLoading || sipStatus?.running}
+                    className="flex-1 flex items-center justify-center space-x-2 bg-green-500 text-white px-3 py-2 rounded text-sm font-medium hover:bg-green-600 disabled:opacity-50"
+                  >
+                    <Play className="w-4 h-4" />
+                    <span>Başlat</span>
+                  </button>
+                  <button
+                    onClick={stopSipAgent}
+                    disabled={sipLoading || !sipStatus?.running}
+                    className="flex-1 flex items-center justify-center space-x-2 bg-red-500 text-white px-3 py-2 rounded text-sm font-medium hover:bg-red-600 disabled:opacity-50"
+                  >
+                    <Square className="w-4 h-4" />
+                    <span>Durdur</span>
+                  </button>
                 </div>
               </div>
             </CardContent>
@@ -201,26 +329,41 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          {/* Speech Processing */}
+          {/* AI Test Panel */}
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-foreground">Speech Processing</h3>
-                <Mic className="w-5 h-5 text-muted-foreground" />
+                <h3 className="text-lg font-semibold text-foreground">AI Test</h3>
+                <Zap className="w-5 h-5 text-muted-foreground" />
               </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Engine:</span>
-                  <span className="font-medium">Azure Cognitive</span>
+              
+              <div className="space-y-3">
+                <div>
+                  <label className="text-sm text-muted-foreground">Test Konuşması:</label>
+                  <input
+                    type="text"
+                    value={testInput}
+                    onChange={(e) => setTestInput(e.target.value)}
+                    placeholder="Merhaba, nasılsınız?"
+                    className="w-full mt-1 px-3 py-2 border rounded text-sm"
+                  />
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Language:</span>
-                  <span className="font-medium">Turkish (TR)</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Latency:</span>
-                  <span className="font-medium">~150ms</span>
-                </div>
+                
+                <button
+                  onClick={testSpeech}
+                  disabled={!testInput.trim() || !sipStatus?.running}
+                  className="w-full flex items-center justify-center space-x-2 bg-blue-500 text-white px-3 py-2 rounded text-sm font-medium hover:bg-blue-600 disabled:opacity-50"
+                >
+                  <Mic className="w-4 h-4" />
+                  <span>Test Et</span>
+                </button>
+                
+                {testResponse && (
+                  <div className="mt-3 p-3 bg-gray-50 rounded text-sm">
+                    <strong>AI Yanıtı:</strong><br />
+                    {testResponse}
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
