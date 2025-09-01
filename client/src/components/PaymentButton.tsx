@@ -1,12 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import { useUser } from '@clerk/clerk-react';
 
 export default function PaymentButton() {
+  const { user } = useUser(); // O an giriş yapmış kullanıcının bilgilerini alır
   const [isLoadingCrypto, setIsLoadingCrypto] = useState(false);
   const [isLoadingCard, setIsLoadingCard] = useState(false);
-
-  const shopierLink = 'https://www.shopier.com/39003278';
 
   const handleCryptoPayment = async () => {
     setIsLoadingCrypto(true);
@@ -31,8 +31,21 @@ export default function PaymentButton() {
   };
 
   const handleCardPayment = () => {
+    if (!user) {
+      alert("Lütfen önce giriş yapın.");
+      return;
+    }
+    
     setIsLoadingCard(true);
-    window.location.href = shopierLink;
+
+    // DİKKAT: Shopier panelinden aldığınız ürün linkini buraya yapıştırın!
+    const shopierProductUrl = "https://www.shopier.com/ShowProductNew/PRODÜCT_ID_BURAYA"; 
+    
+    // Kullanıcının kimliğini (Clerk User ID) linke özel bir parametre olarak ekliyoruz
+    const finalUrl = `${shopierProductUrl}?platform_order_id=${user.id}`;
+    
+    // Kullanıcıyı bu akıllı linke yönlendiriyoruz
+    window.location.href = finalUrl;
   };
 
   return (
