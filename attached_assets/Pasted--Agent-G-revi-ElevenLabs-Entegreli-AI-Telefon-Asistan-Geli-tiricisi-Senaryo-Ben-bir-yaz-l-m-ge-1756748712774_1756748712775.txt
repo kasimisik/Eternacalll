@@ -1,0 +1,171 @@
+🎯 Agent Görevi: ElevenLabs Entegreli AI Telefon Asistanı Geliştiricisi
+Senaryo: Ben bir yazılım geliştiricisiyim. ElevenLabs'in Conversational AI (Sohbet Eden Yapay Zeka) özelliklerini kullanarak, kullanıcıların kendi sesli AI asistanlarını (agent) oluşturup bir telefon numarasına bağlayabildiği bir SaaS platformu (yazılım-hizmeti) oluşturuyorum. Tüm AI ve ses işlemleri için sadece ElevenLabs API'sini kullanacağız. Twilio, OpenAI, Anthropic, Deepgram gibi diğer tüm servislere İHTİYACIMIZ YOK.
+
+Senin Temel Görevin: Bu projeyi hayata geçirmek için ihtiyaç duyduğum tüm backend (Next.js API route'ları) ve frontend (React bileşenleri) kodlarını, aşağıdaki detaylı talimatlara uygun şekilde yazmak.
+
+📋 Proje Mimari Özeti (Yeni & Basitleştirilmiş)
+Kullanıcı Akışı (Sizin Dashboard'ınız):
+
+Kullanıcı, sizin arayüzünüzde bir AI agent oluşturur.
+
+Form Alanları: Agent İsmi, Sistem Promutu (Agent'ın nasıl davranacağı), Ses Seçimi (ElevenLabs'ten ses listesi veya ses yükleme/cloning), İnce ayarlar (Stability, Clarity), Bağlanacak Telefon Numarası.
+
+Kullanıcı "Kaydet"e bastığında, sizin backend'iniz ElevenLabs API'sine gidip bu agentı oluşturur ve dönen agent_id'yi kendi veritabanınıza kaydeder.
+
+Telefon numarası sağlayıcısının (SIP trunk) ayarlarından, o numaraya gelen çağrıların ElevenLabs'teki ilgili agent_id'nin özel endpoint'ine (https://api.elevenlabs.io/v1/agents/[agent_id]/answer) yönlendirilmesi sağlanır. BU KISIM MANUEL BİR AYARDIR, SENİN KODUNUN DIŞINDADIR.
+
+Çağrı Akışı (ElevenLabs Tarafında):
+
+Birisi numarayı arar.
+
+Çağrı, otomatik olarak ElevenLabs'e yönlendirilir.
+
+ElevenLabs, agent'ın prompt'unu ve ses ayarlarını yükler.
+
+ElevenLabs, kendi içinde konuşmayı metne çevirir (STT), AI ile yanıtı oluşturur, ve yanıtı metni sese çevirir (TTS).
+
+Ses, arayan kişiye iletilir.
+
+ÖNEMLİ: Bu süreç için sizin bir /api/twilio/call-handler yazmanıza GEREK YOK. Tüm çağrı mantığı ElevenLabs'te.
+
+👨‍💻 Senden İstenen Kodlar (Senin Yapman Gerekenler)
+Amaç: Kullanıcının agent oluşturup yönetebileceği bir dashboard yapmak.
+
+1. Backend - Next.js API Route'ları ( /pages/api/ veya /app/api/ )
+
+/api/voices/list (GET):
+
+ElevenLabs'in GET /v1/voices endpoint'ini çağıracak.
+
+Kullanıcıya, ses listesini (isim, ID, örnek vs.) döndürecek.
+
+Gereklilik: ElevenLabs API key'i güvenli bir şekilde (.env dosyasından) yüklenmeli.
+
+/api/voices/clone (POST):
+
+ElevenLabs'in POST /v1/voices/add endpoint'ini kullanacak.
+
+Kullanıcıdan bir ses dosyası ve isim alacak, bunu ElevenLabs'e gönderip yeni bir voice_id oluşturacak.
+
+Oluşan voice_id'yi frontend'e döndürecek.
+
+/api/agents/create (POST):
+
+Bu en önemli endpoint. Frontend'den gelen verileri alacak:
+
+json
+{
+  "name": "Ahmet'in Restoranı",
+  "prompt": "Sen dost canlısı bir restoran resepsiyonistisin...",
+  "voice_id": "abc123...",
+  "stability": 0.7,
+  "similarity_boost": 0.8
+  // ...diğer ayarlar
+}
+ElevenLabs'in POST /v1/agents endpoint'ini çağıracak ve yukarıdaki verileri iletecek.
+
+ElevenLabs'ten dönen agent_id'yi kendi veritabanınıza (örneğin Neon PostgreSQL) kaydedecek. (Veritabanı şeması: agents(id, user_id, name, elevenlabs_agent_id, created_at))
+
+Başarı yanıtı dönecek.
+
+/api/agents/list (GET):
+
+Kullanıcının oluşturduğu tüm agent'ları kendi veritabanınızdan çekip frontend'e listeleyecek.
+
+2. Frontend - React Bileşenleri (Dashboard)
+
+VoiceSelector.jsx: ElevenLabs'ten gelen ses listesini gösteren bir dropdown/lista bileşeni. /api/voices/list'i kullanacak.
+
+VoiceCloner.jsx: Kullanıcının ses dosyası yükleyip klonlama yapabileceği bir form bileşeni. /api/voices/clone'u kullanacak.
+
+AgentCreator.jsx: Ana form bileşeni. Kullanıcıdan agent bilgilerini (isim, prompt) alacak, yukarıdaki ses bileşenlerini içerecek, ve tüm veriyi /api/agents/create'e gönderecek.
+
+AgentsList.jsx: Kullanıcının oluşturduğu agent'ları listeleyecek, düzenleme/silme butonları olacak.
+
+⚙️ Teknik Gereksinimler & Kurallar
+Dil: Next.js (App Router tercih edilir), React.
+
+HTTP İstemcisi: fetch API veya axios.
+
+Veritabanı: Neon (PostgreSQL). Basit bir tablo yeterli (agents).
+
+ORM: Drizzle ORM veya direkt pg package'i kullanılabilir.
+
+Kimlik Doğrulama: Clerk.dev. Tüm API route'ları, Clerk'in auth() helper'ı ile korunmalı. Sadece giriş yapmış kullanıcılar agent oluşturabilmeli.
+
+Çevre Değişkenleri: ElevenLabs API Key (ELEVENLABS_API_KEY) kesinlikle .env.local dosyasında saklanmalı ve asla frontend'e gönderilmemeli.
+
+Hata Yönetimi: Tüm API route'ları try-catch blokları içinde olmalı. ElevenLabs'ten veya veritabanından gelecek hatalar kullanıcıya anlaşılır bir şekilde iletilmeli (örneğin: "Ses oluşturulurken bir hata oluştu. Lütfen daha sonra tekrar deneyin.").
+
+🚨 Özel Talimatlar
+KODU AÇIKLA: Önemli fonksiyonların ve karmaşık mantıkların üzerine yorum satırları yaz.
+
+MODÜLER YAZ: Kodları tekrar kullanılabilir bileşenler ve fonksiyonlar halinde yaz. (Örn: lib/elevenlabs.js adında bir dosya oluşturup tüm ElevenLabs API çağrılarını oraya toplayabilirsin).
+
+GÜVENLİK: API Key'i asla açıkta bırakma. Clerk kimlik doğrulamasını her API route için kullan.
+
+KULLANICI DOSTU: Frontend'de yükleme durumları (loading state), hata mesajları ve başarı bildirimleri mutlaka olsun.
+
+Örnek Kod Parçası (API Route - /api/agents/create):
+
+javascript
+// app/api/agents/create/route.js
+import { NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs';
+import { db } from '@/lib/db'; // Veritabanı bağlantın
+import { agents } from '@/lib/db/schema'; // Drizzle ORM şeman
+
+export async function POST(request) {
+  try {
+    // 1. Kullanıcıyı doğrula
+    const { userId } = auth();
+    if (!userId) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    // 2. Frontend'den gelen veriyi al
+    const body = await request.json();
+    const { name, prompt, voice_id, stability, similarity_boost } = body;
+
+    // 3. ElevenLabs'te Agent Oluştur
+    const elevenLabsResponse = await fetch('https://api.elevenlabs.io/v1/agents', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'xi-api-key': process.env.ELEVENLABS_API_KEY,
+      },
+      body: JSON.stringify({
+        name: name,
+        prompt: prompt,
+        voice_id: voice_id,
+        settings: {
+          stability: stability,
+          similarity_boost: similarity_boost,
+        },
+      }),
+    });
+
+    if (!elevenLabsResponse.ok) {
+      throw new Error('ElevenLabs agent creation failed');
+    }
+
+    const elevenLabsData = await elevenLabsResponse.json();
+    const elevenLabsAgentId = elevenLabsData.agent_id;
+
+    // 4. Agent'ı kendi veritabanına kaydet
+    const [newAgent] = await db.insert(agents).values({
+      userId: userId,
+      name: name,
+      elevenlabsAgentId: elevenLabsAgentId,
+    }).returning();
+
+    // 5. Başarıyla sonuç döndür
+    return NextResponse.json(newAgent, { status: 201 });
+
+  } catch (error) {
+    console.log('[AGENT_POST]', error);
+    return new NextResponse("Internal Error", { status: 500 });
+  }
+}
+Şimdi görevim, yukarıda özetlenen tüm bu API route'larını ve frontend bileşenlerini, veritabanı şemasını ve entegrasyonları içeren eksiksiz bir proje oluşturmak. İşe başlayabilirim.
+

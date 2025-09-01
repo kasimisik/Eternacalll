@@ -732,5 +732,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===========================================
+  // ELEVENLABS API ROUTES FOR AI VOICE AGENTS
+  // ===========================================
+
+  // Import ElevenLabs API handlers
+  const { handleGetVoices } = await import('./api/voices/list');
+  const { handleCloneVoice, uploadMiddleware } = await import('./api/voices/clone');
+  const { handleCreateAgent } = await import('./api/agents/create');
+  const { handleListAgents } = await import('./api/agents/list');
+  const { handleUpdateAgent } = await import('./api/agents/update');
+  const { handleDeleteAgent } = await import('./api/agents/delete');
+
+  // Voice management routes
+  app.get('/api/voices/list', handleGetVoices);
+  app.post('/api/voices/clone', uploadMiddleware, handleCloneVoice);
+
+  // Agent management routes
+  app.post('/api/agents/create', handleCreateAgent);
+  app.get('/api/agents/list', handleListAgents);
+  app.patch('/api/agents/update/:id', handleUpdateAgent);
+  app.delete('/api/agents/delete/:id', handleDeleteAgent);
+
   return httpServer;
 }

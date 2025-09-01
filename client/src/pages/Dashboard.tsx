@@ -1,8 +1,12 @@
 import { useUserHook, useAuthHook } from '@/lib/auth-hook';
-import { Card, CardContent } from '@/components/ui/card';
-import { Phone, MessageSquare, Settings, Mic, PhoneCall, Activity, User, CreditCard, Crown, Play, Square, Radio, Zap } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Bot, Plus, CreditCard, Crown } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import PaymentButton from '@/components/PaymentButton';
+import { AgentCreator } from '@/components/AgentCreator';
+import { AgentsList } from '@/components/AgentsList';
 
 export default function Dashboard() {
   const { user } = useUserHook();
@@ -15,17 +19,8 @@ export default function Dashboard() {
     createdAt?: string;
   } | null>(null);
   const [loadingSubscription, setLoadingSubscription] = useState(true);
-  const [sipStatus, setSipStatus] = useState<{
-    running: boolean;
-    netgsmConnected: boolean;
-    activeCallsCount: number;
-    activeCalls: any[];
-    message: string;
-    websocketEndpoint: string | null;
-  } | null>(null);
-  const [sipLoading, setSipLoading] = useState(false);
-  const [testInput, setTestInput] = useState('');
-  const [testResponse, setTestResponse] = useState('');
+  const [activeTab, setActiveTab] = useState('agents');
+  const [agentsRefreshTrigger, setAgentsRefreshTrigger] = useState(0);
 
   // Kullanıcının abonelik durumunu kontrol et
   useEffect(() => {
@@ -49,90 +44,13 @@ export default function Dashboard() {
     checkSubscription();
   }, [user?.id]);
 
-  // SIP Agent durumunu kontrol et
-  useEffect(() => {
-    const checkSipStatus = async () => {
-      try {
-        const response = await fetch('/api/sip/status');
-        const data = await response.json();
-        setSipStatus(data);
-      } catch (error) {
-        console.error('SIP status check failed:', error);
-      }
-    };
-
-    checkSipStatus();
-    // Her 10 saniyede bir durumu kontrol et
-    const interval = setInterval(checkSipStatus, 10000);
-    
-    return () => clearInterval(interval);
-  }, []);
-
-  // SIP Agent'ı başlat
-  const startSipAgent = async () => {
-    setSipLoading(true);
-    try {
-      const response = await fetch('/api/sip/start-agent', {
-        method: 'POST'
-      });
-      const data = await response.json();
-      
-      if (data.success) {
-        setSipStatus(prev => prev ? { ...prev, running: true, message: data.message } : null);
-      } else {
-        alert(data.message);
-      }
-    } catch (error) {
-      console.error('SIP start error:', error);
-      alert('SIP Agent başlatılamadı');
-    } finally {
-      setSipLoading(false);
-    }
+  const handleAgentCreated = () => {
+    setAgentsRefreshTrigger(prev => prev + 1);
+    setActiveTab('agents');
   };
 
-  // SIP Agent'ı durdur
-  const stopSipAgent = async () => {
-    setSipLoading(true);
-    try {
-      const response = await fetch('/api/sip/stop-agent', {
-        method: 'POST'
-      });
-      const data = await response.json();
-      
-      if (data.success) {
-        setSipStatus(prev => prev ? { ...prev, running: false, message: data.message } : null);
-      } else {
-        alert(data.message);
-      }
-    } catch (error) {
-      console.error('SIP stop error:', error);
-      alert('SIP Agent durdurulamadı');
-    } finally {
-      setSipLoading(false);
-    }
-  };
-
-  // Test konuşma simülasyonu
-  const testSpeech = async () => {
-    if (!testInput.trim()) return;
-    
-    try {
-      const response = await fetch('/api/sip/simulate-speech', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: testInput })
-      });
-      const data = await response.json();
-      
-      if (data.success) {
-        setTestResponse(data.aiResponse);
-      } else {
-        setTestResponse('Hata: ' + data.error);
-      }
-    } catch (error) {
-      console.error('Speech test error:', error);
-      setTestResponse('Test başarısız oldu');
-    }
+  const handleAgentsUpdated = () => {
+    setAgentsRefreshTrigger(prev => prev + 1);
   };
 
   const getInitials = (firstName?: string, lastName?: string) => {
@@ -146,7 +64,8 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
-              <h1 className="text-xl font-bold text-primary" data-testid="text-dashboard-title">Voice Agent Dashboard</h1>
+              <Bot className="h-6 w-6 text-primary" />
+              <h1 className="text-xl font-bold text-primary" data-testid="text-dashboard-title">ElevenLabs AI Voice Agent Platform</h1>
             </div>
             <div className="flex items-center space-x-4">
               <div className="relative">
@@ -234,9 +153,10 @@ export default function Dashboard() {
                 </p>
                 <div className="text-3xl font-bold text-primary mb-4">₺60/ay</div>
                 <ul className="text-sm text-muted-foreground space-y-2 mb-6">
-                  <li>✓ Sınırsız SIP çağrıları</li>
-                  <li>✓ Gelişmiş ses tanıma</li>
-                  <li>✓ Özel voice agent yapılandırması</li>
+                  <li>✓ Sınırsız AI ajanları</li>
+                  <li>✓ ElevenLabs ses klonlama</li>
+                  <li>✓ Özel telefon endpoint'leri</li>
+                  <li>✓ Gelişmiş ses ayarları</li>
                   <li>✓ Öncelikli destek</li>
                 </ul>
               </div>
@@ -249,7 +169,32 @@ export default function Dashboard() {
           </Card>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        {/* Main Dashboard Content - ElevenLabs AI Agent Management */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="agents" className="flex items-center space-x-2">
+              <Bot className="h-4 w-4" />
+              <span>Ajanlarım</span>
+            </TabsTrigger>
+            <TabsTrigger value="create" className="flex items-center space-x-2">
+              <Plus className="h-4 w-4" />
+              <span>Yeni Ajan</span>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="agents" className="space-y-6">
+            <AgentsList
+              key={agentsRefreshTrigger}
+              onAgentUpdated={handleAgentsUpdated}
+            />
+          </TabsContent>
+
+          <TabsContent value="create" className="space-y-6">
+            <AgentCreator onAgentCreated={handleAgentCreated} />
+          </TabsContent>
+        </Tabs>
+        
+        <div className="hidden grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {/* SIP Voice Agent Status */}
           <Card>
             <CardContent className="p-6">
