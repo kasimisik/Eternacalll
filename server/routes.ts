@@ -4,6 +4,8 @@ import { storage } from "./storage";
 import { Webhook } from 'svix';
 import { PrismaClient } from '@prisma/client';
 import crypto from 'crypto';
+import Twilio from 'twilio';
+import { textToSpeech } from './azure';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // put application routes here
@@ -465,6 +467,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Subscription check error:', error);
       res.status(500).json({ error: 'Abonelik kontrolü başarısız', details: String(error) });
+    }
+  });
+
+  // Twilio Voice API endpoint
+  app.post('/api/voice', async (req, res) => {
+    try {
+      // Gelen isteğin içeriğini alıyoruz (Twilio'dan)
+      const speechResult = req.body.SpeechResult as string | null; // Kullanıcının konuşması (varsa)
+
+      // TwiML (Twilio Markup Language) yanıtı oluşturuyoruz
+      const twiml = new Twilio.twiml.VoiceResponse();
+
+      if (speechResult) {
+        // ŞİMDİLİK BU KISMI BOŞ BIRAKIYORUZ
+        // TODO: Kullanıcının konuşmasını Anthropic'e gönderip cevap alacağız
+        twiml.say('Cevabınız işleniyor.'); 
+      } else {
+        // Bu, çağrının ilk anıdır. Karşılama mesajı oynatacağız.
+        const welcomeMessage = "Merhaba, EternaCall hizmetine hoş geldiniz. Size nasıl yardımcı olabilirim?";
+        
+        try {
+          // Mesajı Azure'da sese çeviriyoruz
+          const audioBuffer = await textToSpeech(welcomeMessage);
+          const audioBase64 = audioBuffer.toString('base64');
+          
+          // Sesi TwiML yanıtına ekliyoruz
+          twiml.play({}, `data:audio/wav;base64,${audioBase64}`);
+
+        } catch (error) {
+          console.error("Error generating speech:", error);
+          twiml.say("Üzgünüm, bir hata oluştu. Lütfen daha sonra tekrar deneyin.");
+        }
+      }
+
+      // TODO: Kullanıcının cevabını dinlemek için TwiML'e <Gather> ekleyeceğiz
+
+      // TwiML yanıtını XML formatında geri döndürüyoruz
+      res.set('Content-Type', 'text/xml');
+      res.send(twiml.toString());
+      
+    } catch (error) {
+      console.error('Twilio voice endpoint error:', error);
+      res.status(500).json({ error: 'Voice processing failed' });
     }
   });
 
