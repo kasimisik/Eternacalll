@@ -26,8 +26,8 @@ export function ClerkProvider({ children }: ClerkProviderProps) {
       <BaseClerkProvider
         publishableKey={CLERK_CONFIG.publishableKey}
         appearance={CLERK_CONFIG.appearance}
-        afterSignInUrl={CLERK_CONFIG.afterSignInUrl}
-        afterSignUpUrl={CLERK_CONFIG.afterSignUpUrl}
+        signInFallbackRedirectUrl={CLERK_CONFIG.afterSignInUrl}
+        signUpFallbackRedirectUrl={CLERK_CONFIG.afterSignUpUrl}
         signInUrl={CLERK_CONFIG.signInUrl}
         signUpUrl={CLERK_CONFIG.signUpUrl}
       >
