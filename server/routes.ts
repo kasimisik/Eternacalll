@@ -86,14 +86,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/payment/create-crypto-payment', async (req, res) => {
     console.log('=== CRYPTO PAYMENT REQUEST STARTED ===');
     
-    const API_KEY = process.env.NOWPAYMENTS_API_KEY;
+    const API_KEY = 'a4f2518f-aa7b-45d6-bd49-72611a5057ba';
     
-    if (!API_KEY) {
-      console.log('ERROR: NOWPAYMENTS_API_KEY not found');
-      return res.status(500).json({ error: 'NOWPAYMENTS_API_KEY not found' });
-    }
-
-    console.log('API_KEY exists:', !!API_KEY);
+    console.log('Using provided API_KEY');
 
     try {
       const paymentData = {
@@ -152,7 +147,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     } catch (error) {
       console.log('CATCH ERROR:', error);
-      res.status(500).json({ error: 'Internal server error', details: error.message });
+      res.status(500).json({ error: 'Internal server error', details: String(error) });
     }
   });
 
