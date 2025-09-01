@@ -1,0 +1,98 @@
+roje dokümanında  belirtilen, sistemin ana değerini oluşturan olay güdümlü ve gerçek zamanlı konuşma döngüsünü 
+
+
+app/api/twilio/call-handler/route.ts dosyasına implemente et. Bu implementasyon, daha önce oluşturduğumuz 
+
+withSubscriptionCheck güvenlik katmanıyla sarmalanmalıdır. Çağrı akışı, aşağıdaki adımları içeren bir döngüde çalışmalıdır:
+
+Gelen çağrıda, kullanıcının abonelik ve dakika hakkı kontrolü yapılır.
+
+Başlangıçta bir karşılama mesajı Azure'un premium sesleriyle (WaveNet) sese çevrilir ve kullanıcıya dinletilir.
+
+Ardından, sistem kullanıcının konuşmasını dinlemeye başlar.
+
+Kullanıcının konuşması metne çevrilir (STT).
+
+Bu metin, ana beyin olan Anthropic (Claude 3.5 Sonnet) API'sine gönderilerek bir cevap oluşturulur.
+
+AI'dan gelen cevap metni, tekrar Azure'un premium sesleriyle sese çevrilir (TTS) ve kullanıcıya dinletilir.
+
+Sistem, kullanıcı telefonu kapatana kadar 3. adıma geri dönerek konuşma döngüsünü devam ettirir."
+
+Gerekli Kodlar
+Açıklama: Dokümanında bahsedilen WebSocket (ws) mimarisi, en düşük gecikmeyi sağlayan son derece profesyonel bir yöntemdir. Oraya ulaşmadan önce, bu döngüyü Vercel ve Replit gibi sunucusuz ortamlarda daha stabil çalışan ve aynı amaca hizmet eden Twilio'nun <Gather> komutuyla inşa edeceğiz. Bu, o karmaşık yapının daha basit ve güvenilir bir temelidir.
+
+1. Adım: Gerekli Kütüphaneleri Kur
+"Terminale, Twilio ve Prisma kütüphanelerinin kurulu olduğundan emin olmak için şu komutu yaz:"
+
+Bash
+
+npm install twilio @prisma/client
+2. Adım: Ana Orkestratör Kodunu Ekle
+" app/api/twilio/call-handler/route.ts dosyasının içeriğini, aşağıdaki tam ve nihai kodla tamamen değiştir:"
+
+TypeScript
+
+import { NextRequest, NextResponse } from 'next/server';
+import Twilio from 'twilio';
+import { PrismaClient } from '@prisma/client';
+import { withSubscriptionCheck } from '@/lib/subscription-check'; // Güvenlik katmanımız
+import { textToSpeech } from '@/lib/azure';      // Ses üretme modülümüz
+import { getAIResponse } from '@/lib/anthropic'; // Beyin modülümüz
+
+const prisma = new PrismaClient();
+
+// Bu, abonelik kontrolünden geçtikten sonra çalışan ana fonksiyonumuz
+const callHandler = async (req: NextRequest, { userId }: { userId: string }) => {
+  const body = await req.formData();
+  const twiml = new Twilio.twiml.VoiceResponse();
+
+  // Twilio'dan gelen bilgilere bakalım
+  const callSid = body.get('CallSid') as string; // Çağrının benzersiz kimliği
+  const speechResult = body.get('SpeechResult') as string | null; // Kullanıcının son konuşmasının metni
+
+  try {
+    let responseMessage: string;
+
+    if (speechResult && speechResult.trim() !== '') {
+      // Bu, görüşmenin 2. ve sonraki adımıdır (kullanıcı konuştu)
+      // TODO: Konuşma geçmişini veritabanında saklayıp daha akıllı cevaplar üretebiliriz.
+      responseMessage = await getAIResponse(speechResult);
+    } else {
+      // Bu, çağrının ilk anıdır (karşılama)
+      responseMessage = "Merhaba, size nasıl yardımcı olabilirim?";
+    }
+
+    // Cevap metnini Azure'da yüksek kaliteli sese çevir
+    const audioBuffer = await textToSpeech(responseMessage);
+    const audioBase64 = audioBuffer.toString('base64');
+    
+    // Sesi TwiML yanıtına ekleyerek kullanıcıya dinlet
+    twiml.play({}, `data:audio/wav;base64,${audioBase64}`);
+
+    // Konuşma döngüsünü devam ettirmek için kullanıcıyı tekrar dinle
+    const gather = twiml.gather({
+      input: 'speech',
+      speechTimeout: 'auto', // Kullanıcı sustuğunda otomatik olarak algıla
+      language: 'tr-TR',     // Türkçe konuşmayı dinle
+      action: '/api/twilio/call-handler', // Konuşma bitince sonucu bu adrese geri gönder
+    });
+
+    // Çağrı bittiğinde rapor almak için bir sonraki adıma hazırlık
+    twiml.hangup(); // Eğer gather bir şey yakalayamazsa çağrıyı bitir.
+
+  } catch (error) {
+    console.error(`[Call SID: ${callSid}] - Bir hata oluştu:`, error);
+    const errorMessage = "Üzgünüm, sistemsel bir aksaklık oluştu. Lütfen daha sonra tekrar deneyin.";
+    twiml.say({ voice: 'alice', language: 'tr-TR' }, errorMessage);
+    twiml.hangup();
+  }
+
+  // Twilio'ya ne yapacağını XML formatında geri gönderiyoruz
+  return new NextResponse(twiml.toString(), {
+    headers: { 'Content-Type': 'text/xml' },
+  });
+};
+
+// Ana POST isteğini, önce abonelik kontrolü yapacak olan güvenlik katmanımızla sarmalıyoruz.
+export const POST = withSubscriptionCheck(callHandler);

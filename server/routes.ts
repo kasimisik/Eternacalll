@@ -533,14 +533,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Main Twilio Call Handler with Subscription Protection
   const callHandler = async (req: any, res: any, userId: string) => {
     const twiml = new Twilio.twiml.VoiceResponse();
-    
-    // TODO: Dokümanda belirtilen WebSocket, STT, LLM, TTS döngüsü buraya inşa edilecek.
-    // Şimdilik sadece abonelik kontrolünün çalıştığını test etmek için bir karşılama mesajı ekliyoruz.
-    
-    twiml.say({ voice: 'alice', language: 'tr-TR' }, 
-      'Abonelik kontrolü başarılı. Yapay zeka asistanı şimdi devreye giriyor.'
-    );
-    twiml.hangup();
+
+    // Twilio'dan gelen bilgilere bakalım
+    const callSid = req.body.CallSid as string; // Çağrının benzersiz kimliği
+    const speechResult = req.body.SpeechResult as string | null; // Kullanıcının son konuşmasının metni
+
+    try {
+      let responseMessage: string;
+
+      if (speechResult && speechResult.trim() !== '') {
+        // Bu, görüşmenin 2. ve sonraki adımıdır (kullanıcı konuştu)
+        // TODO: Konuşma geçmişini veritabanında saklayıp daha akıllı cevaplar üretebiliriz.
+        responseMessage = await getAIResponse(speechResult);
+      } else {
+        // Bu, çağrının ilk anıdır (karşılama)
+        responseMessage = "Merhaba, size nasıl yardımcı olabilirim?";
+      }
+
+      // Cevap metnini Azure'da yüksek kaliteli sese çevir
+      const audioBuffer = await textToSpeech(responseMessage);
+      const audioBase64 = audioBuffer.toString('base64');
+      
+      // Sesi TwiML yanıtına ekleyerek kullanıcıya dinlet
+      twiml.play({}, `data:audio/wav;base64,${audioBase64}`);
+
+      // Konuşma döngüsünü devam ettirmek için kullanıcıyı tekrar dinle
+      const gather = twiml.gather({
+        input: ['speech'],
+        speechTimeout: 'auto', // Kullanıcı sustuğunda otomatik olarak algıla
+        language: 'tr-TR',     // Türkçe konuşmayı dinle
+        action: '/api/twilio/call-handler', // Konuşma bitince sonucu bu adrese geri gönder
+      });
+
+      // Çağrı bittiğinde rapor almak için bir sonraki adıma hazırlık
+      twiml.hangup(); // Eğer gather bir şey yakalayamazsa çağrıyı bitir.
+
+    } catch (error) {
+      console.error(`[Call SID: ${callSid}] - Bir hata oluştu:`, error);
+      const errorMessage = "Üzgünüm, sistemsel bir aksaklık oluştu. Lütfen daha sonra tekrar deneyin.";
+      twiml.say({ voice: 'alice', language: 'tr-TR' }, errorMessage);
+      twiml.hangup();
+    }
 
     res.set('Content-Type', 'text/xml');
     res.send(twiml.toString());
