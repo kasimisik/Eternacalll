@@ -1,8 +1,11 @@
-import { useAuth, UserButton } from '@clerk/clerk-react';
+import { UserButton } from '@clerk/clerk-react';
 import { Link, useLocation } from 'wouter';
+import { useMockAuth, MockUserButton } from '../lib/auth-fallback';
+import { CLERK_CONFIG } from '../lib/clerk';
+import { useAuthHook } from '../lib/auth-hook';
 
 export function Navigation() {
-  const { isSignedIn } = useAuth();
+  const { isSignedIn } = useAuthHook();
   const [location] = useLocation();
 
   return (
@@ -33,14 +36,18 @@ export function Navigation() {
                     Dashboard
                   </button>
                 </Link>
-                <UserButton 
-                  afterSignOutUrl="/"
-                  appearance={{
-                    elements: {
-                      avatarBox: "w-8 h-8"
-                    }
-                  }}
-                />
+                {CLERK_CONFIG.publishableKey ? (
+                  <UserButton 
+                    afterSignOutUrl="/"
+                    appearance={{
+                      elements: {
+                        avatarBox: "w-8 h-8"
+                      }
+                    }}
+                  />
+                ) : (
+                  <MockUserButton />
+                )}
               </div>
             ) : (
               <Link href="/sign-in">

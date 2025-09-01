@@ -1,8 +1,8 @@
 import { Link } from 'wouter';
-import { useAuth } from '@clerk/clerk-react';
+import { useAuthHook } from '@/lib/auth-hook';
 
 export default function Landing() {
-  const { isSignedIn } = useAuth();
+  const { isSignedIn } = useAuthHook();
 
   return (
     <div className="auth-container min-h-screen flex items-center justify-center p-4">

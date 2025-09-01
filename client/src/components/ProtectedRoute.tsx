@@ -1,4 +1,4 @@
-import { useAuth } from '@clerk/clerk-react';
+import { useAuthHook } from '@/lib/auth-hook';
 import { useLocation } from 'wouter';
 import { useEffect } from 'react';
 
@@ -7,7 +7,7 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isSignedIn, isLoaded } = useAuth();
+  const { isSignedIn, isLoaded } = useAuthHook();
   const [, setLocation] = useLocation();
 
   useEffect(() => {

@@ -1,12 +1,12 @@
-import { useUser, useAuth } from '@clerk/clerk-react';
+import { useUserHook, useAuthHook } from '@/lib/auth-hook';
 import { Card, CardContent } from '@/components/ui/card';
 import { Phone, MessageSquare, Settings, Mic, PhoneCall, Activity, User, CreditCard, Crown, Play, Square, Radio, Zap } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import PaymentButton from '@/components/PaymentButton';
 
 export default function Dashboard() {
-  const { user } = useUser();
-  const { signOut } = useAuth();
+  const { user } = useUserHook();
+  const { signOut } = useAuthHook();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [subscription, setSubscription] = useState<{
     hasSubscription: boolean;
