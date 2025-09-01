@@ -8,7 +8,7 @@ import Twilio from 'twilio';
 import { textToSpeech } from './azure';
 import { getAIResponse } from './anthropic';
 import { withSubscriptionCheck } from '../client/src/lib/subscription-check';
-import { NetgsmVoiceAgent } from './sip-voice-agent';
+import { NetgsmVoiceAgent } from './netgsm-sip-agent';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // put application routes here
