@@ -77,12 +77,20 @@ export default function PaymentButton() {
   };
 
   return (
-    <div style={{ display: 'flex', gap: '1rem' }}>
-      <button onClick={handleCardPayment} disabled={isLoadingCard || isLoadingCrypto}>
-        {isLoadingCard ? 'Yönlendiriliyor...' : 'Kredi Kartı ile Öde'}
+    <div className="flex flex-col sm:flex-row gap-4 justify-center">
+      <button 
+        onClick={handleCardPayment} 
+        disabled={isLoadingCard || isLoadingCrypto}
+        className="flex items-center justify-center space-x-2 bg-primary text-primary-foreground px-6 py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
+      >
+        <span>{isLoadingCard ? 'Yönlendiriliyor...' : '💳 Kredi Kartı ile Öde'}</span>
       </button>
-      <button onClick={handleCryptoPayment} disabled={isLoadingCrypto || isLoadingCard}>
-        {isLoadingCrypto ? 'Yönlendiriliyor...' : 'Kripto ile Öde'}
+      <button 
+        onClick={handleCryptoPayment} 
+        disabled={isLoadingCrypto || isLoadingCard}
+        className="flex items-center justify-center space-x-2 bg-orange-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-orange-600 transition-colors disabled:opacity-50"
+      >
+        <span>{isLoadingCrypto ? 'Yönlendiriliyor...' : '₿ Kripto ile Öde'}</span>
       </button>
     </div>
   );
