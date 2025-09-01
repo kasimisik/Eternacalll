@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { Webhook } from 'svix';
 import { PrismaClient } from '@prisma/client';
+import crypto from 'crypto';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // put application routes here
@@ -79,6 +80,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     res.status(200).json({ received: true });
+  });
+
+  // NOWPayments Create Crypto Payment API
+  app.post('/api/payment/create-crypto-payment', async (req, res) => {
+    const API_KEY = process.env.NOWPAYMENTS_API_KEY;
+    
+    if (!API_KEY) {
+      return res.status(500).json({ error: 'NOWPAYMENTS_API_KEY not found' });
+    }
+
+    try {
+      const paymentData = {
+        price_amount: 60,
+        price_currency: 'USD',
+        pay_currency: 'btc',
+        order_id: 'USER123',
+        order_description: 'Profesyonel Plan Üyeliği'
+      };
+
+      const response = await fetch('https://api.nowpayments.io/v1/payment', {
+        method: 'POST',
+        headers: {
+          'x-api-key': API_KEY,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(paymentData)
+      });
+
+      const result = await response.json();
+      
+      if (!response.ok) {
+        console.error('NOWPayments API error:', result);
+        return res.status(400).json({ error: 'Payment creation failed', details: result });
+      }
+
+      res.json({ paymentUrl: result.payment_url });
+    } catch (error) {
+      console.error('Error creating crypto payment:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  // NOWPayments Crypto Webhook
+  app.post('/api/payment/crypto-webhook', async (req, res) => {
+    const IPN_SECRET = process.env.NOWPAYMENTS_IPN_SECRET;
+    
+    if (!IPN_SECRET) {
+      return res.status(500).json({ error: 'NOWPAYMENTS_IPN_SECRET not found' });
+    }
+
+    try {
+      // Get the signature from headers
+      const receivedSignature = req.headers['x-nowpayments-sig'] as string;
+      
+      if (!receivedSignature) {
+        return res.status(400).json({ error: 'Missing signature header' });
+      }
+
+      // Verify the webhook signature
+      const payload = JSON.stringify(req.body);
+      const expectedSignature = crypto
+        .createHmac('sha512', IPN_SECRET)
+        .update(payload)
+        .digest('hex');
+
+      if (receivedSignature !== expectedSignature) {
+        console.error('Invalid webhook signature');
+        return res.status(400).json({ error: 'Invalid signature' });
+      }
+
+      const { payment_status, order_id } = req.body;
+
+      console.log(`Webhook received: Payment ${order_id} status: ${payment_status}`);
+
+      // If payment is completed
+      if (payment_status === 'finished') {
+        try {
+          // Find user by order_id (in this case it's the user ID)
+          const user = await prisma.user.findFirst({
+            where: {
+              clerkUserId: order_id
+            }
+          });
+
+          if (user) {
+            // Update user subscription to Professional Plan
+            await prisma.user.update({
+              where: {
+                id: user.id
+              },
+              data: {
+                subscription: 'Profesyonel Plan'
+              } as any
+            });
+
+            console.log(`User ${order_id} subscription updated to Profesyonel Plan`);
+          } else {
+            console.log(`User ${order_id} not found`);
+          }
+        } catch (dbError) {
+          console.error('Database error:', dbError);
+          return res.status(500).json({ error: 'Database update failed' });
+        }
+      }
+
+      res.status(200).json({ status: 'success' });
+    } catch (error) {
+      console.error('Webhook processing error:', error);
+      res.status(500).json({ error: 'Webhook processing failed' });
+    }
   });
 
   const httpServer = createServer(app);
