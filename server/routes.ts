@@ -82,6 +82,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(200).json({ received: true });
   });
 
+  // Test NOWPayments API Status
+  app.get('/api/payment/test-nowpayments', async (req, res) => {
+    const API_KEY = 'WK9A0E8-N2C435K-PC4PQA7-ZJ2E7CH';
+    
+    console.log('=== TESTING NOWPAYMENTS API STATUS ===');
+    
+    try {
+      // Test with status endpoint first
+      const statusResponse = await fetch('https://api.nowpayments.io/v1/status', {
+        method: 'GET',
+        headers: {
+          'x-api-key': API_KEY,
+        }
+      });
+      
+      console.log('Status endpoint response:', statusResponse.status);
+      const statusResult = await statusResponse.json();
+      console.log('Status result:', JSON.stringify(statusResult, null, 2));
+      
+      if (!statusResponse.ok) {
+        return res.json({ 
+          error: 'API Key test failed', 
+          status: statusResponse.status,
+          details: statusResult 
+        });
+      }
+      
+      res.json({ 
+        success: true, 
+        apiKeyValid: true,
+        statusResult 
+      });
+    } catch (error) {
+      console.log('API test error:', error);
+      res.status(500).json({ error: 'API test failed', details: String(error) });
+    }
+  });
+
   // NOWPayments Create Crypto Payment API  
   app.post('/api/payment/create-crypto-payment', async (req, res) => {
     console.log('=== CRYPTO PAYMENT REQUEST STARTED ===');
@@ -91,6 +129,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log('Using NOWPayments API Key from user');
 
     try {
+      // First test if API key works with status endpoint
+      const statusTest = await fetch('https://api.nowpayments.io/v1/status', {
+        method: 'GET',
+        headers: {
+          'x-api-key': API_KEY,
+        }
+      });
+      
+      console.log('API Key status test:', statusTest.status);
+      
+      if (!statusTest.ok) {
+        const statusError = await statusTest.json();
+        console.log('API Key validation failed:', statusError);
+        return res.status(400).json({ 
+          error: 'API Key geçersiz - NOWPayments hesabını kontrol et',
+          details: statusError 
+        });
+      }
+      
       const paymentData = {
         price_amount: 60,
         price_currency: 'usd',
@@ -101,11 +158,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ipn_callback_url: `${req.protocol}://${req.get('host')}/api/payment/crypto-webhook`
       };
 
-      console.log('Trying SANDBOX environment first...');
-      console.log('Request data:', JSON.stringify(paymentData, null, 2));
+      console.log('Creating invoice with data:', JSON.stringify(paymentData, null, 2));
 
-      // Try sandbox first
-      let response = await fetch('https://api-sandbox.nowpayments.io/v1/invoice', {
+      const response = await fetch('https://api.nowpayments.io/v1/invoice', {
         method: 'POST',
         headers: {
           'x-api-key': API_KEY,
@@ -114,21 +169,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         body: JSON.stringify(paymentData)
       });
 
-      console.log('Sandbox Response status:', response.status);
-
-      if (response.status === 403) {
-        console.log('Sandbox failed, trying PRODUCTION...');
-        // If sandbox fails, try production
-        response = await fetch('https://api.nowpayments.io/v1/invoice', {
-          method: 'POST',
-          headers: {
-            'x-api-key': API_KEY,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(paymentData)
-        });
-        console.log('Production Response status:', response.status);
-      }
+      console.log('Invoice Response status:', response.status);
 
       let result;
       try {
@@ -140,10 +181,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: 'Invalid JSON response from NOWPayments' });
       }
       
-      console.log('Final response:', JSON.stringify(result, null, 2));
+      console.log('Invoice response:', JSON.stringify(result, null, 2));
       
       if (!response.ok) {
-        console.log('Both sandbox and production failed');
+        console.log('Invoice creation failed');
         return res.status(400).json({ error: 'Payment creation failed', details: result });
       }
 
