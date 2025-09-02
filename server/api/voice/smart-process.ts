@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import multer from 'multer';
 import { textToSpeech } from '../../azure';
-import { getGeminiResponse } from '../../gemini';
+import { eternacall } from '../../eternacall';
 import ffmpeg from 'fluent-ffmpeg';
 import ffmpegStatic from 'ffmpeg-static';
 import { promisify } from 'util';
@@ -221,47 +221,29 @@ async function azureSpeechToText(audioBuffer: Buffer): Promise<string | null> {
   }
 }
 
-// Enhanced AI Response with Conversation History
+// Enhanced AI Response using Eternacall System
 async function getAIResponseWithHistory(
   userText: string, 
   userId: string, 
   conversationHistory: Array<{user: string, assistant: string}>
 ): Promise<string | null> {
   try {
-    // Build conversation context
-    let conversationContext = "";
-    if (conversationHistory.length > 0) {
-      conversationContext = "\n\nKonuşma Geçmişi:\n";
-      conversationHistory.slice(-5).forEach((turn, index) => {
-        conversationContext += `Kullanıcı ${index + 1}: ${turn.user}\n`;
-        conversationContext += `Asistan ${index + 1}: ${turn.assistant}\n\n`;
-      });
-    }
-
-    // Enhanced prompt for continuous conversation
-    const enhancedPrompt = `Sen akıllı bir sesli asistansın ve kullanıcıyla gerçek zamanlı doğal bir konuşma yapıyorsun.
-
-Konuşma Kuralları:
-1. Kısa, net ve samimi yanıtlar ver (maximum 2-3 cümle)
-2. Konuşma geçmişini dikkate alarak tutarlı ol
-3. Soru sorarak konuşmayı devam ettir
-4. Doğal bir sohbet havası yarat
-5. Türkçe konuş ve günlük dil kullan
-
-${conversationContext}
-
-Kullanıcının Son Mesajı: "${userText}"
-
-Asistan Yanıtın:`;
-
-    // Use Gemini AI response function with enhanced prompt
-    const response = await getGeminiResponse(enhancedPrompt, userId);
+    // Extract username from headers if available (will implement Clerk integration later)
+    const username = "Değerli Kullanıcı";
     
-    return response;
+    // Use Eternacall AI Assistant Architect system
+    const result = await eternacall.processUserResponse(userText, userId, username);
+    
+    if (result.stepAdvanced) {
+      console.log(`🔄 Eternacall: User progressed to step ${result.currentStep}`);
+    }
+    
+    return result.response;
 
   } catch (error) {
-    console.error('❌ AI Response with History Error:', error);
-    return null;
+    console.error('❌ Eternacall Response Error:', error);
+    // Fallback to a basic response
+    return "Merhaba! Ben Eternacall. Size özel AI asistanınızı tasarlamak için buradayım. Nasıl yardımcı olabilirim?";
   }
 }
 
