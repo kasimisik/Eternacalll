@@ -2,6 +2,69 @@ import * as sdk from "microsoft-cognitiveservices-speech-sdk";
 
 // Bu fonksiyon, metni sese dönüştürüp ses verisini Buffer olarak döndürür
 export async function textToSpeech(text: string): Promise<Buffer | null> {
+  // ElevenLabs'ı önceleyip daha doğal ses için kullan
+  const elevenLabsResult = await textToSpeechElevenLabs(text);
+  if (elevenLabsResult) {
+    return elevenLabsResult;
+  }
+
+  // ElevenLabs başarısız olursa Azure TTS'ye geç
+  console.log("🔄 ElevenLabs TTS failed, trying Azure TTS...");
+  return await textToSpeechAzure(text);
+}
+
+// ElevenLabs Text-to-Speech (öncelikli)
+async function textToSpeechElevenLabs(text: string): Promise<Buffer | null> {
+  try {
+    const apiKey = process.env.ELEVENLABS_API_KEY_NEW || process.env.ELEVENLABS_API_KEY;
+    
+    if (!apiKey) {
+      console.log("⚠️ ElevenLabs API Key bulunamadı - Azure TTS'ye geçiliyor");
+      return null;
+    }
+
+    // Türkçe için optimize edilmiş multilingual ses modeli
+    const voiceId = "pNInz6obpgDQGcFmaJgB"; // Adam voice - multilingual
+    
+    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+      method: 'POST',
+      headers: {
+        'Accept': 'audio/mpeg',
+        'Content-Type': 'application/json',
+        'xi-api-key': apiKey,
+      },
+      body: JSON.stringify({
+        text: text,
+        model_id: 'eleven_multilingual_v2',
+        voice_settings: {
+          stability: 0.8,
+          similarity_boost: 0.9,
+          style: 0.2,
+          use_speaker_boost: true
+        },
+        pronunciation_dictionary_locators: []
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`❌ ElevenLabs API error: ${response.status} - ${errorText}`);
+      return null;
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    console.log(`✅ ElevenLabs TTS completed: "${text}" (${buffer.length} bytes)`);
+    return buffer;
+
+  } catch (error) {
+    console.error('❌ ElevenLabs TTS error:', error);
+    return null;
+  }
+}
+
+// Azure Text-to-Speech (fallback)
+async function textToSpeechAzure(text: string): Promise<Buffer | null> {
   try {
     // Azure anahtarları kontrolü
     if (!process.env.AZURE_SPEECH_KEY) {
@@ -27,16 +90,16 @@ export async function textToSpeech(text: string): Promise<Buffer | null> {
           if (result.reason === sdk.ResultReason.SynthesizingAudioCompleted) {
             // Ses verisini Buffer'a çevirip geri döndür
             const audioData = Buffer.from(result.audioData);
-            console.log(`✅ TTS completed: "${text}"`);
+            console.log(`✅ Azure TTS completed: "${text}"`);
             resolve(audioData);
           } else {
-            console.error(`❌ TTS failed: ${result.errorDetails}`);
+            console.error(`❌ Azure TTS failed: ${result.errorDetails}`);
             resolve(null);
           }
           speechSynthesizer.close();
         },
         (err) => {
-          console.error("❌ TTS error:", err);
+          console.error("❌ Azure TTS error:", err);
           speechSynthesizer.close();
           reject(err);
         }

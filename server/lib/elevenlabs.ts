@@ -75,13 +75,15 @@ class ElevenLabsService {
   private mockMode: boolean = false;
 
   constructor() {
-    const apiKey = process.env.ELEVENLABS_API_KEY;
+    // Try new API key first, then fallback to old one
+    const apiKey = process.env.ELEVENLABS_API_KEY_NEW || process.env.ELEVENLABS_API_KEY;
     if (!apiKey) {
       console.warn('⚠️ ELEVENLABS_API_KEY not found - Running in mock mode');
       this.apiKey = null;
       this.mockMode = true;
     } else {
       this.apiKey = apiKey;
+      console.log('✅ ElevenLabs API initialized with', process.env.ELEVENLABS_API_KEY_NEW ? 'new' : 'old', 'API key');
     }
   }
 
