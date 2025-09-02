@@ -1,11 +1,27 @@
 // Get Clerk publishable key
-const getClerkPublishableKey = () => {
-  // Use the development key - in production this would come from environment
-  return "pk_test_dXByaWdodC1hYXJkdmFyay03Mi5jbGVyay5hY2NvdW50cy5kZXYk";
+const getClerkPublishableKey = async () => {
+  try {
+    const response = await fetch('/api/config/clerk');
+    const data = await response.json();
+    return data.publishableKey || "";
+  } catch (error) {
+    console.error('Failed to fetch Clerk config:', error);
+    return "";
+  }
 };
 
+// Initialize with empty key, will be fetched later
+let publishableKey = "";
+
+// Fetch the key immediately
+getClerkPublishableKey().then(key => {
+  publishableKey = key;
+});
+
 export const CLERK_CONFIG = {
-  publishableKey: getClerkPublishableKey(),
+  get publishableKey() {
+    return publishableKey;
+  },
   appearance: {
     elements: {
       formButtonPrimary: "bg-primary text-primary-foreground hover:bg-primary/90",

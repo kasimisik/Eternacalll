@@ -26,6 +26,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Using Drizzle ORM instead of Prisma
 
+  // Clerk config endpoint
+  app.get('/api/config/clerk', (req, res) => {
+    res.json({
+      publishableKey: process.env.CLERK_PUBLISHABLE_KEY || ""
+    });
+  });
+
   // Clerk Webhook endpoint
   app.post('/api/webhooks/clerk', async (req, res) => {
     const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
