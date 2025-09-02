@@ -162,20 +162,13 @@ async function azureSpeechToText(audioBuffer: Buffer): Promise<string | null> {
     speechConfig.setProperty(speechSdk.PropertyId.Speech_SegmentationSilenceTimeoutMs, "1000");
     speechConfig.setProperty(speechSdk.PropertyId.SpeechServiceResponse_RequestDetailedResultTrueFalse, "true");
     
-    // Convert WebM to WAV if needed
-    let processedBuffer = audioBuffer;
-    try {
-      // Check if it's WebM format and convert to WAV
-      if (audioBuffer.subarray(0, 4).toString('ascii') !== 'RIFF') {
-        console.log('🔄 Converting WebM to WAV for Azure...');
-        processedBuffer = await convertWebMToWav(audioBuffer);
-      }
-    } catch (conversionError) {
-      console.log('⚠️ Audio conversion failed, using original buffer');
-    }
+    // Use push stream for better format compatibility
+    const pushStream = speechSdk.AudioInputStream.createPushStream();
+    pushStream.write(audioBuffer);
+    pushStream.close();
     
-    // Create audio config from buffer
-    const audioConfig = speechSdk.AudioConfig.fromWavFileInput(processedBuffer);
+    // Create audio config from stream (more flexible than file input)
+    const audioConfig = speechSdk.AudioConfig.fromStreamInput(pushStream);
     
     // Create recognizer
     const recognizer = new speechSdk.SpeechRecognizer(speechConfig, audioConfig);
@@ -202,8 +195,9 @@ async function azureSpeechToText(audioBuffer: Buffer): Promise<string | null> {
           } else {
             console.error('❌ Azure STT Error:', result.errorDetails);
             // Don't fail completely, provide a fallback
-            resolve("Konuşmanızı anlayamadım, tekrar deneyebilir misiniz?");
+            resolve("Ses işleme hatası oluştu, tekrar deneyiniz.");
           }
+          
           recognizer.close();
         },
         (error) => {

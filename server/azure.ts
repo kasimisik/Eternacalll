@@ -1,17 +1,26 @@
 import * as sdk from "microsoft-cognitiveservices-speech-sdk";
 
-// Bu fonksiyon, AI yanıtını ses çıkışına dönüştürüyor (sadece ElevenLabs)
+// Bu fonksiyon, AI yanıtını ses çıkışına dönüştürüyor (Azure Primary, ElevenLabs Fallback)
 export async function textToSpeech(text: string): Promise<Buffer | null> {
-  console.log("🔊 AI yanıtını ElevenLabs ile sesli çıkışa dönüştürüyoruz...");
+  console.log("🔊 AI yanıtını Azure TTS ile sesli çıkışa dönüştürüyoruz...");
   
-  // Sadece ElevenLabs kullan (kaliteli Türkçe ses)
+  // Önce Azure TTS'yi dene (daha güvenilir)
+  const azureResult = await textToSpeechAzure(text);
+  
+  if (azureResult) {
+    console.log("✅ Azure TTS kaliteli Türkçe sesi hazır");
+    return azureResult;
+  }
+  
+  // Azure başarısızsa ElevenLabs'ı dene
+  console.log("⚠️ Azure TTS başarısız, ElevenLabs deneniyor...");
   const elevenLabsResult = await textToSpeechElevenLabs(text);
   
   if (elevenLabsResult) {
     console.log("✅ ElevenLabs kaliteli Türkçe sesi hazır");
     return elevenLabsResult;
   } else {
-    console.log("❌ ElevenLabs çalışmıyor - ses üretilemedi");
+    console.log("❌ Her iki TTS servisi de çalışmıyor - ses üretilemedi");
     return null;
   }
 }
