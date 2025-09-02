@@ -16,15 +16,15 @@ export async function textToSpeech(text: string): Promise<Buffer | null> {
 // ElevenLabs Text-to-Speech (öncelikli)
 async function textToSpeechElevenLabs(text: string): Promise<Buffer | null> {
   try {
-    const apiKey = process.env.ELEVENLABS_API_KEY_NEW || process.env.ELEVENLABS_API_KEY;
+    const apiKey = process.env.ELEVENLABS_API_KEY_V2 || process.env.ELEVENLABS_API_KEY_NEW || process.env.ELEVENLABS_API_KEY;
     
     if (!apiKey) {
       console.log("⚠️ ElevenLabs API Key bulunamadı - Azure TTS'ye geçiliyor");
       return null;
     }
 
-    // Türkçe için optimize edilmiş güzel kadın sesi - multilingual
-    const voiceId = "21m00Tcm4TlvDq8ikWAM"; // Rachel voice - multilingual, çok doğal kadın sesi
+    // Türkçe için en iyi kadın sesi - multilingual ve çok doğal
+    const voiceId = "EXAVITQu4vr4xnSDxMaL"; // Bella voice - multilingual, çok doğal kadın sesi
     
     const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
       method: 'POST',
