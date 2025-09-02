@@ -19,19 +19,14 @@ export async function textToSpeech(text: string): Promise<Buffer | null> {
 // ElevenLabs Text-to-Speech (öncelikli)
 async function textToSpeechElevenLabs(text: string): Promise<Buffer | null> {
   try {
-    // Ücretli API anahtarını önceleyerek dene
-    const apiKey = process.env.ELEVENLABS_API_KEY_PAID || process.env.ELEVENLABS_API_KEY_V3 || process.env.ELEVENLABS_API_KEY_V2 || process.env.ELEVENLABS_API_KEY_NEW || process.env.ELEVENLABS_API_KEY;
+    // Verdiğiniz API anahtarını kullan
+    const apiKey = process.env.ELEVENLABS_API_KEY_V3;
     
     console.log("🔍 ElevenLabs API Key kontrolü:", apiKey ? 'API Key bulundu' : 'API Key bulunamadı');
-    console.log("🔍 Kullanılan API Key tipi:", 
-      process.env.ELEVENLABS_API_KEY_PAID ? 'PAID' :
-      process.env.ELEVENLABS_API_KEY_V3 ? 'V3' : 
-      process.env.ELEVENLABS_API_KEY_V2 ? 'V2' : 
-      process.env.ELEVENLABS_API_KEY_NEW ? 'NEW' : 
-      process.env.ELEVENLABS_API_KEY ? 'OLD' : 'YOK');
+    console.log("🔍 Verdiğiniz V3 API anahtarı kullanılıyor");
     
     if (!apiKey) {
-      console.log("⚠️ ElevenLabs API Key bulunamadı - Azure fallback devre dışı");
+      console.log("⚠️ V3 API Key bulunamadı");
       return null;
     }
 
@@ -43,7 +38,7 @@ async function textToSpeechElevenLabs(text: string): Promise<Buffer | null> {
     console.log("  Text:", text.substring(0, 50) + "...");
     console.log("  API Key başlangıcı:", apiKey.substring(0, 8) + "...");
     
-    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream`, {
       method: 'POST',
       headers: {
         'Accept': 'audio/mpeg',
@@ -52,7 +47,7 @@ async function textToSpeechElevenLabs(text: string): Promise<Buffer | null> {
       },
       body: JSON.stringify({
         text: text,
-        model_id: 'eleven_turbo_v2_5', // Daha hızlı model
+        model_id: 'eleven_multilingual_v2', // Stable model
         voice_settings: {
           stability: 0.8,
           similarity_boost: 0.9,
