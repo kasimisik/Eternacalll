@@ -1,4 +1,5 @@
 import * as sdk from "microsoft-cognitiveservices-speech-sdk";
+import ffmpeg from 'fluent-ffmpeg';
 
 // Bu fonksiyon, AI yanıtını ses çıkışına dönüştürüyor (Sadece Azure TTS - En Yüksek Kalite)
 export async function textToSpeech(text: string): Promise<Buffer | null> {
@@ -142,6 +143,47 @@ async function textToSpeechAzureSSML(ssmlString: string): Promise<Buffer | null>
   }
 }
 
+// WebM ses dosyasını WAV formatına çevir
+async function convertWebMToWav(webmBuffer: Buffer): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    try {
+      const chunks: Buffer[] = [];
+      
+      const stream = ffmpeg()
+        .input('pipe:0')
+        .inputFormat('webm')
+        .audioCodec('pcm_s16le')
+        .audioFrequency(16000)
+        .audioChannels(1)
+        .format('wav')
+        .on('error', (err: any) => {
+          console.error('FFmpeg conversion error:', err);
+          reject(err);
+        })
+        .on('end', () => {
+          const wavBuffer = Buffer.concat(chunks);
+          console.log(`✅ WebM to WAV conversion completed: ${wavBuffer.length} bytes`);
+          resolve(wavBuffer);
+        })
+        .pipe();
+      
+      stream.on('data', (chunk: any) => chunks.push(chunk));
+      stream.on('end', () => {
+        const wavBuffer = Buffer.concat(chunks);
+        resolve(wavBuffer);
+      });
+      
+      // WebM buffer'ı ffmpeg'e yaz
+      stream.write(webmBuffer);
+      stream.end();
+      
+    } catch (error) {
+      console.error('Conversion setup error:', error);
+      reject(error);
+    }
+  });
+}
+
 export async function speechToText(audioBuffer: Buffer): Promise<string | null> {
   try {
     // Azure anahtarları kontrolü
@@ -149,6 +191,11 @@ export async function speechToText(audioBuffer: Buffer): Promise<string | null> 
       console.warn("⚠️ Azure Speech Key bulunamadı - Mock STT kullanılıyor");
       return "Mock konuşma metni"; // Mock metin
     }
+    
+    // WebM'i WAV'a çevir
+    console.log('🔄 Converting WebM to WAV...');
+    const wavBuffer = await convertWebMToWav(audioBuffer);
+    console.log(`✅ Conversion completed: ${wavBuffer.length} bytes WAV`);
 
     const speechConfig = sdk.SpeechConfig.fromSubscription(
       process.env.AZURE_SPEECH_KEY,
@@ -157,9 +204,9 @@ export async function speechToText(audioBuffer: Buffer): Promise<string | null> 
 
     speechConfig.speechRecognitionLanguage = "tr-TR";
 
-    // Audio stream oluştur
+    // WAV audio stream oluştur
     const pushStream = sdk.AudioInputStream.createPushStream();
-    pushStream.write(audioBuffer);
+    pushStream.write(wavBuffer);
     pushStream.close();
 
     const audioConfig = sdk.AudioConfig.fromStreamInput(pushStream);
@@ -172,7 +219,9 @@ export async function speechToText(audioBuffer: Buffer): Promise<string | null> 
             console.log(`✅ STT completed: "${result.text}"`);
             resolve(result.text);
           } else {
-            console.error(`❌ STT failed: ${result.errorDetails}`);
+            const errorMsg = result.errorDetails || `Recognition failed with reason: ${result.reason}`;
+            console.error(`❌ STT failed: ${errorMsg}`);
+            console.error(`STT Result reason: ${result.reason}`);
             resolve(null);
           }
           recognizer.close();
