@@ -196,13 +196,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Ana Ses Asistanı - Eski versiyon (isteğe bağlı) */}
-        <details className="mb-8">
-          <summary className="cursor-pointer text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4">
-            💡 Eski Sesli Asistan (Karşılaştırma için)
-          </summary>
-          <InteractiveVoiceAssistant />
-        </details>
       </main>
       
       {/* Smart Voice Assistant Modal */}

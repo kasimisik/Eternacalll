@@ -72,12 +72,12 @@ export function SmartVoiceAssistant({ className, onClose }: SmartVoiceAssistantP
         onVADMisfire: () => {
           console.log("VAD: Yanlış algılama, devam ediliyor");
         },
-        positiveSpeechThreshold: 0.6, // Daha hassas algılama
-        negativeSpeechThreshold: 0.2,
-        preSpeechPadFrames: 10, // Konuşma başlangıcını biraz erken yakala
-        redemptionFrames: 30, // Kısa susmalarda kaydı kesme
-        frameSamples: 1536, // Daha düşük latency için
-        minSpeechFrames: 20, // Minimum konuşma süresi
+        positiveSpeechThreshold: 0.5, // Daha hassas algılama
+        negativeSpeechThreshold: 0.15, // Daha hızlı susma algılama
+        preSpeechPadFrames: 5, // Konuşma başlangıcını biraz erken yakala
+        redemptionFrames: 15, // Kısa susmalarda kaydı kesme - daha hızlı
+        frameSamples: 512, // Çok daha düşük latency için
+        minSpeechFrames: 10, // Minimum konuşma süresi - daha hızlı
       });
 
       vadRef.current = vad;
@@ -100,8 +100,14 @@ export function SmartVoiceAssistant({ className, onClose }: SmartVoiceAssistantP
     if (!streamRef.current) return;
 
     try {
+      // WAV formatında kayıt yapmaya çalış, desteklenmiyorsa WebM kullan
+      let mimeType = 'audio/wav';
+      if (!MediaRecorder.isTypeSupported(mimeType)) {
+        mimeType = 'audio/webm;codecs=opus';
+      }
+      
       const mediaRecorder = new MediaRecorder(streamRef.current, {
-        mimeType: 'audio/webm;codecs=opus'
+        mimeType: mimeType
       });
       
       mediaRecorderRef.current = mediaRecorder;

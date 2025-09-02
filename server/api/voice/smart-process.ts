@@ -2,8 +2,20 @@ import { Request, Response } from 'express';
 import multer from 'multer';
 import { textToSpeech } from '../../azure';
 import { getAIResponse } from '../../anthropic';
-// ElevenLabs will be handled by existing text-to-speech function
-// import { generateVoice } from '../../lib/elevenlabs';
+import ffmpeg from 'fluent-ffmpeg';
+import ffmpegStatic from 'ffmpeg-static';
+import { promisify } from 'util';
+import { writeFile, unlink } from 'fs';
+import { tmpdir } from 'os';
+import { join } from 'path';
+
+// Set FFmpeg path
+if (ffmpegStatic) {
+  ffmpeg.setFfmpegPath(ffmpegStatic);
+}
+
+const writeFileAsync = promisify(writeFile);
+const unlinkAsync = promisify(unlink);
 
 // Multer configuration for audio file handling
 const upload = multer({
@@ -116,8 +128,20 @@ async function azureSpeechToText(audioBuffer: Buffer): Promise<string | null> {
     const speechConfig = speechSdk.SpeechConfig.fromSubscription(speechKey, speechRegion);
     speechConfig.speechRecognitionLanguage = "tr-TR"; // Turkish recognition
     
+    // Convert WebM to WAV if needed
+    let processedBuffer = audioBuffer;
+    try {
+      // Check if it's WebM format and convert to WAV
+      if (audioBuffer.subarray(0, 4).toString('ascii') !== 'RIFF') {
+        console.log('🔄 Converting WebM to WAV for Azure...');
+        processedBuffer = await convertWebMToWav(audioBuffer);
+      }
+    } catch (conversionError) {
+      console.log('⚠️ Audio conversion failed, using original buffer');
+    }
+    
     // Create audio config from buffer
-    const audioConfig = speechSdk.AudioConfig.fromWavFileInput(audioBuffer);
+    const audioConfig = speechSdk.AudioConfig.fromWavFileInput(processedBuffer);
     
     // Create recognizer
     const recognizer = new speechSdk.SpeechRecognizer(speechConfig, audioConfig);
@@ -193,4 +217,48 @@ Asistan Yanıtın:`;
     console.error('❌ AI Response with History Error:', error);
     return null;
   }
+}
+
+// Convert WebM to WAV for Azure Speech Service
+async function convertWebMToWav(webmBuffer: Buffer): Promise<Buffer> {
+  return new Promise(async (resolve, reject) => {
+    const inputPath = join(tmpdir(), `input-${Date.now()}.webm`);
+    const outputPath = join(tmpdir(), `output-${Date.now()}.wav`);
+    
+    try {
+      // Write WebM buffer to temporary file
+      await writeFileAsync(inputPath, webmBuffer);
+      
+      // Convert using FFmpeg
+      ffmpeg(inputPath)
+        .toFormat('wav')
+        .audioFrequency(16000) // 16kHz for Azure Speech
+        .audioChannels(1)      // Mono for Azure Speech
+        .on('end', async () => {
+          try {
+            // Read converted WAV file
+            const fs = await import('fs');
+            const wavBuffer = fs.readFileSync(outputPath);
+            
+            // Clean up temporary files
+            await unlinkAsync(inputPath).catch(() => {});
+            await unlinkAsync(outputPath).catch(() => {});
+            
+            resolve(wavBuffer);
+          } catch (readError) {
+            reject(readError);
+          }
+        })
+        .on('error', async (err: any) => {
+          // Clean up temporary files
+          await unlinkAsync(inputPath).catch(() => {});
+          await unlinkAsync(outputPath).catch(() => {});
+          reject(err);
+        })
+        .save(outputPath);
+        
+    } catch (error) {
+      reject(error);
+    }
+  });
 }
