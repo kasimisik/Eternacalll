@@ -20,16 +20,20 @@ export async function textToSpeech(text: string): Promise<Buffer | null> {
 // ElevenLabs Text-to-Speech (öncelikli)
 async function textToSpeechElevenLabs(text: string): Promise<Buffer | null> {
   try {
-    // Verdiğiniz API anahtarını kullan
-    const apiKey = process.env.ELEVENLABS_API_KEY_V3;
+    // Verdiğiniz API anahtarını kullan (önce V3, sonra standart)
+    const apiKey = process.env.ELEVENLABS_API_KEY_V3 || process.env.ELEVENLABS_API_KEY_V2 || process.env.ELEVENLABS_API_KEY_NEW || process.env.ELEVENLABS_API_KEY;
     
     console.log("🔍 ElevenLabs API Key kontrolü:", apiKey ? 'API Key bulundu' : 'API Key bulunamadı');
-    console.log("🔍 Verdiğiniz V3 API anahtarı kullanılıyor");
     
     if (!apiKey) {
-      console.log("⚠️ V3 API Key bulunamadı");
+      console.log("⚠️ ElevenLabs API Key bulunamadı");
       return null;
     }
+    
+    const keyType = process.env.ELEVENLABS_API_KEY_V3 ? 'V3' : 
+                    process.env.ELEVENLABS_API_KEY_V2 ? 'V2' : 
+                    process.env.ELEVENLABS_API_KEY_NEW ? 'new' : 'standart';
+    console.log("🔍 ElevenLabs", keyType, "API anahtarı kullanılıyor");
 
     // Kullanıcının belirlediği en iyi kadın sesi
     const voiceId = "aEJD8mYP0nuof1XHShVY"; // En iyi kadın sesi
