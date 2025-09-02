@@ -3,8 +3,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { CreditCard, Crown, Bot } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import PaymentButton from '@/components/PaymentButton';
-import { InteractiveVoiceAssistant } from '@/components/InteractiveVoiceAssistant';
-import { VoiceAssistantModal, VoiceAssistantTrigger } from '@/components/VoiceAssistantModal';
 
 export default function Dashboard() {
   const { user } = useUserHook();
@@ -17,7 +15,6 @@ export default function Dashboard() {
     createdAt?: string;
   } | null>(null);
   const [loadingSubscription, setLoadingSubscription] = useState(true);
-  const [showSmartAssistant, setShowSmartAssistant] = useState(false);
 
   // Kullanıcının abonelik durumunu kontrol et
   useEffect(() => {
@@ -54,7 +51,7 @@ export default function Dashboard() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
               <Bot className="h-6 w-6 text-primary" />
-              <h1 className="text-xl font-bold text-primary" data-testid="text-dashboard-title">ElevenLabs AI Voice Agent Platform</h1>
+              <h1 className="text-xl font-bold text-primary" data-testid="text-dashboard-title">Azure AI Sesli Asistan Platform</h1>
             </div>
             <div className="flex items-center space-x-4">
               <div className="relative">
@@ -143,7 +140,7 @@ export default function Dashboard() {
                 <div className="text-3xl font-bold text-primary mb-4">₺60/ay</div>
                 <ul className="text-sm text-muted-foreground space-y-2 mb-6">
                   <li>✓ Sınırsız AI ajanları</li>
-                  <li>✓ ElevenLabs ses klonlama</li>
+                  <li>✓ Azure ses sentezi</li>
                   <li>✓ Özel telefon endpoint'leri</li>
                   <li>✓ Gelişmiş ses ayarları</li>
                   <li>✓ Öncelikli destek</li>
@@ -158,21 +155,17 @@ export default function Dashboard() {
           </Card>
         )}
 
-        {/* Smart Voice Assistant Trigger */}
+        {/* SIP Voice Agent Info */}
         <div className="mb-8 text-center">
           <div className="bg-gradient-to-br from-blue-50 via-purple-50 to-indigo-50 dark:from-blue-950 dark:via-purple-950 dark:to-indigo-950 rounded-2xl p-8 border border-blue-200 dark:border-blue-800">
             <div className="mb-6">
               <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">
-                🤖 Akıllı Sesli Asistan
+                📞 Azure SIP Telefon Asistanı
               </h2>
               <p className="text-lg text-gray-600 dark:text-gray-300 mb-4">
-                PDF'deki mimariye göre yeniden tasarlanan real-time akıcı konuşma deneyimi
+                Azure Speech ve Anthropic AI ile güçlendirilmiş telefon asistanı
               </p>
               <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  Voice Activity Detection (VAD)
-                </div>
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                   Azure Speech-to-Text
@@ -182,27 +175,24 @@ export default function Dashboard() {
                   Anthropic Claude AI
                 </div>
                 <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  Azure Text-to-Speech
+                </div>
+                <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                  ElevenLabs TTS
+                  SIP/NetGSM Entegrasyonu
                 </div>
               </div>
             </div>
             
-            <VoiceAssistantTrigger onOpen={() => setShowSmartAssistant(true)} />
-            
             <div className="mt-6 text-sm text-gray-500 dark:text-gray-400">
-              ✨ Artık birkaç saniye bekleme yok! Sustuğunuz anda sistem algılayıp anında yanıt verir.
+              ✨ SIP tabanlı telefon arama sistemi ile akıllı sesli asistan hizmeti
             </div>
           </div>
         </div>
 
       </main>
       
-      {/* Smart Voice Assistant Modal */}
-      <VoiceAssistantModal 
-        isOpen={showSmartAssistant} 
-        onClose={() => setShowSmartAssistant(false)} 
-      />
     </div>
   );
 }

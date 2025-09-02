@@ -6,16 +6,11 @@ import { db } from './db';
 import { users } from '../shared/schema';
 import { eq } from 'drizzle-orm';
 import crypto from 'crypto';
-import Twilio from 'twilio';
 import { textToSpeech } from './azure';
 import { getAIResponse } from './anthropic';
 import { withSubscriptionCheck } from '../client/src/lib/subscription-check';
 import { NetGSMSipAgent, NetGSMConfig } from './netgsm-sip-agent';
 import { SipVoiceAgent } from './sip-voice-agent';
-import { TwilioVoiceAgent } from './twilio-voice-agent';
-
-// Voice Agent'ları global olarak tanımla
-let twilioAgent: TwilioVoiceAgent | null = null;
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // put application routes here
@@ -487,135 +482,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Twilio Voice API endpoint (yeni)
-  app.post('/api/twilio/voice', async (req, res) => {
-    if (!twilioAgent) {
-      return res.status(500).send('Twilio Voice Agent not initialized');
-    }
-    
-    const twimlResponse = twilioAgent.generateTwiML(req);
-    res.set('Content-Type', 'text/xml');
-    res.send(twimlResponse);
-  });
 
-  // Twilio Voice API endpoint (eski)
-  app.post('/api/voice', async (req, res) => {
-    // Gelen isteğin içeriğini alıyoruz (Twilio'dan)
-    const speechResult = req.body.SpeechResult as string | null; // Kullanıcının konuşması (varsa)
-    
-    // TwiML (Twilio Markup Language) yanıtı oluşturuyoruz
-    const twiml = new Twilio.twiml.VoiceResponse();
 
-    try {
-      if (speechResult && speechResult.trim() !== '') {
-        // EĞER KULLANICI KONUŞTUYSA (Görüşmenin 2. ve sonraki adımları)
-
-        // 1. ADIM: Kullanıcının konuşmasını Anthropic'e gönderip cevap al
-        const userId = req.body.CallSid || 'anonymous';
-        const aiResponseText = await getAIResponse(speechResult, userId);
-
-        // 2. ADIM: Anthropic'ten gelen metin cevabı Azure'da sese çevir
-        const audioBuffer = await textToSpeech(aiResponseText);
-        if (audioBuffer) {
-          const audioBase64 = audioBuffer.toString('base64');
-          
-          // 3. ADIM: Üretilen sesi kullanıcıya dinlet
-          twiml.play({}, `data:audio/wav;base64,${audioBase64}`);
-        }
-
-      } else {
-        // EĞER BU ÇAĞRININ İLK ANIYSA
-
-        // 1. ADIM: Karşılama mesajını belirle
-        const welcomeMessage = "Merhaba, EternaCall hizmetine hoş geldiniz. Size nasıl yardımcı olabilirim?";
-        
-        // 2. ADIM: Mesajı Azure'da sese çevir
-        const audioBuffer = await textToSpeech(welcomeMessage);
-        if (audioBuffer) {
-          const audioBase64 = audioBuffer.toString('base64');
-          
-          // 3. ADIM: Karşılama sesini kullanıcıya dinlet
-          twiml.play({}, `data:audio/wav;base64,${audioBase64}`);
-        }
-      }
-
-      // 4. ADIM (EN ÖNEMLİ KISIM): Konuşma döngüsünü devam ettirmek için kullanıcıyı tekrar dinle
-      twiml.gather({
-        input: ['speech'],
-        speechTimeout: 'auto', // Kullanıcı sustuğunda otomatik olarak algıla
-        language: 'tr-TR',     // Türkçe konuşmayı dinle
-        action: '/api/voice',  // Konuşma bittiğinde sonucu bu adrese geri gönder
-      });
-
-    } catch (error) {
-      console.error("Bir hata oluştu:", error);
-      // Hata durumunda kullanıcıya bir sesli mesaj dinlet
-      const errorMessage = "Üzgünüm, bir sistem hatası oluştu. Lütfen daha sonra tekrar deneyin.";
-      const audioBuffer = await textToSpeech(errorMessage);
-      if (audioBuffer) {
-        const audioBase64 = audioBuffer.toString('base64');
-        twiml.play({}, `data:audio/wav;base64,${audioBase64}`);
-      }
-    }
-
-    // TwiML yanıtını XML formatında geri döndürüyoruz
-    res.set('Content-Type', 'text/xml');
-    res.send(twiml.toString());
-  });
-
-  // Main Twilio Call Handler with Subscription Protection
-  const callHandler = async (req: any, res: any, userId: string) => {
-    const twiml = new Twilio.twiml.VoiceResponse();
-
-    // Twilio'dan gelen bilgilere bakalım
-    const callSid = req.body.CallSid as string; // Çağrının benzersiz kimliği
-    const speechResult = req.body.SpeechResult as string | null; // Kullanıcının son konuşmasının metni
-
-    try {
-      let responseMessage: string;
-
-      if (speechResult && speechResult.trim() !== '') {
-        // Bu, görüşmenin 2. ve sonraki adımıdır (kullanıcı konuştu)
-        // TODO: Konuşma geçmişini veritabanında saklayıp daha akıllı cevaplar üretebiliriz.
-        responseMessage = await getAIResponse(speechResult, userId);
-      } else {
-        // Bu, çağrının ilk anıdır (karşılama)
-        responseMessage = "Merhaba, size nasıl yardımcı olabilirim?";
-      }
-
-      // Cevap metnini Azure'da yüksek kaliteli sese çevir
-      const audioBuffer = await textToSpeech(responseMessage);
-      if (audioBuffer) {
-        const audioBase64 = audioBuffer.toString('base64');
-        
-        // Sesi TwiML yanıtına ekleyerek kullanıcıya dinlet
-        twiml.play({}, `data:audio/wav;base64,${audioBase64}`);
-      }
-
-      // Konuşma döngüsünü devam ettirmek için kullanıcıyı tekrar dinle
-      const gather = twiml.gather({
-        input: ['speech'],
-        speechTimeout: 'auto', // Kullanıcı sustuğunda otomatik olarak algıla
-        language: 'tr-TR',     // Türkçe konuşmayı dinle
-        action: '/api/twilio/call-handler', // Konuşma bitince sonucu bu adrese geri gönder
-      });
-
-      // Çağrı bittiğinde rapor almak için bir sonraki adıma hazırlık
-      twiml.hangup(); // Eğer gather bir şey yakalayamazsa çağrıyı bitir.
-
-    } catch (error) {
-      console.error(`[Call SID: ${callSid}] - Bir hata oluştu:`, error);
-      const errorMessage = "Üzgünüm, sistemsel bir aksaklık oluştu. Lütfen daha sonra tekrar deneyin.";
-      twiml.say({ voice: 'alice', language: 'tr-TR' }, errorMessage);
-      twiml.hangup();
-    }
-
-    res.set('Content-Type', 'text/xml');
-    res.send(twiml.toString());
-  };
-
-  // Protected call handler endpoint
-  app.post('/api/twilio/call-handler', withSubscriptionCheck(callHandler));
 
   // SIP Voice Agent kontrolü
   let sipAgent: NetGSMSipAgent | null = null;
@@ -624,15 +492,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // HTTP Server oluşturma
   const httpServer = createServer(app);
 
-  // Twilio Voice Agent'ı başlat
-  try {
-    console.log("🎤 Twilio Voice Agent başlatılıyor...");
-    twilioAgent = new TwilioVoiceAgent();
-    twilioAgent.initializeWithServer(httpServer);
-    console.log("✅ Twilio Voice Agent başarıyla başlatıldı");
-  } catch (error) {
-    console.error("❌ Twilio Voice Agent başlatma hatası:", error);
-  }
 
   // SIP Voice Agent'ı başlat
   app.post('/api/sip/start-agent', async (req, res) => {
@@ -716,7 +575,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         activeCalls: voiceAgent ? voiceAgent.getAllActiveCalls() : [],
         message: voiceAgentRunning ? 'SIP Voice Agent aktif' : 'SIP Voice Agent pasif',
         websocketEndpoint: voiceAgentRunning ? 'ws://localhost:5000/sip-voice' : null,
-        twilioAgent: twilioAgent !== null ? 'aktif' : 'pasif'
+        twilioAgent: 'kaldırıldı'
       });
     } catch (error) {
       res.status(500).json({ message: String(error) });
@@ -750,43 +609,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ===========================================
-  // ELEVENLABS API ROUTES FOR AI VOICE AGENTS
-  // ===========================================
-
-  // Import ElevenLabs API handlers
-  const { handleGetVoices } = await import('./api/voices/list');
-  const { handleCloneVoice, uploadMiddleware } = await import('./api/voices/clone');
-  const { previewVoice } = await import('./api/voices/preview');
-  const { processVoice, processVoiceMiddleware } = await import('./api/voice/process');
-  const { smartProcess, smartProcessMiddleware } = await import('./api/voice/smart-process');
-  const { handleCreateAgent } = await import('./api/agents/create');
-  const { handleListAgents } = await import('./api/agents/list');
-  const { handleUpdateAgent } = await import('./api/agents/update');
-  const { handleDeleteAgent } = await import('./api/agents/delete');
-  const { getUserPreferences, saveUserPreferences, deleteUserPreferences } = await import('./api/user/preferences');
-
-  // Voice management routes
-  app.get('/api/voices/list', handleGetVoices);
-  app.post('/api/voices/clone', uploadMiddleware, handleCloneVoice);
-  app.post('/api/voices/preview', previewVoice);
-  
-  // Interactive voice assistant route
-  app.post('/api/voice/process', processVoiceMiddleware, processVoice);
-  
-  // Smart voice assistant route with Azure -> Anthropic -> ElevenLabs orchestration
-  app.post('/api/voice/smart-process', smartProcessMiddleware, smartProcess);
-
-  // User preferences routes
-  app.get('/api/user/preferences', getUserPreferences);
-  app.post('/api/user/preferences', saveUserPreferences);
-  app.delete('/api/user/preferences', deleteUserPreferences);
-
-  // Agent management routes
-  app.post('/api/agents/create', handleCreateAgent);
-  app.get('/api/agents/list', handleListAgents);
-  app.patch('/api/agents/update/:id', handleUpdateAgent);
-  app.delete('/api/agents/delete/:id', handleDeleteAgent);
 
   return httpServer;
 }
