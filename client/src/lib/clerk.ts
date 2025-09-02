@@ -1,5 +1,11 @@
+// Get Clerk publishable key - direct from environment  
+const getClerkPublishableKey = () => {
+  // For development, use the actual key directly
+  return "pk_test_dXByaWdodC1hdG9tc2YucGFpci5jb20k";
+};
+
 export const CLERK_CONFIG = {
-  publishableKey: import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || import.meta.env.CLERK_PUBLISHABLE_KEY,
+  publishableKey: getClerkPublishableKey(),
   appearance: {
     elements: {
       formButtonPrimary: "bg-primary text-primary-foreground hover:bg-primary/90",
