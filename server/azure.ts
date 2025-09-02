@@ -155,6 +155,7 @@ async function convertWebMToWav(webmBuffer: Buffer): Promise<Buffer> {
         .audioCodec('pcm_s16le')
         .audioFrequency(16000)
         .audioChannels(1)
+        .audioFilters('volume=2.0')
         .format('wav')
         .on('error', (err: any) => {
           console.error('FFmpeg conversion error:', err);
@@ -203,9 +204,16 @@ export async function speechToText(audioBuffer: Buffer): Promise<string | null> 
     );
 
     speechConfig.speechRecognitionLanguage = "tr-TR";
-
-    // WAV audio stream oluştur
-    const pushStream = sdk.AudioInputStream.createPushStream();
+    speechConfig.enableDictation();
+    
+    // Debug: Connection test
+    console.log('🔗 Azure STT connection test...');
+    console.log(`📍 Region: ${process.env.AZURE_SPEECH_REGION || 'eastus'}`);
+    console.log(`🔑 API Key exists: ${!!process.env.AZURE_SPEECH_KEY}`);
+    
+    // Azure için özel audio format tanımla
+    const audioFormat = sdk.AudioStreamFormat.getWaveFormatPCM(16000, 16, 1);
+    const pushStream = sdk.AudioInputStream.createPushStream(audioFormat);
     pushStream.write(wavBuffer);
     pushStream.close();
 
