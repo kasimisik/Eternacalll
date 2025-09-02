@@ -133,7 +133,7 @@ export function InteractiveVoiceAssistant({ className }: InteractiveVoiceAssista
       const formData = new FormData();
       formData.append('audio', audioBlob, 'recording.webm');
       
-      const response = await fetch('/api/voice/process', {
+      const response = await fetch('/api/voice/smart-process', {
         method: 'POST',
         headers: {
           'x-user-id': user?.id || '',
