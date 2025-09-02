@@ -488,7 +488,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // EĞER KULLANICI KONUŞTUYSA (Görüşmenin 2. ve sonraki adımları)
 
         // 1. ADIM: Kullanıcının konuşmasını Anthropic'e gönderip cevap al
-        const aiResponseText = await getAIResponse(speechResult);
+        const userId = req.body.CallSid || 'anonymous';
+        const aiResponseText = await getAIResponse(speechResult, userId);
 
         // 2. ADIM: Anthropic'ten gelen metin cevabı Azure'da sese çevir
         const audioBuffer = await textToSpeech(aiResponseText);
@@ -553,7 +554,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (speechResult && speechResult.trim() !== '') {
         // Bu, görüşmenin 2. ve sonraki adımıdır (kullanıcı konuştu)
         // TODO: Konuşma geçmişini veritabanında saklayıp daha akıllı cevaplar üretebiliriz.
-        responseMessage = await getAIResponse(speechResult);
+        responseMessage = await getAIResponse(speechResult, userId);
       } else {
         // Bu, çağrının ilk anıdır (karşılama)
         responseMessage = "Merhaba, size nasıl yardımcı olabilirim?";

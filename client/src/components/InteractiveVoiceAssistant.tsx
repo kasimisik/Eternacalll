@@ -165,9 +165,15 @@ export function InteractiveVoiceAssistant({ className }: InteractiveVoiceAssista
       };
 
       audio.onended = () => {
+        console.log("Asistan konuşmayı bitirdi. Şimdi sıra kullanıcıda.");
         setIsAssistantSpeaking(false);
-        setButtonText("Konuşmak için Basılı Tutun");
+        setButtonText("Dinliyorum... Konuşun");
         URL.revokeObjectURL(audioUrl);
+        
+        // PDF'deki öneriye göre: Otomatik olarak dinlemeye geçiş
+        setTimeout(() => {
+          startRecording();
+        }, 500); // Kısa bir bekleme süresi
       };
 
       audio.onerror = () => {

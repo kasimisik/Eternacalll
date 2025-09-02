@@ -4,6 +4,8 @@ import ws from "ws";
 import * as schema from "@shared/schema";
 
 neonConfig.webSocketConstructor = ws;
+neonConfig.wsProxy = (host) => `${host}:443/v1`;
+neonConfig.useSecureWebSocket = false;
 
 if (!process.env.DATABASE_URL) {
   throw new Error(
