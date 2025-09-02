@@ -733,14 +733,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Import ElevenLabs API handlers
   const { handleGetVoices } = await import('./api/voices/list');
   const { handleCloneVoice, uploadMiddleware } = await import('./api/voices/clone');
+  const { previewVoice } = await import('./api/voices/preview');
   const { handleCreateAgent } = await import('./api/agents/create');
   const { handleListAgents } = await import('./api/agents/list');
   const { handleUpdateAgent } = await import('./api/agents/update');
   const { handleDeleteAgent } = await import('./api/agents/delete');
+  const { getUserPreferences, saveUserPreferences, deleteUserPreferences } = await import('./api/user/preferences');
 
   // Voice management routes
   app.get('/api/voices/list', handleGetVoices);
   app.post('/api/voices/clone', uploadMiddleware, handleCloneVoice);
+  app.post('/api/voices/preview', previewVoice);
+
+  // User preferences routes
+  app.get('/api/user/preferences', getUserPreferences);
+  app.post('/api/user/preferences', saveUserPreferences);
+  app.delete('/api/user/preferences', deleteUserPreferences);
 
   // Agent management routes
   app.post('/api/agents/create', handleCreateAgent);

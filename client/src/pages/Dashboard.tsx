@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Bot, Plus, CreditCard, Crown } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import PaymentButton from '@/components/PaymentButton';
-import { AgentCreator } from '@/components/AgentCreator';
+import { InteractiveAgentCreator } from '@/components/InteractiveAgentCreator';
 import { AgentsList } from '@/components/AgentsList';
 
 export default function Dashboard() {
@@ -194,7 +194,7 @@ export default function Dashboard() {
           </TabsContent>
 
           <TabsContent value="create" className="space-y-6">
-            <AgentCreator onAgentCreated={handleAgentCreated} />
+            <InteractiveAgentCreator onAgentCreated={handleAgentCreated} />
           </TabsContent>
         </Tabs>
       </main>
