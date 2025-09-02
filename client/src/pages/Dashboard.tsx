@@ -1,6 +1,7 @@
 import { useUserHook, useAuthHook } from '@/lib/auth-hook';
 import { Card, CardContent } from '@/components/ui/card';
 import { CreditCard, Crown, Bot } from 'lucide-react';
+import { VoiceAssistantModal, VoiceAssistantTrigger } from '@/components/VoiceAssistantModal';
 import { useState, useEffect } from 'react';
 import PaymentButton from '@/components/PaymentButton';
 
@@ -15,6 +16,7 @@ export default function Dashboard() {
     createdAt?: string;
   } | null>(null);
   const [loadingSubscription, setLoadingSubscription] = useState(true);
+  const [showVoiceAssistant, setShowVoiceAssistant] = useState(false);
 
   // Kullanıcının abonelik durumunu kontrol et
   useEffect(() => {
@@ -185,14 +187,21 @@ export default function Dashboard() {
               </div>
             </div>
             
+            <VoiceAssistantTrigger onOpen={() => setShowVoiceAssistant(true)} />
+            
             <div className="mt-6 text-sm text-gray-500 dark:text-gray-400">
-              ✨ SIP tabanlı telefon arama sistemi ile akıllı sesli asistan hizmeti
+              ✨ Mikrofona tıklayın ve Azure AI ile konuşun
             </div>
           </div>
         </div>
 
       </main>
       
+      {/* Voice Assistant Modal */}
+      <VoiceAssistantModal 
+        isOpen={showVoiceAssistant} 
+        onClose={() => setShowVoiceAssistant(false)} 
+      />
     </div>
   );
 }

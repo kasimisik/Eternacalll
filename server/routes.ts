@@ -610,5 +610,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
 
+  // Azure Voice Assistant API Routes
+  const { handleSpeechToText, uploadMiddleware } = await import('./api/azure/speech-to-text');
+  const { handleTextToSpeech } = await import('./api/azure/text-to-speech');
+  const { handleProcessConversation } = await import('./api/azure/process-conversation');
+
+  app.post('/api/azure/speech-to-text', uploadMiddleware, handleSpeechToText);
+  app.post('/api/azure/text-to-speech', handleTextToSpeech);
+  app.post('/api/azure/process-conversation', handleProcessConversation);
+
   return httpServer;
 }
