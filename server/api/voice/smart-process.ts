@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import multer from 'multer';
 import { textToSpeech } from '../../azure';
-import { getAIResponse } from '../../anthropic';
+import { getGeminiResponse } from '../../gemini';
 import ffmpeg from 'fluent-ffmpeg';
 import ffmpegStatic from 'ffmpeg-static';
 import { promisify } from 'util';
@@ -93,8 +93,8 @@ export async function smartProcess(req: Request, res: Response) {
       assistant: aiTextResponse
     };
     
-    // Send conversation update in header for frontend to track
-    res.setHeader('x-conversation-update', JSON.stringify(newHistoryEntry));
+    // Send conversation update in header for frontend to track (encode for safe header transmission)
+    res.setHeader('x-conversation-update', encodeURIComponent(JSON.stringify(newHistoryEntry)));
     res.setHeader('Content-Type', 'audio/mpeg');
     
     console.log('✅ Smart Voice Orchestration completed successfully');
@@ -208,8 +208,8 @@ Kullanıcının Son Mesajı: "${userText}"
 
 Asistan Yanıtın:`;
 
-    // Use existing AI response function with enhanced prompt
-    const response = await getAIResponse(enhancedPrompt, userId);
+    // Use Gemini AI response function with enhanced prompt
+    const response = await getGeminiResponse(enhancedPrompt, userId);
     
     return response;
 
