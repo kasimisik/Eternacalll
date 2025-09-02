@@ -34,12 +34,25 @@ const upload = multer({
 
 export const smartProcessMiddleware = upload.single('audio');
 
+// Track active requests per user to prevent multiple simultaneous processing
+const activeRequests = new Map<string, boolean>();
+
 // Smart Voice Processing with Azure -> Anthropic -> ElevenLabs orchestration
 export async function smartProcess(req: Request, res: Response) {
   try {
+    const userId = req.headers['x-user-id'] as string;
+    
+    // Check if user already has an active request
+    if (activeRequests.get(userId)) {
+      console.log('⚠️ User already has active voice request, skipping...');
+      return res.status(429).json({ error: 'Already processing voice request' });
+    }
+    
+    // Mark user as having active request
+    activeRequests.set(userId, true);
+    
     console.log('=== SMART VOICE ORCHESTRATION STARTED ===');
     
-    const userId = req.headers['x-user-id'] as string;
     const conversationHistoryStr = req.body.conversationHistory || '[]';
     
     if (!userId) {
@@ -47,6 +60,7 @@ export async function smartProcess(req: Request, res: Response) {
     }
 
     if (!req.file) {
+      activeRequests.delete(userId);
       return res.status(400).json({ error: 'Audio file required' });
     }
 
@@ -62,6 +76,7 @@ export async function smartProcess(req: Request, res: Response) {
     const userText = await azureSpeechToText(req.file.buffer);
     
     if (!userText || userText.trim() === '') {
+      activeRequests.delete(userId);
       return res.status(400).json({ error: 'No speech detected in audio' });
     }
     
@@ -72,6 +87,7 @@ export async function smartProcess(req: Request, res: Response) {
     const aiTextResponse = await getAIResponseWithHistory(userText, userId, conversationHistory);
     
     if (!aiTextResponse) {
+      activeRequests.delete(userId);
       return res.status(500).json({ error: 'Failed to generate AI response' });
     }
     
@@ -83,6 +99,7 @@ export async function smartProcess(req: Request, res: Response) {
     
     if (!audioBuffer) {
       console.error('❌ Ses üretimi başarısız oldu');
+      activeRequests.delete(userId);
       return res.status(500).json({ error: 'Ses üretimi başarısız' });
     }
     
@@ -100,10 +117,20 @@ export async function smartProcess(req: Request, res: Response) {
     
     console.log('✅ Smart Voice Orchestration completed successfully');
     
+    // Clear active request flag
+    activeRequests.delete(userId);
+    
     return res.send(audioBuffer);
 
   } catch (error) {
     console.error('❌ Smart Voice Orchestration Error:', error);
+    
+    // Clear active request flag on error
+    const userId = req.headers['x-user-id'] as string;
+    if (userId) {
+      activeRequests.delete(userId);
+    }
+    
     return res.status(500).json({ 
       error: 'Voice processing failed', 
       details: error instanceof Error ? error.message : 'Unknown error' 
