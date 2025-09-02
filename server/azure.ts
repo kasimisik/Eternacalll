@@ -108,62 +108,69 @@ async function textToSpeechAzureSSML(ssmlString: string): Promise<Buffer | null>
   }
 }
 
-// WebM ses dosyasını WAV formatına çevir
+// WebM ses dosyasını WAV formatına çevir  
 async function convertWebMToWav(webmBuffer: Buffer): Promise<Buffer> {
+  const fs = require('fs');
+  const path = require('path');
+  const tmpDir = '/tmp';
+  
   return new Promise((resolve, reject) => {
     try {
-      const chunks: Buffer[] = [];
+      // Temporary dosya isimleri
+      const inputFile = path.join(tmpDir, `input_${Date.now()}.webm`);
+      const outputFile = path.join(tmpDir, `output_${Date.now()}.wav`);
       
-      // Proper FFmpeg stream setup for WebM to WAV conversion
-      const stream = ffmpeg()
-        .input('pipe:0')
-        .inputFormat('webm')
-        .outputFormat('wav')
+      console.log('🔄 FFmpeg: Temporary files created');
+      
+      // WebM buffer'ı dosyaya yaz
+      fs.writeFileSync(inputFile, webmBuffer);
+      
+      // FFmpeg conversion (file-based, more stable)
+      ffmpeg(inputFile)
         .audioCodec('pcm_s16le')
-        .audioFrequency(16000) 
+        .audioFrequency(16000)
         .audioChannels(1)
-        .audioFilters(['volume=3.0', 'highpass=f=100']) // Amplify and filter
-        .outputOptions([
-          '-ar', '16000',           // Sample rate  
-          '-ac', '1',              // Mono channel
-          '-acodec', 'pcm_s16le',  // PCM 16-bit
-          '-f', 'wav'              // Force WAV output
-        ])
+        .audioFilters('volume=3.0')
+        .outputOptions(['-ar', '16000', '-ac', '1', '-acodec', 'pcm_s16le'])
         .on('start', (cmd) => {
-          console.log('🔄 FFmpeg conversion started');
+          console.log('🔄 FFmpeg conversion started (file-based)');
         })
         .on('error', (err: any) => {
-          console.error('❌ FFmpeg conversion error:', err);
+          console.error('❌ FFmpeg error:', err);
+          // Cleanup
+          try { fs.unlinkSync(inputFile); } catch {}
+          try { fs.unlinkSync(outputFile); } catch {}
           reject(err);
         })
         .on('end', () => {
-          const wavBuffer = Buffer.concat(chunks);
-          console.log(`✅ WebM to WAV conversion: ${wavBuffer.length} bytes`);
-          
-          // WAV header check - should start with "RIFF"
-          if (wavBuffer.length >= 12) {
+          try {
+            // WAV dosyasını oku
+            const wavBuffer = fs.readFileSync(outputFile);
+            console.log(`✅ WebM to WAV conversion: ${wavBuffer.length} bytes`);
+            
+            // WAV header check
             const header = wavBuffer.subarray(0, 4).toString('ascii');
             console.log(`🔍 WAV Header: "${header}" (expected: "RIFF")`);
             
             if (header === 'RIFF') {
-              console.log('✅ Valid WAV file produced');
-            } else {
-              console.warn('⚠️ Unusual WAV header, but proceeding...');
+              console.log('✅ Valid WAV file created');
             }
+            
+            // Cleanup temp files
+            try { fs.unlinkSync(inputFile); } catch {}
+            try { fs.unlinkSync(outputFile); } catch {}
+            
+            resolve(wavBuffer);
+            
+          } catch (readError) {
+            console.error('❌ Failed to read output file:', readError);
+            try { fs.unlinkSync(inputFile); } catch {}
+            try { fs.unlinkSync(outputFile); } catch {}
+            reject(readError);
           }
-          
-          resolve(wavBuffer);
         })
-        .pipe();
-      
-      // Collect output data
-      stream.on('data', (chunk: Buffer) => {
-        chunks.push(chunk);
-      });
-      
-      // Write WebM data to FFmpeg stdin
-      stream.end(webmBuffer);
-      
+        .save(outputFile);
+        
     } catch (error) {
       console.error('❌ Conversion setup error:', error);
       reject(error);
