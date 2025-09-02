@@ -94,7 +94,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Test NOWPayments API Status
   app.get('/api/payment/test-nowpayments', async (req, res) => {
-    const API_KEY = 'WK9A0E8-N2C435K-PC4PQA7-ZJ2E7CH';
+    const API_KEY = process.env.NOWPAYMENTS_API_KEY;
+    
+    if (!API_KEY) {
+      return res.status(500).json({ error: 'NOWPAYMENTS_API_KEY not found in environment variables' });
+    }
     
     console.log('=== TESTING NOWPAYMENTS API STATUS ===');
     
@@ -134,9 +138,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/payment/create-crypto-payment', async (req, res) => {
     console.log('=== CRYPTO PAYMENT REQUEST STARTED ===');
     
-    const API_KEY = 'WK9A0E8-N2C435K-PC4PQA7-ZJ2E7CH';
+    const API_KEY = process.env.NOWPAYMENTS_API_KEY;
     
-    console.log('Using NOWPayments API Key from user');
+    if (!API_KEY) {
+      return res.status(500).json({ error: 'NOWPAYMENTS_API_KEY not found in environment variables' });
+    }
+    
+    console.log('Using NOWPayments API Key from environment');
 
     try {
       // First test if API key works with status endpoint
@@ -280,8 +288,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/payment/create-shopier-payment', async (req, res) => {
     console.log('=== SHOPIER PAYMENT REQUEST STARTED ===');
     
-    const API_KEY = '7311fcb8508b668d72df3f1fd22c0451';
-    const API_SECRET = 'abc8145ed90f69218c7402a70cf490d0';
+    const API_KEY = process.env.SHOPIER_API_KEY;
+    const API_SECRET = process.env.SHOPIER_API_SECRET;
+    
+    if (!API_KEY || !API_SECRET) {
+      return res.status(500).json({ error: 'SHOPIER_API_KEY or SHOPIER_API_SECRET not found in environment variables' });
+    }
     
     try {
       const { userId, userEmail, userName } = req.body;
@@ -368,7 +380,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log('=== SHOPIER CALLBACK RECEIVED ===');
     console.log('Callback data:', JSON.stringify(req.body, null, 2));
     
-    const API_SECRET = 'abc8145ed90f69218c7402a70cf490d0';
+    const API_SECRET = process.env.SHOPIER_API_SECRET;
+    
+    if (!API_SECRET) {
+      return res.status(500).json({ error: 'SHOPIER_API_SECRET not found in environment variables' });
+    }
     
     try {
       const { 
