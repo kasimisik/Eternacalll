@@ -20,6 +20,13 @@ async function textToSpeechElevenLabs(text: string): Promise<Buffer | null> {
   try {
     const apiKey = process.env.ELEVENLABS_API_KEY_V3 || process.env.ELEVENLABS_API_KEY_V2 || process.env.ELEVENLABS_API_KEY_NEW || process.env.ELEVENLABS_API_KEY;
     
+    console.log("🔍 ElevenLabs API Key kontrolü:", apiKey ? 'API Key bulundu' : 'API Key bulunamadı');
+    console.log("🔍 Kullanılan API Key tipi:", 
+      process.env.ELEVENLABS_API_KEY_V3 ? 'V3' : 
+      process.env.ELEVENLABS_API_KEY_V2 ? 'V2' : 
+      process.env.ELEVENLABS_API_KEY_NEW ? 'NEW' : 
+      process.env.ELEVENLABS_API_KEY ? 'OLD' : 'YOK');
+    
     if (!apiKey) {
       console.log("⚠️ ElevenLabs API Key bulunamadı - Azure fallback devre dışı");
       return null;
@@ -27,6 +34,11 @@ async function textToSpeechElevenLabs(text: string): Promise<Buffer | null> {
 
     // Kullanıcının belirlediği en iyi kadın sesi
     const voiceId = "aEJD8mYP0nuof1XHShVY"; // En iyi kadın sesi
+    
+    console.log("🔍 ElevenLabs Request details:");
+    console.log("  Voice ID:", voiceId);
+    console.log("  Text:", text.substring(0, 50) + "...");
+    console.log("  API Key başlangıcı:", apiKey.substring(0, 8) + "...");
     
     const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
       method: 'POST',
