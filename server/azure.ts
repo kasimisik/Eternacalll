@@ -193,6 +193,11 @@ export async function speechToText(audioBuffer: Buffer): Promise<string | null> 
       return "Mock konuşma metni"; // Mock metin
     }
     
+    console.log('🔍 Azure STT başlatılıyor...');
+    console.log(`📊 Audio buffer: ${audioBuffer.length} bytes`);
+    console.log(`🔑 Azure Key: ${process.env.AZURE_SPEECH_KEY ? 'EXISTS' : 'MISSING'}`);
+    console.log(`🌍 Azure Region: ${process.env.AZURE_SPEECH_REGION || 'eastus'}`);
+    
     // WebM'i WAV'a çevir
     console.log('🔄 Converting WebM to WAV...');
     const wavBuffer = await convertWebMToWav(audioBuffer);
@@ -204,38 +209,45 @@ export async function speechToText(audioBuffer: Buffer): Promise<string | null> 
     );
 
     speechConfig.speechRecognitionLanguage = "tr-TR";
-    speechConfig.enableDictation();
     
-    // Debug: Connection test
-    console.log('🔗 Azure STT connection test...');
-    console.log(`📍 Region: ${process.env.AZURE_SPEECH_REGION || 'eastus'}`);
-    console.log(`🔑 API Key exists: ${!!process.env.AZURE_SPEECH_KEY}`);
+    console.log('🎛️ Azure SDK Configuration...');
+    console.log(`📋 Language: ${speechConfig.speechRecognitionLanguage}`);
     
-    // Azure için özel audio format tanımla
-    const audioFormat = sdk.AudioStreamFormat.getWaveFormatPCM(16000, 16, 1);
-    const pushStream = sdk.AudioInputStream.createPushStream(audioFormat);
+    // Basit audio stream (format belirtmeden)
+    console.log('🎵 Creating audio stream...');
+    const pushStream = sdk.AudioInputStream.createPushStream();
     pushStream.write(wavBuffer);
     pushStream.close();
+    console.log('✅ Audio stream created');
 
     const audioConfig = sdk.AudioConfig.fromStreamInput(pushStream);
     const recognizer = new sdk.SpeechRecognizer(speechConfig, audioConfig);
 
     return new Promise((resolve, reject) => {
+      console.log('🔄 Starting recognition...');
+      
       recognizer.recognizeOnceAsync(
         (result: sdk.SpeechRecognitionResult) => {
-          if (result.reason === sdk.ResultReason.RecognizedSpeech) {
-            console.log(`✅ STT completed: "${result.text}"`);
+          console.log(`📤 Recognition completed with reason: ${result.reason}`);
+          console.log(`📝 Result text: "${result.text || 'EMPTY'}"`);
+          console.log(`❓ Error details: ${result.errorDetails || 'NONE'}`);
+          
+          if (result.reason === sdk.ResultReason.RecognizedSpeech && result.text) {
+            console.log(`✅ STT SUCCESS: "${result.text}"`);
             resolve(result.text);
+          } else if (result.reason === sdk.ResultReason.NoMatch) {
+            console.log(`⚠️ NO MATCH: Azure couldn't detect speech in audio`);
+            console.log(`🎤 Tip: Speak louder, clearer, or check microphone`);
+            resolve("Azure ses tanıyamadı - lütfen daha net konuşun");
           } else {
             const errorMsg = result.errorDetails || `Recognition failed with reason: ${result.reason}`;
-            console.error(`❌ STT failed: ${errorMsg}`);
-            console.error(`STT Result reason: ${result.reason}`);
+            console.error(`❌ STT FAILED: ${errorMsg}`);
             resolve(null);
           }
           recognizer.close();
         },
         (error: any) => {
-          console.error("❌ STT error:", error);
+          console.error("❌ STT ERROR:", error);
           recognizer.close();
           reject(error);
         }
