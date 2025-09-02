@@ -165,15 +165,16 @@ export function InteractiveVoiceAssistant({ className }: InteractiveVoiceAssista
       };
 
       audio.onended = () => {
-        console.log("Asistan konuşmayı bitirdi. Şimdi sıra kullanıcıda.");
+        console.log("Asistan konuşmayı bitirdi. Otomatik dinleme başlatılıyor...");
         setIsAssistantSpeaking(false);
-        setButtonText("Dinliyorum... Konuşun");
+        setButtonText("Hazırlanıyor...");
         URL.revokeObjectURL(audioUrl);
         
         // PDF'deki öneriye göre: Otomatik olarak dinlemeye geçiş
         setTimeout(() => {
+          setButtonText("Dinliyorum... Konuşun");
           startRecording();
-        }, 500); // Kısa bir bekleme süresi
+        }, 800); // Kullanıcının hazırlanması için biraz daha zaman
       };
 
       audio.onerror = () => {
@@ -235,10 +236,10 @@ export function InteractiveVoiceAssistant({ className }: InteractiveVoiceAssista
           <div className="flex justify-center">
             <div 
               className={cn(
-                "w-32 h-32 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 transition-all duration-300 ease-in-out",
-                isAssistantSpeaking && "shadow-2xl shadow-blue-500/50 scale-110 animate-pulse",
-                isRecording && "shadow-lg shadow-red-500/50 scale-105",
-                isProcessing && "shadow-lg shadow-yellow-500/50 animate-spin"
+                "w-32 h-32 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 transition-all duration-500 ease-in-out",
+                isAssistantSpeaking && "shadow-2xl shadow-blue-500/60 scale-110 animate-pulse bg-gradient-to-br from-blue-600 to-purple-700",
+                isRecording && "shadow-xl shadow-red-500/60 scale-105 bg-gradient-to-br from-red-500 to-pink-600",
+                isProcessing && "shadow-lg shadow-yellow-500/50 animate-spin bg-gradient-to-br from-yellow-500 to-orange-600"
               )}
               data-testid="avatar-assistant"
             >
