@@ -1,27 +1,30 @@
 import * as sdk from "microsoft-cognitiveservices-speech-sdk";
 
-// Bu fonksiyon, metni sese dönüştürüp ses verisini Buffer olarak döndürür
+// Bu fonksiyon, Gemini'den gelen metni direkt ElevenLabs ile seslendiriyor
 export async function textToSpeech(text: string): Promise<Buffer | null> {
-  // Önce ElevenLabs dene
-  console.log("🔄 ElevenLabs TTS deneniyor...");
+  console.log("🎯 Gemini text'ini direkt ElevenLabs ile seslendiriyoruz...");
+  
+  // Sadece ElevenLabs kullanıyoruz - Azure yok
   const elevenLabsResult = await textToSpeechElevenLabs(text);
   
   if (elevenLabsResult) {
+    console.log("✅ ElevenLabs başarılı - ses döndürülüyor");
     return elevenLabsResult;
   } else {
-    // ElevenLabs başarısız olursa Azure'nun en iyi sesi
-    console.log("🔄 ElevenLabs TTS başarısız, Azure en iyi kadın sesi aktif...");
-    return await textToSpeechAzure(text);
+    console.error("❌ ElevenLabs başarısız - ses üretilemedi");
+    return null;
   }
 }
 
 // ElevenLabs Text-to-Speech (öncelikli)
 async function textToSpeechElevenLabs(text: string): Promise<Buffer | null> {
   try {
-    const apiKey = process.env.ELEVENLABS_API_KEY_V3 || process.env.ELEVENLABS_API_KEY_V2 || process.env.ELEVENLABS_API_KEY_NEW || process.env.ELEVENLABS_API_KEY;
+    // Ücretli API anahtarını önceleyerek dene
+    const apiKey = process.env.ELEVENLABS_API_KEY_PAID || process.env.ELEVENLABS_API_KEY_V3 || process.env.ELEVENLABS_API_KEY_V2 || process.env.ELEVENLABS_API_KEY_NEW || process.env.ELEVENLABS_API_KEY;
     
     console.log("🔍 ElevenLabs API Key kontrolü:", apiKey ? 'API Key bulundu' : 'API Key bulunamadı');
     console.log("🔍 Kullanılan API Key tipi:", 
+      process.env.ELEVENLABS_API_KEY_PAID ? 'PAID' :
       process.env.ELEVENLABS_API_KEY_V3 ? 'V3' : 
       process.env.ELEVENLABS_API_KEY_V2 ? 'V2' : 
       process.env.ELEVENLABS_API_KEY_NEW ? 'NEW' : 
@@ -49,14 +52,13 @@ async function textToSpeechElevenLabs(text: string): Promise<Buffer | null> {
       },
       body: JSON.stringify({
         text: text,
-        model_id: 'eleven_multilingual_v2',
+        model_id: 'eleven_turbo_v2_5', // Daha hızlı model
         voice_settings: {
-          stability: 0.75,
-          similarity_boost: 0.85,
-          style: 0.3,
+          stability: 0.8,
+          similarity_boost: 0.9,
+          style: 0.4,
           use_speaker_boost: true
-        },
-        pronunciation_dictionary_locators: []
+        }
       }),
     });
 
