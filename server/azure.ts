@@ -23,8 +23,8 @@ async function textToSpeechElevenLabs(text: string): Promise<Buffer | null> {
       return null;
     }
 
-    // Türkçe için optimize edilmiş multilingual ses modeli
-    const voiceId = "pNInz6obpgDQGcFmaJgB"; // Adam voice - multilingual
+    // Türkçe için optimize edilmiş güzel kadın sesi - multilingual
+    const voiceId = "21m00Tcm4TlvDq8ikWAM"; // Rachel voice - multilingual, çok doğal kadın sesi
     
     const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
       method: 'POST',
@@ -37,9 +37,9 @@ async function textToSpeechElevenLabs(text: string): Promise<Buffer | null> {
         text: text,
         model_id: 'eleven_multilingual_v2',
         voice_settings: {
-          stability: 0.8,
-          similarity_boost: 0.9,
-          style: 0.2,
+          stability: 0.75,
+          similarity_boost: 0.85,
+          style: 0.3,
           use_speaker_boost: true
         },
         pronunciation_dictionary_locators: []
@@ -77,8 +77,8 @@ async function textToSpeechAzure(text: string): Promise<Buffer | null> {
       process.env.AZURE_SPEECH_REGION || "eastus"
     );
     
-    // Türkiye için yüksek kaliteli, doğal erkek sesi
-    speechConfig.speechSynthesisVoiceName = "tr-TR-AhmetNeural"; 
+    // Türkiye için yüksek kaliteli, doğal kadın sesi
+    speechConfig.speechSynthesisVoiceName = "tr-TR-EmelNeural"; 
 
     // Ses sentezleyiciyi oluştur
     const speechSynthesizer = new sdk.SpeechSynthesizer(speechConfig);
