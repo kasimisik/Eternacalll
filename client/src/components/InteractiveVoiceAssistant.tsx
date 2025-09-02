@@ -227,7 +227,7 @@ export function InteractiveVoiceAssistant({ className }: InteractiveVoiceAssista
         <CardHeader>
           <CardTitle className="text-2xl">🤖 AI Asistanınız</CardTitle>
           <CardDescription>
-            Butona basılı tutarak konuşun, asistanınız size cevap verecek
+            Benimle konuşmak için hazırım
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-8">
@@ -283,15 +283,6 @@ export function InteractiveVoiceAssistant({ className }: InteractiveVoiceAssista
               {buttonText}
             </Button>
 
-            {/* Instructions */}
-            <div className="text-sm text-muted-foreground space-y-2">
-              <p>💡 <strong>Nasıl kullanılır:</strong></p>
-              <ul className="text-xs space-y-1">
-                <li>• Butona basılı tutarak konuşun</li>
-                <li>• Konuşmayı bitirince butonu bırakın</li>
-                <li>• Asistan konuşurken durdurmak için tıklayın</li>
-              </ul>
-            </div>
           </div>
         </CardContent>
       </Card>
