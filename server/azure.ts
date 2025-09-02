@@ -1,30 +1,31 @@
 import * as sdk from "microsoft-cognitiveservices-speech-sdk";
 
-// Bu fonksiyon, metni sese dönüştürüp ses verisini Buffer olarak döndürür
+// Bu fonksiyon, metni sese dönüştürüp ses verisini Buffer olarak döndürür (Sadece ElevenLabs)
 export async function textToSpeech(text: string): Promise<Buffer | null> {
-  // ElevenLabs'ı önceleyip daha doğal ses için kullan
+  // Sadece ElevenLabs kullanıyoruz - Azure fallback yok
+  console.log("🔄 ElevenLabs TTS (sadece ElevenLabs modu)...");
   const elevenLabsResult = await textToSpeechElevenLabs(text);
+  
   if (elevenLabsResult) {
     return elevenLabsResult;
+  } else {
+    console.error("❌ ElevenLabs TTS başarısız - Azure fallback devre dışı");
+    return null;
   }
-
-  // ElevenLabs başarısız olursa Azure TTS'ye geç
-  console.log("🔄 ElevenLabs TTS failed, trying Azure TTS...");
-  return await textToSpeechAzure(text);
 }
 
 // ElevenLabs Text-to-Speech (öncelikli)
 async function textToSpeechElevenLabs(text: string): Promise<Buffer | null> {
   try {
-    const apiKey = process.env.ELEVENLABS_API_KEY_V2 || process.env.ELEVENLABS_API_KEY_NEW || process.env.ELEVENLABS_API_KEY;
+    const apiKey = process.env.ELEVENLABS_API_KEY_V3 || process.env.ELEVENLABS_API_KEY_V2 || process.env.ELEVENLABS_API_KEY_NEW || process.env.ELEVENLABS_API_KEY;
     
     if (!apiKey) {
-      console.log("⚠️ ElevenLabs API Key bulunamadı - Azure TTS'ye geçiliyor");
+      console.log("⚠️ ElevenLabs API Key bulunamadı - Azure fallback devre dışı");
       return null;
     }
 
-    // Türkçe için en iyi kadın sesi - multilingual ve çok doğal
-    const voiceId = "EXAVITQu4vr4xnSDxMaL"; // Bella voice - multilingual, çok doğal kadın sesi
+    // Kullanıcının belirlediği en iyi kadın sesi
+    const voiceId = "aEJD8mYP0nuof1XHShVY"; // En iyi kadın sesi
     
     const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
       method: 'POST',
