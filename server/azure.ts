@@ -23,53 +23,70 @@ export async function textToSpeech(text: string): Promise<Buffer | null> {
 // ElevenLabs devre dışı bırakıldı - Sadece Azure TTS kullanılıyor
 
 /**
- * ADIM 1: AKILLI SSML ÜRETİCİ FONKSİYONU
- * Anthropic'ten gelen düz metni analiz edip Azure'un anlayacağı zengin SSML formatına dönüştürür.
- * Bu, kaliteyi artıran sihirli adımdır (PDF'den uyarlandı).
+ * GELİŞMİŞ SSML ORKESTRA ŞEFİ FONKSİYONU (PDF'den)
+ * Bu fonksiyon, metni analiz ederek ve SSML'in prosodi özelliklerini
+ * kullanarak Azure sesini insana benzer bir doğallıkla konuşturur.
+ * Robotik hissiyatı ortadan kaldırmayı hedefler.
  */
 function createSSMLForText(text: string, voiceName: string = "tr-TR-EmelNeural"): string {
-  let ssmlBody = text;
+  // Kural 1: Cümleleri doğal duraksamalarla böl
+  // Virgüllerden sonra kısa, cümle sonlarından sonra biraz daha uzun nefes payı bırak.
+  let processedText = text.replace(/,/g, '<break time="250ms"/>');
   
-  // Kural 1: Neşeli karşılama ve tebrikler
-  const positiveWords = ["merhaba", "hoş geldin", "harika", "mükemmel", "tebrikler", "başladık", "hazırım"];
-  if (positiveWords.some(word => text.toLowerCase().includes(word))) {
-    // Neşeli bir tonla söylet
-    ssmlBody = `<mstts:express-as style="cheerful">${text}</mstts:express-as>`;
-  }
-  // Kural 2: Soruları daha doğal hale getirme
-  else if (text.includes('?')) {
-    // Sorunun son kelimesinin perdesini hafifçe yükselterek doğal bir soru tonu ver
-    const words = text.split(' ');
-    if (words.length >= 3) {
-      const questionPart = words.slice(-3).join(' '); // Son 3 kelimeyi al
-      const mainPart = words.slice(0, -3).join(' ');
-      ssmlBody = `${mainPart} <prosody pitch="+15%">${questionPart}</prosody>`;
-    } else {
-      ssmlBody = `<prosody pitch="+10%">${text}</prosody>`;
+  // Başlangıç SSML yapısını oluştur
+  let ssmlBody = "";
+  
+  // Cümleleri "." veya "?"'ye göre ayır ve her birini ayrı ayrı işle
+  const sentences = processedText.split(/([.?!])/).filter(s => s.trim().length > 0);
+  
+  for (let i = 0; i < sentences.length; i += 2) {
+    const sentence = sentences[i];
+    const punctuation = sentences[i + 1] || '';
+    const fullSentence = (sentence + punctuation).trim();
+    
+    if (!fullSentence) continue;
+    
+    let processedSentence = fullSentence;
+    
+    // Kural 2: Soruları doğal bir tonlama ile sor
+    // Soru cümlelerinin sonuna doğru ses perdesini hafifçe yükselt.
+    if (fullSentence.includes('?')) {
+      // Sorunun kendisini daha yavaş ve net sor, sonunu yükselt
+      processedSentence = `<prosody rate="-5%" pitch="+8%">${fullSentence}</prosody>`;
     }
+    
+    // Kural 3: Heyecan veya olumlu ifadelerde tonu ve hızı ayarla
+    const positiveWords = ["harika", "mükemmel", "tebrikler", "muhteşem", "elbette", "merhaba", "hoş geldin"];
+    if (positiveWords.some(word => fullSentence.toLowerCase().includes(word))) {
+      // Daha pozitif bir ton için sesi hafifçe incelt ve hızlandır
+      processedSentence = `<mstts:express-as style="cheerful"><prosody rate="+5%" pitch="+5%">${fullSentence}</prosody></mstts:express-as>`;
+    }
+    
+    // Kural 4: Önemli veya teknik terimleri yavaşlatarak vurgula
+    // Örneğin, tırnak içindeki kelimeleri daha yavaş ve net söyle
+    if (fullSentence.includes('"')) {
+      const parts = fullSentence.split('"');
+      if (parts.length >= 3) {
+        processedSentence = `${parts[0]} <prosody rate="-15%">"${parts[1]}"</prosody> ${parts[2]}`;
+      }
+    }
+    
+    ssmlBody += processedSentence + ' <break time="400ms"/> ';
   }
-  // Kural 3: Vurgu ekleme (Örnek: tırnak içindeki kelimeler)
-  else if (text.includes('"')) {
-    // Tırnak içindeki kelimeleri daha vurgulu yap
-    ssmlBody = text.replace(/"([^"]+)"/g, '<emphasis level="strong">$1</emphasis>');
-  }
-  // Kural 4: Önemli kelimeler için vurgu
-  else if (text.toLowerCase().includes('önemli') || text.toLowerCase().includes('dikkat')) {
-    ssmlBody = text.replace(/(önemli|dikkat)/gi, '<emphasis level="moderate">$1</emphasis>');
-  }
-
+  
   // Final SSML'i oluştur
   const ssmlString = `
     <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis"
            xmlns:mstts="http://www.w3.org/2001/mstts" xml:lang="tr-TR">
       <voice name="${voiceName}">
-        <prosody rate="0.95" pitch="+3%">
+        <prosody rate="1.0" pitch="medium">
           ${ssmlBody}
         </prosody>
       </voice>
     </speak>
   `;
   
+  console.log("✅ Gelişmiş SSML oluşturuldu - Doğal tonlama aktif");
   return ssmlString;
 }
 

@@ -161,20 +161,15 @@ Mevcut Adım: ${userState.currentStep}
   private getStep1Prompt(userState: UserCreationState, userInput: string): string {
     const lowerInput = userInput.toLowerCase();
     
-    // İlk kez geliyorsa karşılama yap
+    // İlk kez geliyorsa HEMEN karşılama yap (bekletme yok)
     if (lowerInput.includes('merhaba') || lowerInput.includes('selam') || userInput.length < 10) {
       return `
-Kullanıcı ilk kez geldi ya da basit selamlama yaptı: "${userInput}"
+Kullanıcı ilk kez geldi: "${userInput}"
 
-CEVAP VER:
-"Merhaba ${userState.agentPurpose ? '' : 'Değerli Kullanıcı'}, ben Eternacall. Size özel AI sesli asistanınızı tasarlamak için buradayım. 
+HEMEN CEVAP VER:
+"Merhaba! Ben Eternacall, hoş geldiniz! Size özel AI asistanınızı tasarlayacağım. 
 
-İlk olarak, bu asistanın ana görevini belirleyelim. Ne tür bir asistan istiyorsunuz? Örneğin:
-- Müşteri hizmetleri için mi?
-- Kişisel yardımcı olarak mı? 
-- İş yerinizdeki ziyaretçiler için mi?
-
-Lütfen bana asistanınızın ne yapmasını istediğinizi söyleyin."
+Hemen başlayalım - ne tür bir asistan istiyorsunuz?"
       `;
     }
 

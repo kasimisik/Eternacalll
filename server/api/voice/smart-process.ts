@@ -36,20 +36,32 @@ export const smartProcessMiddleware = upload.single('audio');
 
 // Track active requests per user to prevent multiple simultaneous processing
 const activeRequests = new Map<string, boolean>();
+const requestStartTimes = new Map<string, number>();
 
 // Smart Voice Processing with Azure -> Anthropic -> ElevenLabs orchestration
 export async function smartProcess(req: Request, res: Response) {
   try {
     const userId = req.headers['x-user-id'] as string;
     
-    // Check if user already has an active request
+    // GÜÇLÜ ÇAKıŞMA KONTROL SİSTEMİ - Aynı kullanıcı aynı anda birden fazla istek gönderemez
     if (activeRequests.get(userId)) {
-      console.log('⚠️ User already has active voice request, skipping...');
-      return res.status(429).json({ error: 'Already processing voice request' });
+      console.log('⚠️ Kullanıcı zaten aktif sesli istek işliyor, tekrar geldi');
+      
+      // 8 saniye geçtiyse zorla temizle (hızlandırıldı)
+      const currentTime = Date.now();
+      const userStartTime = requestStartTimes.get(userId);
+      if (userStartTime && (currentTime - userStartTime) > 8000) {
+        console.log('⚠️ 8 saniye timeout - zorla temizliyor');
+        activeRequests.delete(userId);
+        requestStartTimes.delete(userId);
+      } else {
+        return res.status(429).json({ error: 'Lütfen önceki işlemin bitmesini bekleyin' });
+      }
     }
     
-    // Mark user as having active request
+    // Mark user as having active request + zaman damgası
     activeRequests.set(userId, true);
+    requestStartTimes.set(userId, Date.now());
     
     console.log('=== SMART VOICE ORCHESTRATION STARTED ===');
     
@@ -119,6 +131,7 @@ export async function smartProcess(req: Request, res: Response) {
     
     // Clear active request flag
     activeRequests.delete(userId);
+    requestStartTimes.delete(userId);
     
     return res.send(audioBuffer);
 
@@ -129,6 +142,7 @@ export async function smartProcess(req: Request, res: Response) {
     const userId = req.headers['x-user-id'] as string;
     if (userId) {
       activeRequests.delete(userId);
+      requestStartTimes.delete(userId);
     }
     
     return res.status(500).json({ 
@@ -156,11 +170,11 @@ async function azureSpeechToText(audioBuffer: Buffer): Promise<string | null> {
     const speechConfig = speechSdk.SpeechConfig.fromSubscription(speechKey, speechRegion);
     speechConfig.speechRecognitionLanguage = "tr-TR"; // Turkish recognition
     
-    // Optimized recognition settings for speed
-    speechConfig.setProperty(speechSdk.PropertyId.SpeechServiceConnection_InitialSilenceTimeoutMs, "3000");
-    speechConfig.setProperty(speechSdk.PropertyId.SpeechServiceConnection_EndSilenceTimeoutMs, "1000");
-    speechConfig.setProperty(speechSdk.PropertyId.Speech_SegmentationSilenceTimeoutMs, "1000");
-    speechConfig.setProperty(speechSdk.PropertyId.SpeechServiceResponse_RequestDetailedResultTrueFalse, "true");
+    // HIZ İÇİN OPTİMİZE EDİLMİŞ AYARLAR (DAHA HIZLI)
+    speechConfig.setProperty(speechSdk.PropertyId.SpeechServiceConnection_InitialSilenceTimeoutMs, "1500"); // 3000 -> 1500
+    speechConfig.setProperty(speechSdk.PropertyId.SpeechServiceConnection_EndSilenceTimeoutMs, "500");      // 1000 -> 500
+    speechConfig.setProperty(speechSdk.PropertyId.Speech_SegmentationSilenceTimeoutMs, "500");           // 1000 -> 500
+    speechConfig.setProperty(speechSdk.PropertyId.SpeechServiceResponse_RequestDetailedResultTrueFalse, "false"); // true -> false (daha hızlı)
     
     // Use push stream for better format compatibility
     const pushStream = speechSdk.AudioInputStream.createPushStream();
