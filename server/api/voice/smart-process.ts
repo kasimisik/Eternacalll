@@ -156,10 +156,10 @@ async function azureSpeechToText(audioBuffer: Buffer): Promise<string | null> {
     const speechConfig = speechSdk.SpeechConfig.fromSubscription(speechKey, speechRegion);
     speechConfig.speechRecognitionLanguage = "tr-TR"; // Turkish recognition
     
-    // Improved recognition settings
-    speechConfig.setProperty(speechSdk.PropertyId.SpeechServiceConnection_InitialSilenceTimeoutMs, "8000");
-    speechConfig.setProperty(speechSdk.PropertyId.SpeechServiceConnection_EndSilenceTimeoutMs, "2000");
-    speechConfig.setProperty(speechSdk.PropertyId.Speech_SegmentationSilenceTimeoutMs, "2000");
+    // Optimized recognition settings for speed
+    speechConfig.setProperty(speechSdk.PropertyId.SpeechServiceConnection_InitialSilenceTimeoutMs, "3000");
+    speechConfig.setProperty(speechSdk.PropertyId.SpeechServiceConnection_EndSilenceTimeoutMs, "1000");
+    speechConfig.setProperty(speechSdk.PropertyId.Speech_SegmentationSilenceTimeoutMs, "1000");
     speechConfig.setProperty(speechSdk.PropertyId.SpeechServiceResponse_RequestDetailedResultTrueFalse, "true");
     
     // Convert WebM to WAV if needed
@@ -271,9 +271,7 @@ async function convertWebMToWav(webmBuffer: Buffer): Promise<Buffer> {
     const inputPath = join(tmpdir(), `input-${Date.now()}.webm`);
     const outputPath = join(tmpdir(), `output-${Date.now()}.wav`);
     
-    console.log('🔧 Starting WebM to WAV conversion...');
-    console.log('📁 Input buffer size:', webmBuffer.length);
-    console.log('📂 Temp paths:', { inputPath, outputPath });
+    // Optimize conversion for speed
     
     try {
       // Write WebM buffer to temporary file
@@ -291,26 +289,17 @@ async function convertWebMToWav(webmBuffer: Buffer): Promise<Buffer> {
         .audioFrequency(16000) // 16kHz for Azure Speech
         .audioChannels(1)      // Mono for Azure Speech
         .audioCodec('pcm_s16le') // PCM 16-bit little-endian
-        .on('start', (commandLine) => {
-          console.log('🎬 FFmpeg started:', commandLine);
+        .on('start', () => {
+          // Silent for speed
         })
-        .on('progress', (progress) => {
-          console.log('📊 FFmpeg progress:', progress.percent + '% done');
+        .on('progress', () => {
+          // Silent for speed
         })
         .on('end', async () => {
           try {
-            console.log('✅ FFmpeg conversion completed');
-            
-            // Read converted WAV file
+            // Read converted WAV file (silent for speed)
             const fs = await import('fs');
             const wavBuffer = fs.readFileSync(outputPath);
-            console.log('📁 WAV buffer size:', wavBuffer.length);
-            
-            // Verify WAV header
-            if (wavBuffer.length > 12) {
-              const header = wavBuffer.subarray(0, 12);
-              console.log('🔍 WAV header:', header.toString('ascii', 0, 4), header.toString('ascii', 8, 12));
-            }
             
             // Clean up temporary files
             await unlinkAsync(inputPath).catch(() => {});

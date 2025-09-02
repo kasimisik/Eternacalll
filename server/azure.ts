@@ -22,25 +22,12 @@ async function textToSpeechElevenLabs(text: string): Promise<Buffer | null> {
     // Verdiğiniz API anahtarını kullan (önce V3, sonra standart)
     const apiKey = process.env.ELEVENLABS_API_KEY_V3 || process.env.ELEVENLABS_API_KEY_V2 || process.env.ELEVENLABS_API_KEY_NEW || process.env.ELEVENLABS_API_KEY;
     
-    console.log("🔍 ElevenLabs API Key kontrolü:", apiKey ? 'API Key bulundu' : 'API Key bulunamadı');
-    
     if (!apiKey) {
-      console.log("⚠️ ElevenLabs API Key bulunamadı");
       return null;
     }
-    
-    const keyType = process.env.ELEVENLABS_API_KEY_V3 ? 'V3' : 
-                    process.env.ELEVENLABS_API_KEY_V2 ? 'V2' : 
-                    process.env.ELEVENLABS_API_KEY_NEW ? 'new' : 'standart';
-    console.log("🔍 ElevenLabs", keyType, "API anahtarı kullanılıyor");
 
     // Kullanıcının belirlediği en iyi kadın sesi
-    const voiceId = "aEJD8mYP0nuof1XHShVY"; // En iyi kadın sesi
-    
-    console.log("🔍 ElevenLabs Request details:");
-    console.log("  Voice ID:", voiceId);
-    console.log("  Text:", text.substring(0, 50) + "...");
-    console.log("  API Key başlangıcı:", apiKey.substring(0, 8) + "...");
+    const voiceId = "aEJD8mYP0nuof1XHShVY";
     
     const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream`, {
       method: 'POST',
@@ -51,12 +38,12 @@ async function textToSpeechElevenLabs(text: string): Promise<Buffer | null> {
       },
       body: JSON.stringify({
         text: text,
-        model_id: 'eleven_multilingual_v2', // Stable model
+        model_id: 'eleven_turbo_v2', // Fastest model for speed
         voice_settings: {
-          stability: 0.8,
-          similarity_boost: 0.9,
-          style: 0.4,
-          use_speaker_boost: true
+          stability: 0.7,
+          similarity_boost: 0.8,
+          style: 0.3,
+          use_speaker_boost: false // Disable for speed
         }
       }),
     });
