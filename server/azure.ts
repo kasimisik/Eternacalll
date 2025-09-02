@@ -77,20 +77,33 @@ async function textToSpeechAzure(text: string): Promise<Buffer | null> {
       process.env.AZURE_SPEECH_REGION || "eastus"
     );
     
-    // Türkiye için yüksek kaliteli, doğal kadın sesi
-    speechConfig.speechSynthesisVoiceName = "tr-TR-EmelNeural"; 
+    // Türkiye için en doğal ve duygusal kadın sesi
+    speechConfig.speechSynthesisVoiceName = "tr-TR-SerapNeural"; 
 
     // Ses sentezleyiciyi oluştur
     const speechSynthesizer = new sdk.SpeechSynthesizer(speechConfig);
 
+    // SSML kullanarak daha doğal ve duygusal konuşma
+    const ssmlText = `
+      <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="tr-TR">
+        <voice name="tr-TR-SerapNeural">
+          <prosody rate="0.9" pitch="+5%">
+            <express-as style="friendly" styledegree="2">
+              ${text}
+            </express-as>
+          </prosody>
+        </voice>
+      </speak>
+    `;
+
     return new Promise((resolve, reject) => {
-      speechSynthesizer.speakTextAsync(
-        text,
+      speechSynthesizer.speakSsmlAsync(
+        ssmlText,
         (result) => {
           if (result.reason === sdk.ResultReason.SynthesizingAudioCompleted) {
             // Ses verisini Buffer'a çevirip geri döndür
             const audioData = Buffer.from(result.audioData);
-            console.log(`✅ Azure TTS completed: "${text}"`);
+            console.log(`✅ Azure TTS (Serap Neural) completed: "${text}"`);
             resolve(audioData);
           } else {
             console.error(`❌ Azure TTS failed: ${result.errorDetails}`);
