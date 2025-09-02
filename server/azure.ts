@@ -38,12 +38,12 @@ async function textToSpeechElevenLabs(text: string): Promise<Buffer | null> {
       },
       body: JSON.stringify({
         text: text,
-        model_id: 'eleven_turbo_v2', // Fastest model for speed
+        model_id: 'eleven_multilingual_v2', // Better for Turkish
         voice_settings: {
-          stability: 0.7,
-          similarity_boost: 0.8,
-          style: 0.3,
-          use_speaker_boost: false // Disable for speed
+          stability: 0.8,
+          similarity_boost: 0.9,
+          style: 0.4,
+          use_speaker_boost: true // Better Turkish pronunciation
         }
       }),
     });
