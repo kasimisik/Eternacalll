@@ -6,14 +6,14 @@ import { GoogleGenAI } from "@google/genai";
 //   - do not change this unless explicitly requested by the user
 
 // This API key is from Gemini Developer API Key, not vertex AI API Key
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY || "" });
 
 // Konuşma geçmişini saklamak için basit bir hafıza sistemi
 const conversationMemory = new Map<string, Array<{role: 'user' | 'assistant', content: string}>>();
 
 export async function getAIResponse(userInput: string, userId?: string): Promise<string> {
     try {
-        if (!process.env.GEMINI_API_KEY) {
+        if (!process.env.GOOGLE_AI_API_KEY) {
             console.warn("🤖 Gemini Mock: User said:", userInput);
             const mockResponses = [
                 "Anlıyorum, bu konu gerçekten ilginç. Peki bu durumla ilgili ne düşünüyorsun?",

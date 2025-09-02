@@ -7,7 +7,7 @@ import { users } from '../shared/schema';
 import { eq } from 'drizzle-orm';
 import crypto from 'crypto';
 import { textToSpeech } from './azure';
-import { getAIResponse } from './anthropic';
+import { getAIResponse } from './gemini';
 import { withSubscriptionCheck } from '../client/src/lib/subscription-check';
 import { NetGSMSipAgent, NetGSMConfig } from './netgsm-sip-agent';
 import { SipVoiceAgent } from './sip-voice-agent';
