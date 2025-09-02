@@ -36,18 +36,6 @@ export function Navigation() {
                     Dashboard
                   </button>
                 </Link>
-                <Link href="/voice-assistant">
-                  <button 
-                    className={`px-4 py-2 rounded-md transition-colors ${
-                      location === '/voice-assistant' 
-                        ? 'bg-primary text-primary-foreground' 
-                        : 'text-foreground hover:text-primary'
-                    }`}
-                    data-testid="button-voice-assistant"
-                  >
-                    🎤 Sesli Asistan
-                  </button>
-                </Link>
                 {CLERK_CONFIG.publishableKey ? (
                   <UserButton 
                     afterSignOutUrl="/"
