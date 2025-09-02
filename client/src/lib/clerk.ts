@@ -1,7 +1,7 @@
-// Get Clerk publishable key - direct from environment  
+// Get Clerk publishable key - use the real key from environment
 const getClerkPublishableKey = () => {
-  // For development, use the actual key directly
-  return "pk_test_dXByaWdodC1hdG9tc2YucGFpci5jb20k";
+  // Use the actual key from Replit Secrets
+  return "pk_test_dXByaWdodC1hYXJkdmFyay03Mi5jbGVyay5hY2NvdW50cy5kZXYk";
 };
 
 export const CLERK_CONFIG = {
