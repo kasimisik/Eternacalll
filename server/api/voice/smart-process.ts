@@ -82,10 +82,8 @@ export async function smartProcess(req: Request, res: Response) {
     const audioBuffer = await textToSpeech(aiTextResponse);
     
     if (!audioBuffer) {
-      console.log('⚠️ TTS failed, using mock audio response');
-      // Create a small mock audio buffer to prevent complete failure
-      const mockAudio = Buffer.alloc(1024, 0);
-      return res.status(200).send(mockAudio);
+      console.error('❌ Ses üretimi başarısız oldu');
+      return res.status(500).json({ error: 'Ses üretimi başarısız' });
     }
     
     console.log('✅ Text-to-Speech completed');

@@ -1,18 +1,19 @@
 import * as sdk from "microsoft-cognitiveservices-speech-sdk";
 
-// Bu fonksiyon, Gemini'den gelen metni direkt ElevenLabs ile seslendiriyor
+// Bu fonksiyon, AI yanıtını ses çıkışına dönüştürüyor (çalışan sistem)
 export async function textToSpeech(text: string): Promise<Buffer | null> {
-  console.log("🎯 Gemini text'ini direkt ElevenLabs ile seslendiriyoruz...");
+  console.log("🔊 AI yanıtını sesli çıkışa dönüştürüyoruz...");
   
-  // Sadece ElevenLabs kullanıyoruz - Azure yok
+  // Önce ElevenLabs dene, çalışmazsa Azure
   const elevenLabsResult = await textToSpeechElevenLabs(text);
   
   if (elevenLabsResult) {
-    console.log("✅ ElevenLabs başarılı - ses döndürülüyor");
+    console.log("✅ ElevenLabs sesi hazır");
     return elevenLabsResult;
   } else {
-    console.error("❌ ElevenLabs başarısız - ses üretilemedi");
-    return null;
+    // ElevenLabs çalışmıyor, Azure kullan
+    console.log("🔄 Azure TTS aktif - ses üretiliyor...");
+    return await textToSpeechAzure(text);
   }
 }
 
