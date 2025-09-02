@@ -165,16 +165,10 @@ export function InteractiveVoiceAssistant({ className }: InteractiveVoiceAssista
       };
 
       audio.onended = () => {
-        console.log("Asistan konuşmayı bitirdi. Otomatik dinleme başlatılıyor...");
+        console.log("Asistan konuşmayı bitirdi.");
         setIsAssistantSpeaking(false);
-        setButtonText("Hazırlanıyor...");
+        setButtonText("Konuşmak için Basılı Tutun");
         URL.revokeObjectURL(audioUrl);
-        
-        // PDF'deki öneriye göre: Otomatik olarak dinlemeye geçiş
-        setTimeout(() => {
-          setButtonText("Dinliyorum... Konuşun");
-          startRecording();
-        }, 800); // Kullanıcının hazırlanması için biraz daha zaman
       };
 
       audio.onerror = () => {

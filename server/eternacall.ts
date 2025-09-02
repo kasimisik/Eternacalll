@@ -117,11 +117,11 @@ export class EternacallSystem {
 Sakin, bilge, teşvik edici ve profesyonel bir karaktersin. 
 Kullanıcıların kendi sesli AI asistanlarını tasarlamalarına yardımcı oluyorsun.
 
-Her etkileşim kullanıcının projesini bir adım ileri taşımalı.
-Ses tonun her zaman sakin, net ve güven verici olmalı.
-Kullanıcı bir adımı tamamladığında olumlu ve teşvik edici ifadeler kullan.
+ÖNEMLİ: Kullanıcının her cevabını DİKKATLE OKUYUP ona göre ilerle. Aynı soruları tekrar sorma.
+Kullanıcının verdiği bilgileri KAYDET ve bir sonraki adıma geç.
 
 Kullanıcı Adı: ${username}
+Kullanıcının Son Girişi: "${userInput}"
 Mevcut Adım: ${userState.currentStep}
 
 `;
@@ -159,27 +159,59 @@ Mevcut Adım: ${userState.currentStep}
    * Step 1: Discovery and Purpose Definition
    */
   private getStep1Prompt(userState: UserCreationState, userInput: string): string {
-    if (!userState.agentPurpose) {
+    const lowerInput = userInput.toLowerCase();
+    
+    // İlk kez geliyorsa karşılama yap
+    if (lowerInput.includes('merhaba') || lowerInput.includes('selam') || userInput.length < 10) {
       return `
-Adım 1: Keşif ve Amaç Belirleme
+Kullanıcı ilk kez geldi ya da basit selamlama yaptı: "${userInput}"
 
-Karşılama: "Ben Eternacall. Size özel AI sesli asistanınızı tasarlamak için buradayım. Hazır olduğunuzda başlayalım."
+CEVAP VER:
+"Merhaba ${userState.agentPurpose ? '' : 'Değerli Kullanıcı'}, ben Eternacall. Size özel AI sesli asistanınızı tasarlamak için buradayım. 
 
-Şu anda Adım 1'desin: Asistanın temel görevini belirleme zamanı.
+İlk olarak, bu asistanın ana görevini belirleyelim. Ne tür bir asistan istiyorsunuz? Örneğin:
+- Müşteri hizmetleri için mi?
+- Kişisel yardımcı olarak mı? 
+- İş yerinizdeki ziyaretçiler için mi?
 
-Kullanıcının girdisi: "${userInput}"
-
-Eğer bu ilk etkileşimse, ona şu soruları sor:
-1. "İlk olarak, bu asistanın ana görevini belirleyelim. Örneğin, bir sanal resepsiyonist mi olacak, yoksa kişisel bir yardımcı mı?"
-2. "Peki bu asistan kiminle etkileşim kuracak? Sadece sizinle mi, yoksa müşterileriniz veya ekibinizle mi?"
-
-Eğer kullanıcı bu sorulara cevap verdiyse, verdiği bilgileri özetle ve Adım 2'ye geçeceğini belirt.
-"Anlaşıldı, asistanın görev tanımını netleştirdik. Şimdi ona bir kişilik verelim."
-
-YANIT VER:`;
+Lütfen bana asistanınızın ne yapmasını istediğinizi söyleyin."
+      `;
     }
 
-    return `Adım 1 zaten tamamlanmış. Kullanıcının amacı: ${userState.agentPurpose}. Adım 2'ye geç.`;
+    // Kullanıcı bir amaç belirttiyse
+    if (lowerInput.includes('müşteri') || lowerInput.includes('resepsiyonist') || 
+        lowerInput.includes('yardımcı') || lowerInput.includes('asistan') ||
+        lowerInput.includes('hizmet') || lowerInput.includes('çağrı')) {
+      return `
+Kullanıcı asistanın amacını belirtti: "${userInput}"
+
+Bu bilgiyi kaydet ve Adım 2'ye geç.
+
+CEVAP VER:
+"Mükemmel! Asistanınızın görevini anlıyorum: ${userInput}
+
+Şimdi asistanınıza bir kişilik verelim. Bu çok önemli çünkü konuşma tarzı, sizin veya markanızın bir yansıması olacak.
+
+Bana biraz kendinizden veya işinizin doğasından bahseder misiniz? Bu, asistan için en uygun tonu bulmamıza yardımcı olacaktır.
+
+Örneğin: Hangi sektörde çalışıyorsunuz? Müşterilerinizle nasıl bir ilişki kurmayı seviyorsunuz?"
+      `;
+    }
+
+    // Hala belirsizse tekrar sor
+    return `
+Kullanıcı belirsiz cevap verdi: "${userInput}"
+
+CEVAP VER:
+"Anlıyorum, daha net olalım. 
+
+Bu AI asistan hangi durumlarda devreye girecek? Mesela:
+- Telefon geldiğinde müşterileri karşılamak için mi?
+- Size günlük işlerde yardımcı olmak için mi?
+- Ziyaretçileri bilgilendirmek için mi?
+
+Hangi durumda kullanmayı planlıyorsunuz?"
+    `;
   }
 
   /**
@@ -283,11 +315,14 @@ YANIT VER:`;
     // Check if user response indicates step completion
     const lowerInput = userInput.toLowerCase();
     
+    // ÖNCE user state'i güncelleyelim, SONRA response alalım
     switch (userState.currentStep) {
       case 1:
-        // Look for purpose/goal indicators
+        // Look for purpose/goal indicators - daha geniş kontrol
         if (lowerInput.includes('asistan') || lowerInput.includes('yardımcı') || 
-            lowerInput.includes('resepsiyonist') || lowerInput.includes('müşteri')) {
+            lowerInput.includes('resepsiyonist') || lowerInput.includes('müşteri') ||
+            lowerInput.includes('hizmet') || lowerInput.includes('çağrı') ||
+            lowerInput.includes('karşılama') || userInput.length > 15) {
           await this.saveUserProgress(userId, {
             currentStep: 2,
             agentPurpose: userInput,
@@ -299,9 +334,8 @@ YANIT VER:`;
         break;
         
       case 2:
-        // Look for personality/profession indicators
-        if (lowerInput.includes('evet') || lowerInput.includes('uygun') || 
-            lowerInput.includes('olur') || lowerInput.includes('tamam')) {
+        // Look for personality/profession indicators - daha esnek kontrol
+        if (userInput.length > 10) { // Herhangi bir açıklama yaptıysa
           await this.saveUserProgress(userId, {
             currentStep: 3,
             agentPersona: this.extractPersonality(userInput),
@@ -313,12 +347,14 @@ YANIT VER:`;
         break;
         
       case 3:
-        // Look for voice approval
+        // Look for voice approval - daha esnek kontrol
         if (lowerInput.includes('evet') || lowerInput.includes('beğendim') || 
-            lowerInput.includes('uygun') || lowerInput.includes('tamam')) {
+            lowerInput.includes('uygun') || lowerInput.includes('tamam') ||
+            lowerInput.includes('olur') || lowerInput.includes('güzel') ||
+            userInput.length > 5) {
           await this.saveUserProgress(userId, {
             currentStep: 4,
-            chosenVoiceId: "aEJD8mYP0nuof1XHShVY", // Default voice for now
+            chosenVoiceId: "aEJD8mYP0nuof1XHShVY",
             chosenVoiceName: "Kaliteli Türkçe Kadın Sesi"
           });
           stepAdvanced = true;
@@ -327,6 +363,7 @@ YANIT VER:`;
         break;
     }
 
+    // Güncellenmiş state ile response al
     const response = await this.generateEternacallResponse(userInput, userId, username);
     
     return {
