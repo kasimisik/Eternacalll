@@ -1,12 +1,9 @@
 import { useUserHook, useAuthHook } from '@/lib/auth-hook';
 import { Card, CardContent } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Bot, Plus, CreditCard, Crown, Mic } from 'lucide-react';
+import { CreditCard, Crown, Bot } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import PaymentButton from '@/components/PaymentButton';
-import { InteractiveAgentCreator } from '@/components/InteractiveAgentCreator';
-import { AgentsList } from '@/components/AgentsList';
-import { Link } from 'wouter';
+import { InteractiveVoiceAssistant } from '@/components/InteractiveVoiceAssistant';
 
 export default function Dashboard() {
   const { user } = useUserHook();
@@ -19,8 +16,6 @@ export default function Dashboard() {
     createdAt?: string;
   } | null>(null);
   const [loadingSubscription, setLoadingSubscription] = useState(true);
-  const [activeTab, setActiveTab] = useState('agents');
-  const [agentsRefreshTrigger, setAgentsRefreshTrigger] = useState(0);
 
   // Kullanıcının abonelik durumunu kontrol et
   useEffect(() => {
@@ -44,18 +39,6 @@ export default function Dashboard() {
     checkSubscription();
   }, [user?.id]);
 
-  const handleAgentCreated = () => {
-    setAgentsRefreshTrigger(prev => prev + 1);
-    setActiveTab('agents');
-  };
-
-  const handleAgentsUpdated = () => {
-    setAgentsRefreshTrigger(prev => prev + 1);
-  };
-
-  const handleCreateAgentClick = () => {
-    setActiveTab('create');
-  };
 
   const getInitials = (firstName?: string, lastName?: string) => {
     return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
@@ -145,33 +128,6 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Interactive Voice Assistant Quick Access */}
-        <Card className="mb-8 bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
-                  <Mic className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-blue-900 mb-1">🎤 Sesli AI Asistanı</h3>
-                  <p className="text-sm text-blue-700">
-                    Konuşarak etkileşim kurun! Basılı tutarak konuşun, asistanınız size cevap verecek.
-                  </p>
-                </div>
-              </div>
-              <Link href="/voice-assistant">
-                <button 
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors font-semibold"
-                  data-testid="button-start-voice-assistant"
-                >
-                  Başlat →
-                </button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Ödeme Seçenekleri - Sadece aboneliği olmayanlara göster */}
         {!loadingSubscription && !subscription?.hasSubscription && (
           <Card className="mb-8 border-primary">
@@ -200,31 +156,8 @@ export default function Dashboard() {
           </Card>
         )}
 
-        {/* Main Dashboard Content - ElevenLabs AI Agent Management */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="agents" className="flex items-center space-x-2">
-              <Bot className="h-4 w-4" />
-              <span>Ajanlarım</span>
-            </TabsTrigger>
-            <TabsTrigger value="create" className="flex items-center space-x-2">
-              <Plus className="h-4 w-4" />
-              <span>Yeni Ajan</span>
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="agents" className="space-y-6">
-            <AgentsList
-              key={agentsRefreshTrigger}
-              onAgentUpdated={handleAgentsUpdated}
-              onCreateAgentClick={handleCreateAgentClick}
-            />
-          </TabsContent>
-
-          <TabsContent value="create" className="space-y-6">
-            <InteractiveAgentCreator onAgentCreated={handleAgentCreated} />
-          </TabsContent>
-        </Tabs>
+        {/* Ana Ses Asistanı - Dashboard'un merkezinde */}
+        <InteractiveVoiceAssistant />
       </main>
     </div>
   );
