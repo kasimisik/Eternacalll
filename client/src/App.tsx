@@ -10,6 +10,7 @@ import Landing from "@/pages/Landing";
 import SignIn from "@/pages/SignIn";
 import SignUp from "@/pages/SignUp";
 import Dashboard from "@/pages/Dashboard";
+import VoiceAssistant from "@/pages/VoiceAssistant";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -21,6 +22,11 @@ function Router() {
       <Route path="/dashboard">
         <ProtectedRoute>
           <Dashboard />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/voice-assistant">
+        <ProtectedRoute>
+          <VoiceAssistant />
         </ProtectedRoute>
       </Route>
       {/* Fallback to 404 */}

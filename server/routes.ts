@@ -734,6 +734,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const { handleGetVoices } = await import('./api/voices/list');
   const { handleCloneVoice, uploadMiddleware } = await import('./api/voices/clone');
   const { previewVoice } = await import('./api/voices/preview');
+  const { processVoice, processVoiceMiddleware } = await import('./api/voice/process');
   const { handleCreateAgent } = await import('./api/agents/create');
   const { handleListAgents } = await import('./api/agents/list');
   const { handleUpdateAgent } = await import('./api/agents/update');
@@ -744,6 +745,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/voices/list', handleGetVoices);
   app.post('/api/voices/clone', uploadMiddleware, handleCloneVoice);
   app.post('/api/voices/preview', previewVoice);
+  
+  // Interactive voice assistant route
+  app.post('/api/voice/process', processVoiceMiddleware, processVoice);
 
   // User preferences routes
   app.get('/api/user/preferences', getUserPreferences);

@@ -1,11 +1,12 @@
 import { useUserHook, useAuthHook } from '@/lib/auth-hook';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Bot, Plus, CreditCard, Crown } from 'lucide-react';
+import { Bot, Plus, CreditCard, Crown, Mic } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import PaymentButton from '@/components/PaymentButton';
 import { InteractiveAgentCreator } from '@/components/InteractiveAgentCreator';
 import { AgentsList } from '@/components/AgentsList';
+import { Link } from 'wouter';
 
 export default function Dashboard() {
   const { user } = useUserHook();
@@ -143,6 +144,33 @@ export default function Dashboard() {
             </div>
           </div>
         )}
+
+        {/* Interactive Voice Assistant Quick Access */}
+        <Card className="mb-8 bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
+                  <Mic className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-blue-900 mb-1">🎤 Sesli AI Asistanı</h3>
+                  <p className="text-sm text-blue-700">
+                    Konuşarak etkileşim kurun! Basılı tutarak konuşun, asistanınız size cevap verecek.
+                  </p>
+                </div>
+              </div>
+              <Link href="/voice-assistant">
+                <button 
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors font-semibold"
+                  data-testid="button-start-voice-assistant"
+                >
+                  Başlat →
+                </button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Ödeme Seçenekleri - Sadece aboneliği olmayanlara göster */}
         {!loadingSubscription && !subscription?.hasSubscription && (
