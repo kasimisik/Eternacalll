@@ -752,6 +752,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const { handleCloneVoice, uploadMiddleware } = await import('./api/voices/clone');
   const { previewVoice } = await import('./api/voices/preview');
   const { processVoice, processVoiceMiddleware } = await import('./api/voice/process');
+  const { smartProcess, smartProcessMiddleware } = await import('./api/voice/smart-process');
   const { handleCreateAgent } = await import('./api/agents/create');
   const { handleListAgents } = await import('./api/agents/list');
   const { handleUpdateAgent } = await import('./api/agents/update');
@@ -765,6 +766,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Interactive voice assistant route
   app.post('/api/voice/process', processVoiceMiddleware, processVoice);
+  
+  // Smart voice assistant route with Azure -> Anthropic -> ElevenLabs orchestration
+  app.post('/api/voice/smart-process', smartProcessMiddleware, smartProcess);
 
   // User preferences routes
   app.get('/api/user/preferences', getUserPreferences);

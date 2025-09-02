@@ -4,6 +4,7 @@ import { CreditCard, Crown, Bot } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import PaymentButton from '@/components/PaymentButton';
 import { InteractiveVoiceAssistant } from '@/components/InteractiveVoiceAssistant';
+import { VoiceAssistantModal, VoiceAssistantTrigger } from '@/components/VoiceAssistantModal';
 
 export default function Dashboard() {
   const { user } = useUserHook();
@@ -16,6 +17,7 @@ export default function Dashboard() {
     createdAt?: string;
   } | null>(null);
   const [loadingSubscription, setLoadingSubscription] = useState(true);
+  const [showSmartAssistant, setShowSmartAssistant] = useState(false);
 
   // Kullanıcının abonelik durumunu kontrol et
   useEffect(() => {
@@ -156,9 +158,58 @@ export default function Dashboard() {
           </Card>
         )}
 
-        {/* Ana Ses Asistanı - Dashboard'un merkezinde */}
-        <InteractiveVoiceAssistant />
+        {/* Smart Voice Assistant Trigger */}
+        <div className="mb-8 text-center">
+          <div className="bg-gradient-to-br from-blue-50 via-purple-50 to-indigo-50 dark:from-blue-950 dark:via-purple-950 dark:to-indigo-950 rounded-2xl p-8 border border-blue-200 dark:border-blue-800">
+            <div className="mb-6">
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">
+                🤖 Akıllı Sesli Asistan
+              </h2>
+              <p className="text-lg text-gray-600 dark:text-gray-300 mb-4">
+                PDF'deki mimariye göre yeniden tasarlanan real-time akıcı konuşma deneyimi
+              </p>
+              <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  Voice Activity Detection (VAD)
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  Azure Speech-to-Text
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                  Anthropic Claude AI
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                  ElevenLabs TTS
+                </div>
+              </div>
+            </div>
+            
+            <VoiceAssistantTrigger onOpen={() => setShowSmartAssistant(true)} />
+            
+            <div className="mt-6 text-sm text-gray-500 dark:text-gray-400">
+              ✨ Artık birkaç saniye bekleme yok! Sustuğunuz anda sistem algılayıp anında yanıt verir.
+            </div>
+          </div>
+        </div>
+
+        {/* Ana Ses Asistanı - Eski versiyon (isteğe bağlı) */}
+        <details className="mb-8">
+          <summary className="cursor-pointer text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4">
+            💡 Eski Sesli Asistan (Karşılaştırma için)
+          </summary>
+          <InteractiveVoiceAssistant />
+        </details>
       </main>
+      
+      {/* Smart Voice Assistant Modal */}
+      <VoiceAssistantModal 
+        isOpen={showSmartAssistant} 
+        onClose={() => setShowSmartAssistant(false)} 
+      />
     </div>
   );
 }
