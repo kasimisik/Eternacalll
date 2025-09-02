@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { getAIResponse } from '../../anthropic';
+import { getAIResponse } from '../../gemini';
 
 interface ConversationMessage {
   user: string;
@@ -39,7 +39,7 @@ export async function handleProcessConversation(req: Request, res: Response) {
     if (!aiResponse) {
       return res.status(500).json({ 
         error: 'AI yanıtı alınamadı',
-        message: 'Anthropic AI servisi yanıt veremedi. Lütfen tekrar deneyin.'
+        message: 'Gemini AI servisi yanıt veremedi. Lütfen tekrar deneyin.'
       });
     }
 

@@ -1,6 +1,6 @@
 import Srf from 'drachtio-srf';
 import { WebSocketServer } from 'ws';
-import Anthropic from '@anthropic-ai/sdk';
+import { getAIResponse } from './gemini';
 // import * as wav from 'node-wav'; // Not needed for basic voice agent
 import * as sdk from "microsoft-cognitiveservices-speech-sdk";
 import { textToSpeech } from './azure';
@@ -22,16 +22,14 @@ const DEFAULT_MODEL_STR = "claude-sonnet-4-20250514";
 export class SipVoiceAgent extends EventEmitter {
   private srf: Srf;
   private wss: WebSocketServer | null = null;
-  private anthropic: Anthropic;
+  // Gemini AI response handler artık getAIResponse fonksiyonu ile sağlanıyor
   private activeCalls: Map<string, CallSession> = new Map();
   private speechConfig: sdk.SpeechConfig | null = null;
 
   constructor() {
     super();
     this.srf = new Srf();
-    this.anthropic = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY,
-    });
+    // Gemini AI artık getAIResponse fonksiyonu ile çalışıyor
     this.initializeAzureSpeech();
     this.setupSipHandlers();
   }
@@ -101,7 +99,6 @@ export class SipVoiceAgent extends EventEmitter {
           req.get('From'),
           req.get('To'),
           dialog,
-          this.anthropic,
           this.speechConfig,
           this.wss
         );
@@ -273,7 +270,7 @@ class CallSession {
   public toNumber: string;
   public startTime: Date;
   private dialog: any; // SIP dialog
-  private anthropic: Anthropic;
+  // Gemini AI artık getAIResponse fonksiyonu ile kullanılıyor
   private speechConfig: sdk.SpeechConfig | null;
   private wss: WebSocketServer | null;
   private conversationHistory: Array<{role: string, content: string}> = [];
@@ -285,7 +282,6 @@ class CallSession {
     from: string, 
     to: string, 
     dialog: any,
-    anthropic: Anthropic,
     speechConfig: sdk.SpeechConfig | null,
     wss: WebSocketServer | null
   ) {
@@ -294,7 +290,6 @@ class CallSession {
     this.toNumber = this.extractNumber(to);
     this.startTime = new Date();
     this.dialog = dialog;
-    this.anthropic = anthropic;
     this.speechConfig = speechConfig;
     this.wss = wss;
   }
@@ -398,30 +393,11 @@ class CallSession {
 
   private async processUserSpeech(userText: string) {
     try {
-      // Konuşma geçmişine ekle
-      this.conversationHistory.push({
-        role: 'user',
-        content: userText
-      });
-
-      // Anthropic ile yanıt üret
-      const response = await this.anthropic.messages.create({
-        model: DEFAULT_MODEL_STR, // "claude-sonnet-4-20250514"
-        max_tokens: 200,
-        system: `Sen yardımsever bir telefon asistanısın. Kısa, net ve samimi yanıtlar ver. 
-        Türkçe konuş ve telefon görüşmesi için uygun ol. Uzun açıklamalar yapma.`,
-        messages: this.conversationHistory.slice(-10) as Array<{role: 'user' | 'assistant', content: string}> // Son 10 mesajı tut
-      });
-
-      const aiMessage = response.content[0]?.type === 'text' ? response.content[0].text : 'Anlayamadım, tekrar söyler misiniz?';
+      // Gemini ile yanıt üret
+      const userId = `sip_call_${this.callId}`;
+      const aiMessage = await getAIResponse(userText, userId);
       
-      // Konuşma geçmişine AI yanıtını ekle
-      this.conversationHistory.push({
-        role: 'assistant',
-        content: aiMessage
-      });
-
-      console.log(`🤖 AI Response: "${aiMessage}"`);
+      console.log(`🤖 Gemini AI Response: "${aiMessage}"`);
       
       // Ses yanıtı gönder
       await this.sendAudioResponse(aiMessage);

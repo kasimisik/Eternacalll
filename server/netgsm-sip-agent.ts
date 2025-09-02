@@ -3,7 +3,7 @@ import { EventEmitter } from 'events';
 import * as sdk from "microsoft-cognitiveservices-speech-sdk";
 import { SIP_CONFIG } from './sip-config';
 import { textToSpeech } from './azure';
-import Anthropic from '@anthropic-ai/sdk';
+import { getAIResponse } from './gemini';
 import WebSocket from 'ws';
 
 /*
@@ -33,14 +33,12 @@ export class NetGSMSipAgent extends EventEmitter {
   private isRegistered = false;
   private currentCall: any = null;
   private speechRecognizer: sdk.SpeechRecognizer | null = null;
-  private anthropic: Anthropic;
+  // Gemini AI artık getAIResponse fonksiyonu ile kullanılıyor
 
   constructor(config: NetGSMConfig) {
     super();
     this.config = config;
-    this.anthropic = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY,
-    });
+    // Gemini AI artık getAIResponse fonksiyonu ile çalışıyor
     this.initializeAzureSpeech();
   }
 
@@ -200,20 +198,10 @@ a=rtpmap:0 PCMU/8000\r
     console.log(`🎤 Kullanıcı (simüle): "${userText}"`);
     
     try {
-      // Anthropic'ten AI cevabı al
-      const response = await this.anthropic.messages.create({
-        model: DEFAULT_MODEL_STR, // "claude-sonnet-4-20250514"
-        max_tokens: 200,
-        system: `Sen yardımsever bir telefon asistanısın. Kısa, net ve samimi yanıtlar ver. 
-        Türkçe konuş ve telefon görüşmesi için uygun ol. Uzun açıklamalar yapma.`,
-        messages: [{
-          role: 'user',
-          content: `Telefonda konuşuyorum. Kullanıcı şunu söyledi: "${userText}"`
-        }]
-      });
-
-      const aiResponse = response.content[0]?.type === 'text' ? response.content[0].text : 'Anlayamadım, tekrar söyler misiniz?';
-      console.log(`🤖 AI Cevabı: "${aiResponse}"`);
+      // Gemini ile AI cevabı al
+      const userId = `netgsm_call_${Date.now()}`;
+      const aiResponse = await getAIResponse(userText, userId);
+      console.log(`🤖 Gemini AI Cevabı: "${aiResponse}"`);
 
       // AI cevabını sese çevir
       const audioBuffer = await textToSpeech(aiResponse);
