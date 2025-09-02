@@ -114,37 +114,58 @@ async function convertWebMToWav(webmBuffer: Buffer): Promise<Buffer> {
     try {
       const chunks: Buffer[] = [];
       
+      // Proper FFmpeg stream setup for WebM to WAV conversion
       const stream = ffmpeg()
         .input('pipe:0')
         .inputFormat('webm')
+        .outputFormat('wav')
         .audioCodec('pcm_s16le')
-        .audioFrequency(16000)
+        .audioFrequency(16000) 
         .audioChannels(1)
-        .audioFilters('volume=2.0')
-        .format('wav')
+        .audioFilters(['volume=3.0', 'highpass=f=100']) // Amplify and filter
+        .outputOptions([
+          '-ar', '16000',           // Sample rate  
+          '-ac', '1',              // Mono channel
+          '-acodec', 'pcm_s16le',  // PCM 16-bit
+          '-f', 'wav'              // Force WAV output
+        ])
+        .on('start', (cmd) => {
+          console.log('🔄 FFmpeg conversion started');
+        })
         .on('error', (err: any) => {
-          console.error('FFmpeg conversion error:', err);
+          console.error('❌ FFmpeg conversion error:', err);
           reject(err);
         })
         .on('end', () => {
           const wavBuffer = Buffer.concat(chunks);
-          console.log(`✅ WebM to WAV conversion completed: ${wavBuffer.length} bytes`);
+          console.log(`✅ WebM to WAV conversion: ${wavBuffer.length} bytes`);
+          
+          // WAV header check - should start with "RIFF"
+          if (wavBuffer.length >= 12) {
+            const header = wavBuffer.subarray(0, 4).toString('ascii');
+            console.log(`🔍 WAV Header: "${header}" (expected: "RIFF")`);
+            
+            if (header === 'RIFF') {
+              console.log('✅ Valid WAV file produced');
+            } else {
+              console.warn('⚠️ Unusual WAV header, but proceeding...');
+            }
+          }
+          
           resolve(wavBuffer);
         })
         .pipe();
       
-      stream.on('data', (chunk: any) => chunks.push(chunk));
-      stream.on('end', () => {
-        const wavBuffer = Buffer.concat(chunks);
-        resolve(wavBuffer);
+      // Collect output data
+      stream.on('data', (chunk: Buffer) => {
+        chunks.push(chunk);
       });
       
-      // WebM buffer'ı ffmpeg'e yaz
-      stream.write(webmBuffer);
-      stream.end();
+      // Write WebM data to FFmpeg stdin
+      stream.end(webmBuffer);
       
     } catch (error) {
-      console.error('Conversion setup error:', error);
+      console.error('❌ Conversion setup error:', error);
       reject(error);
     }
   });
