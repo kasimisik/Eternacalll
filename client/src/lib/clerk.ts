@@ -1,5 +1,5 @@
 export const CLERK_CONFIG = {
-  publishableKey: import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
+  publishableKey: import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || import.meta.env.CLERK_PUBLISHABLE_KEY,
   appearance: {
     elements: {
       formButtonPrimary: "bg-primary text-primary-foreground hover:bg-primary/90",
