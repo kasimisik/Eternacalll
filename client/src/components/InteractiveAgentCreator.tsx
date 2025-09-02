@@ -75,6 +75,17 @@ export function InteractiveAgentCreator({ onAgentCreated, className }: Interacti
     }
   }, [user?.id]);
 
+  // Welcome message when component loads
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (currentStep === 1) {
+        speakTurkish("Merhaba! AI asistan oluşturma rehberinize hoş geldiniz. Ben size bu süreçte Türkçe olarak rehberlik edeceğim. Hazır olduğunuzda başlayalım!");
+      }
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, []); // Only run once when component mounts
+
   const loadUserPreferences = async () => {
     try {
       const response = await fetch('/api/user/preferences', {
@@ -170,6 +181,38 @@ export function InteractiveAgentCreator({ onAgentCreated, className }: Interacti
     }
   };
 
+  // AI Turkish speech function
+  const speakTurkish = async (text: string, voiceId?: string) => {
+    try {
+      const defaultVoiceId = 'pNInz6obpgDQGcFmaJgB'; // Default Turkish voice
+      const response = await fetch('/api/voices/preview', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          voiceId: voiceId || defaultVoiceId,
+          text: text,
+          language: 'tr'
+        }),
+      });
+
+      if (response.ok) {
+        const audioBlob = await response.blob();
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
+        
+        audio.onended = () => {
+          URL.revokeObjectURL(audioUrl);
+        };
+        
+        await audio.play();
+      }
+    } catch (error) {
+      console.error('Error speaking Turkish:', error);
+    }
+  };
+
   const previewVoice = async (voice: VoiceOption) => {
     try {
       setIsPlayingPreview(true);
@@ -221,9 +264,11 @@ export function InteractiveAgentCreator({ onAgentCreated, className }: Interacti
           description: "Lütfen tüm alanları doldurun.",
           variant: "destructive",
         });
+        await speakTurkish("Lütfen tüm alanları doldurun. Asistanınızın amacını ve hedef kitlesini belirtmeyi unutmayın.");
         return;
       }
       stepData = { agentPurpose, targetAudience };
+      await speakTurkish("Harika! Şimdi kişilik özelliklerinizi belirleyelim. Bu sayede asistanınız size daha uygun bir karakter geliştirebilir.");
     } else if (currentStep === 2) {
       if (!userProfession.trim()) {
         toast({
@@ -231,11 +276,13 @@ export function InteractiveAgentCreator({ onAgentCreated, className }: Interacti
           description: "Lütfen mesleğinizi belirtin.",
           variant: "destructive",
         });
+        await speakTurkish("Mesleğinizi belirtmeyi unutmayın. Bu, asistanınızın size daha iyi yardım edebilmesi için önemli.");
         return;
       }
       const persona = generatePersonaSuggestion(userProfession, userHobbies);
       setSuggestedPersona(persona);
       stepData = { userProfession, userHobbies, agentPersona: persona };
+      await speakTurkish("Mükemmel! Kişilik analizi tamamlandı. Şimdi asistanınız için en uygun sesi seçelim. Her ses seçeneğini dinleyebilirsiniz.");
     } else if (currentStep === 3) {
       if (!selectedVoice) {
         toast({
@@ -243,18 +290,24 @@ export function InteractiveAgentCreator({ onAgentCreated, className }: Interacti
           description: "Lütfen bir ses seçin.",
           variant: "destructive",
         });
+        await speakTurkish("Lütfen asistanınız için bir ses seçin. Tüm sesleri dinleyerek en beğendiğinizi seçebilirsiniz.");
         return;
       }
       stepData = { chosenVoiceId: selectedVoice.id, chosenVoiceName: selectedVoice.name };
+      await speakTurkish("Excellent! Ses seçimi tamamlandı. Artık asistanınızı oluşturup telefon entegrasyonu bilgilerini alabilirsiniz.");
     }
     
     const nextStepNumber = currentStep + 1;
     await saveProgress(nextStepNumber, stepData);
     setCurrentStep(nextStepNumber);
     
-    // Load voices when entering step 3
+    // Load voices when entering step 3 and speak introduction
     if (nextStepNumber === 3) {
       await loadVoices();
+      // Wait a moment then speak
+      setTimeout(() => {
+        speakTurkish("Merhaba! Şimdi asistanınız için ses seçimi zamanı. Her bir sesi dinleyerek size en uygun olanını seçebilirsiniz. Play butonuna tıklayarak sesleri test edebilirsiniz.");
+      }, 1000);
     }
   };
 
@@ -314,6 +367,11 @@ export function InteractiveAgentCreator({ onAgentCreated, className }: Interacti
         title: "Başarılı!",
         description: "AI Asistanınız başarıyla oluşturuldu!",
       });
+
+      // Celebrate with Turkish speech
+      setTimeout(() => {
+        speakTurkish("Tebrikler! AI asistanınız başarıyla oluşturuldu. Artık telefon entegrasyonu için gerekli bilgileri görebilirsiniz. Twilio kurulumunu tamamlayarak asistanınızı telefon aramalarında kullanabilirsiniz.");
+      }, 1000);
 
     } catch (error) {
       console.error('Agent creation error:', error);
@@ -514,7 +572,10 @@ export function InteractiveAgentCreator({ onAgentCreated, className }: Interacti
                   className={`border rounded-lg p-4 cursor-pointer transition-all hover:bg-accent/50 ${
                     selectedVoice?.id === voice.id ? 'border-primary bg-primary/5' : ''
                   }`}
-                  onClick={() => setSelectedVoice(voice)}
+                  onClick={() => {
+                    setSelectedVoice(voice);
+                    speakTurkish(`${voice.name} sesini seçtiniz. Bu ses hoşunuza gittiyse devam edebilir, ya da başka sesleri de dinleyebilirsiniz.`);
+                  }}
                 >
                   <div className="flex items-center justify-between">
                     <div>
