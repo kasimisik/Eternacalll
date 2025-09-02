@@ -30,64 +30,29 @@ export async function textToSpeech(text: string): Promise<Buffer | null> {
  * Robotik hissiyatı ortadan kaldırmayı hedefler.
  */
 function createSSMLForText(text: string, voiceName: string = "tr-TR-EmelNeural"): string {
-  // Kural 1: Cümleleri doğal duraksamalarla böl
-  // Virgüllerden sonra kısa, cümle sonlarından sonra biraz daha uzun nefes payı bırak.
-  let processedText = text.replace(/,/g, '<break time="250ms"/>');
-  
-  // Başlangıç SSML yapısını oluştur
-  let ssmlBody = "";
-  
-  // Cümleleri "." veya "?"'ye göre ayır ve her birini ayrı ayrı işle
-  const sentences = processedText.split(/([.?!])/).filter(s => s.trim().length > 0);
-  
-  for (let i = 0; i < sentences.length; i += 2) {
-    const sentence = sentences[i];
-    const punctuation = sentences[i + 1] || '';
-    const fullSentence = (sentence + punctuation).trim();
-    
-    if (!fullSentence) continue;
-    
-    let processedSentence = fullSentence;
-    
-    // Kural 2: Soruları doğal bir tonlama ile sor
-    // Soru cümlelerinin sonuna doğru ses perdesini hafifçe yükselt.
-    if (fullSentence.includes('?')) {
-      // Sorunun kendisini daha yavaş ve net sor, sonunu yükselt
-      processedSentence = `<prosody rate="-5%" pitch="+8%">${fullSentence}</prosody>`;
-    }
-    
-    // Kural 3: Heyecan veya olumlu ifadelerde tonu ve hızı ayarla
-    const positiveWords = ["harika", "mükemmel", "tebrikler", "muhteşem", "elbette", "merhaba", "hoş geldin"];
-    if (positiveWords.some(word => fullSentence.toLowerCase().includes(word))) {
-      // Daha pozitif bir ton için sesi hafifçe incelt ve hızlandır
-      processedSentence = `<mstts:express-as style="cheerful"><prosody rate="+5%" pitch="+5%">${fullSentence}</prosody></mstts:express-as>`;
-    }
-    
-    // Kural 4: Önemli veya teknik terimleri yavaşlatarak vurgula
-    // Örneğin, tırnak içindeki kelimeleri daha yavaş ve net söyle
-    if (fullSentence.includes('"')) {
-      const parts = fullSentence.split('"');
-      if (parts.length >= 3) {
-        processedSentence = `${parts[0]} <prosody rate="-15%">"${parts[1]}"</prosody> ${parts[2]}`;
-      }
-    }
-    
-    ssmlBody += processedSentence + ' <break time="400ms"/> ';
+  // XML karakterlerini escape et
+  function escapeXml(unsafe: string): string {
+    return unsafe
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
   }
   
-  // Final SSML'i oluştur
-  const ssmlString = `
-    <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis"
-           xmlns:mstts="http://www.w3.org/2001/mstts" xml:lang="tr-TR">
-      <voice name="${voiceName}">
-        <prosody rate="1.0" pitch="medium">
-          ${ssmlBody}
-        </prosody>
-      </voice>
-    </speak>
-  `;
+  // Metni temizle ve escape et
+  const cleanText = escapeXml(text.trim());
   
-  console.log("✅ Gelişmiş SSML oluşturuldu - Doğal tonlama aktif");
+  // Basit ve güvenilir SSML oluştur
+  const ssmlString = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="tr-TR">
+    <voice name="${voiceName}">
+      <prosody rate="1.0" pitch="medium">
+        ${cleanText}
+      </prosody>
+    </voice>
+  </speak>`;
+  
+  console.log("✅ Güvenli SSML oluşturuldu");
   return ssmlString;
 }
 
@@ -213,12 +178,25 @@ export async function speechToText(audioBuffer: Buffer): Promise<string | null> 
     console.log('🎛️ Azure SDK Configuration...');
     console.log(`📋 Language: ${speechConfig.speechRecognitionLanguage}`);
     
-    // Basit audio stream (format belirtmeden)
-    console.log('🎵 Creating audio stream...');
-    const pushStream = sdk.AudioInputStream.createPushStream();
-    pushStream.write(wavBuffer);
+    // Azure için tam uyumlu audio stream
+    console.log('🎵 Creating audio stream with proper format...');
+    
+    // WAV header'ını kontrol et
+    console.log(`🔍 WAV Header check: ${wavBuffer.subarray(0, 12).toString('hex')}`);
+    
+    // Azure'ın beklediği tam format: 16kHz, 16-bit, mono PCM
+    const audioFormat = sdk.AudioStreamFormat.getWaveFormatPCM(16000, 16, 1);
+    const pushStream = sdk.AudioInputStream.createPushStream(audioFormat);
+    
+    // WAV header'ını atla ve sadece PCM data gönder
+    const wavHeaderSize = 44; // Standard WAV header size
+    const pcmData = wavBuffer.subarray(wavHeaderSize);
+    
+    console.log(`📊 PCM Data: ${pcmData.length} bytes (header atlandı)`);
+    
+    pushStream.write(pcmData);
     pushStream.close();
-    console.log('✅ Audio stream created');
+    console.log('✅ Audio stream created with PCM data');
 
     const audioConfig = sdk.AudioConfig.fromStreamInput(pushStream);
     const recognizer = new sdk.SpeechRecognizer(speechConfig, audioConfig);
