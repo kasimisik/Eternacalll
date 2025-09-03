@@ -194,6 +194,24 @@ export function ModernSignIn() {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    if (!isLoaded) return;
+    
+    setIsLoading(true);
+    setError('');
+
+    try {
+      await signIn.authenticateWithRedirect({
+        strategy: 'oauth_google',
+        redirectUrl: '/dashboard',
+        redirectUrlComplete: '/dashboard',
+      });
+    } catch (err: any) {
+      setError(err.errors?.[0]?.message || 'Google sign in failed');
+      setIsLoading(false);
+    }
+  };
+
   const formFields = {
     header: 'Welcome back',
     subHeader: 'Sign in to your account to continue',
@@ -236,6 +254,7 @@ export function ModernSignIn() {
           formFields={formFields}
           goTo={goToSignUp}
           handleSubmit={handleSubmit}
+          onGoogleClick={handleGoogleSignIn}
         />
       </span>
     </section>

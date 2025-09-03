@@ -201,6 +201,24 @@ export function ModernSignUp() {
     }
   };
 
+  const handleGoogleSignUp = async () => {
+    if (!isLoaded) return;
+    
+    setIsLoading(true);
+    setError('');
+
+    try {
+      await signUp.authenticateWithRedirect({
+        strategy: 'oauth_google',
+        redirectUrl: '/dashboard',
+        redirectUrlComplete: '/dashboard',
+      });
+    } catch (err: any) {
+      setError(err.errors?.[0]?.message || 'Google sign up failed');
+      setIsLoading(false);
+    }
+  };
+
   const formFields = {
     header: 'Create Account',
     subHeader: 'Sign up to get started with our AI Voice Agent',
@@ -259,6 +277,7 @@ export function ModernSignUp() {
           formFields={formFields}
           goTo={goToSignIn}
           handleSubmit={handleSubmit}
+          onGoogleClick={handleGoogleSignUp}
         />
       </span>
     </section>
