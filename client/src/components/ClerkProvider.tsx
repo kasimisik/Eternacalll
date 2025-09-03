@@ -75,7 +75,7 @@ export function ClerkProvider({ children }: ClerkProviderProps) {
         signUpUrl="/sign-up"
         allowedRedirectOrigins={[
           window.location.origin,
-          `https://6017fd2d-e63c-400e-895b-07c85d97c0c3-00-rh9v8mjbsg02.picard.replit.dev`
+          `https://3f5c913b-437f-4271-999a-66f703ef45e7-00-1yq7btoorvyqe.pike.replit.dev`
         ]}
       >
         {children}
