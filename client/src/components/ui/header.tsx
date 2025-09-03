@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { RainbowButton } from "@/components/ui/rainbow-button";
 import {
     NavigationMenu,
     NavigationMenuContent,
@@ -139,7 +140,7 @@ function Header1() {
               <Button variant="outline">Giriş Yap</Button>
             </Link>
             <Link href="/sign-up">
-              <Button>Başlayın</Button>
+              <RainbowButton>Ücretsiz Deneyin</RainbowButton>
             </Link>
          </div>
          <div className="flex w-12 shrink lg:hidden items-end justify-end">
