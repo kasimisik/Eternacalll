@@ -4,7 +4,8 @@ import { SplineScene } from "@/components/ui/splite";
 import { Card } from "@/components/ui/card"
 import { Spotlight } from "@/components/ui/spotlight"
 import { NavBar } from "@/components/ui/tubelight-navbar"
-import { Home, User, Briefcase, LogIn, UserPlus, Bot } from 'lucide-react'
+import { GlowingEffect } from "@/components/ui/glowing-effect"
+import { Home, User, Briefcase, LogIn, UserPlus, Bot, Mic, Brain, Phone, Zap, MessageSquare } from 'lucide-react'
 
 export default function Landing() {
   const { isSignedIn } = useAuthHook();
@@ -98,36 +99,151 @@ export default function Landing() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            <Card className="p-6 hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center mb-4">
-                <span className="text-2xl">🎤</span>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-12 md:grid-rows-3 lg:gap-6 xl:max-h-[40rem] xl:grid-rows-2">
+            {/* Azure Speech Services */}
+            <div className="min-h-[14rem] list-none md:[grid-area:1/1/2/7] xl:[grid-area:1/1/2/5]">
+              <div className="relative h-full rounded-[1.25rem] border-[0.75px] border-border p-2 md:rounded-[1.5rem] md:p-3">
+                <GlowingEffect
+                  spread={40}
+                  glow={true}
+                  disabled={false}
+                  proximity={64}
+                  inactiveZone={0.01}
+                  borderWidth={3}
+                />
+                <div className="relative flex h-full flex-col justify-between gap-6 overflow-hidden rounded-xl border-[0.75px] bg-background p-6 shadow-sm dark:shadow-[0px_0px_27px_0px_rgba(45,45,45,0.3)] md:p-6">
+                  <div className="relative flex flex-1 flex-col justify-between gap-3">
+                    <div className="w-fit rounded-lg border-[0.75px] border-border bg-muted p-2">
+                      <Mic className="h-4 w-4" />
+                    </div>
+                    <div className="space-y-3">
+                      <h3 className="pt-0.5 text-xl leading-[1.375rem] font-semibold font-sans tracking-[-0.04em] md:text-2xl md:leading-[1.875rem] text-balance text-foreground">
+                        Azure Speech Services
+                      </h3>
+                      <p className="font-sans text-sm leading-[1.125rem] md:text-base md:leading-[1.375rem] text-muted-foreground">
+                        Real-time speech-to-text and text-to-speech powered by Microsoft Azure's advanced AI models
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Azure Speech Services</h3>
-              <p className="text-muted-foreground">
-                Real-time speech-to-text and text-to-speech powered by Microsoft Azure's advanced AI models
-              </p>
-            </Card>
+            </div>
 
-            <Card className="p-6 hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center mb-4">
-                <span className="text-2xl">🧠</span>
+            {/* Anthropic Claude AI */}
+            <div className="min-h-[14rem] list-none md:[grid-area:1/7/2/13] xl:[grid-area:2/1/3/5]">
+              <div className="relative h-full rounded-[1.25rem] border-[0.75px] border-border p-2 md:rounded-[1.5rem] md:p-3">
+                <GlowingEffect
+                  spread={40}
+                  glow={true}
+                  disabled={false}
+                  proximity={64}
+                  inactiveZone={0.01}
+                  borderWidth={3}
+                />
+                <div className="relative flex h-full flex-col justify-between gap-6 overflow-hidden rounded-xl border-[0.75px] bg-background p-6 shadow-sm dark:shadow-[0px_0px_27px_0px_rgba(45,45,45,0.3)] md:p-6">
+                  <div className="relative flex flex-1 flex-col justify-between gap-3">
+                    <div className="w-fit rounded-lg border-[0.75px] border-border bg-muted p-2">
+                      <Brain className="h-4 w-4" />
+                    </div>
+                    <div className="space-y-3">
+                      <h3 className="pt-0.5 text-xl leading-[1.375rem] font-semibold font-sans tracking-[-0.04em] md:text-2xl md:leading-[1.875rem] text-balance text-foreground">
+                        Anthropic Claude AI
+                      </h3>
+                      <p className="font-sans text-sm leading-[1.125rem] md:text-base md:leading-[1.375rem] text-muted-foreground">
+                        Natural language understanding and generation with context-aware conversation handling
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Anthropic Claude AI</h3>
-              <p className="text-muted-foreground">
-                Natural language understanding and generation with context-aware conversation handling
-              </p>
-            </Card>
+            </div>
 
-            <Card className="p-6 hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center mb-4">
-                <span className="text-2xl">📞</span>
+            {/* SIP Integration */}
+            <div className="min-h-[14rem] list-none md:[grid-area:2/1/3/7] xl:[grid-area:1/5/3/8]">
+              <div className="relative h-full rounded-[1.25rem] border-[0.75px] border-border p-2 md:rounded-[1.5rem] md:p-3">
+                <GlowingEffect
+                  spread={40}
+                  glow={true}
+                  disabled={false}
+                  proximity={64}
+                  inactiveZone={0.01}
+                  borderWidth={3}
+                />
+                <div className="relative flex h-full flex-col justify-between gap-6 overflow-hidden rounded-xl border-[0.75px] bg-background p-6 shadow-sm dark:shadow-[0px_0px_27px_0px_rgba(45,45,45,0.3)] md:p-6">
+                  <div className="relative flex flex-1 flex-col justify-between gap-3">
+                    <div className="w-fit rounded-lg border-[0.75px] border-border bg-muted p-2">
+                      <Phone className="h-4 w-4" />
+                    </div>
+                    <div className="space-y-3">
+                      <h3 className="pt-0.5 text-xl leading-[1.375rem] font-semibold font-sans tracking-[-0.04em] md:text-2xl md:leading-[1.875rem] text-balance text-foreground">
+                        SIP Integration
+                      </h3>
+                      <p className="font-sans text-sm leading-[1.125rem] md:text-base md:leading-[1.375rem] text-muted-foreground">
+                        Seamless telephone system integration with NetGSM and enterprise SIP providers
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <h3 className="text-xl font-semibold mb-2">SIP Integration</h3>
-              <p className="text-muted-foreground">
-                Seamless telephone system integration with NetGSM and enterprise SIP providers
-              </p>
-            </Card>
+            </div>
+
+            {/* Real-time Processing */}
+            <div className="min-h-[14rem] list-none md:[grid-area:2/7/3/13] xl:[grid-area:1/8/2/13]">
+              <div className="relative h-full rounded-[1.25rem] border-[0.75px] border-border p-2 md:rounded-[1.5rem] md:p-3">
+                <GlowingEffect
+                  spread={40}
+                  glow={true}
+                  disabled={false}
+                  proximity={64}
+                  inactiveZone={0.01}
+                  borderWidth={3}
+                />
+                <div className="relative flex h-full flex-col justify-between gap-6 overflow-hidden rounded-xl border-[0.75px] bg-background p-6 shadow-sm dark:shadow-[0px_0px_27px_0px_rgba(45,45,45,0.3)] md:p-6">
+                  <div className="relative flex flex-1 flex-col justify-between gap-3">
+                    <div className="w-fit rounded-lg border-[0.75px] border-border bg-muted p-2">
+                      <Zap className="h-4 w-4" />
+                    </div>
+                    <div className="space-y-3">
+                      <h3 className="pt-0.5 text-xl leading-[1.375rem] font-semibold font-sans tracking-[-0.04em] md:text-2xl md:leading-[1.875rem] text-balance text-foreground">
+                        Real-time Processing
+                      </h3>
+                      <p className="font-sans text-sm leading-[1.125rem] md:text-base md:leading-[1.375rem] text-muted-foreground">
+                        Lightning-fast voice processing with low latency for seamless conversations
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Advanced Analytics */}
+            <div className="min-h-[14rem] list-none md:[grid-area:3/1/4/13] xl:[grid-area:2/8/3/13]">
+              <div className="relative h-full rounded-[1.25rem] border-[0.75px] border-border p-2 md:rounded-[1.5rem] md:p-3">
+                <GlowingEffect
+                  spread={40}
+                  glow={true}
+                  disabled={false}
+                  proximity={64}
+                  inactiveZone={0.01}
+                  borderWidth={3}
+                />
+                <div className="relative flex h-full flex-col justify-between gap-6 overflow-hidden rounded-xl border-[0.75px] bg-background p-6 shadow-sm dark:shadow-[0px_0px_27px_0px_rgba(45,45,45,0.3)] md:p-6">
+                  <div className="relative flex flex-1 flex-col justify-between gap-3">
+                    <div className="w-fit rounded-lg border-[0.75px] border-border bg-muted p-2">
+                      <MessageSquare className="h-4 w-4" />
+                    </div>
+                    <div className="space-y-3">
+                      <h3 className="pt-0.5 text-xl leading-[1.375rem] font-semibold font-sans tracking-[-0.04em] md:text-2xl md:leading-[1.875rem] text-balance text-foreground">
+                        Conversation Analytics
+                      </h3>
+                      <p className="font-sans text-sm leading-[1.125rem] md:text-base md:leading-[1.375rem] text-muted-foreground">
+                        Advanced insights and analytics for call quality, sentiment analysis, and performance metrics
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
