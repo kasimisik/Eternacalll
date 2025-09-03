@@ -19,65 +19,101 @@ interface GlowingEffectProps {
 const GlowingEffect = memo(
   ({
     blur = 0,
-    inactiveZone = 0.3,
-    proximity = 80,
-    spread = 40,
+    inactiveZone = 0.7,
+    proximity = 0,
+    spread = 20,
     variant = "default",
-    glow = true,
+    glow = false,
     className,
-    movementDuration = 1.5,
-    borderWidth = 2,
-    disabled = false,
+    movementDuration = 2,
+    borderWidth = 1,
+    disabled = true,
   }: GlowingEffectProps) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const lastPosition = useRef({ x: 0, y: 0 });
     const animationFrameRef = useRef<number>(0);
 
     const handleMove = useCallback(
-      (e: MouseEvent) => {
-        const element = containerRef.current;
-        if (!element) return;
+      (e?: MouseEvent | { x: number; y: number }) => {
+        if (!containerRef.current) return;
 
-        const rect = element.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        
-        // Check if mouse is within the card bounds + proximity
-        const isInBounds = 
-          e.clientX >= rect.left - proximity &&
-          e.clientX <= rect.right + proximity &&
-          e.clientY >= rect.top - proximity &&
-          e.clientY <= rect.bottom + proximity;
-
-        if (!isInBounds) {
-          element.style.setProperty("--active", "0");
-          return;
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
         }
 
-        element.style.setProperty("--active", "1");
+        animationFrameRef.current = requestAnimationFrame(() => {
+          const element = containerRef.current;
+          if (!element) return;
 
-        // Calculate angle from center of card to mouse position
-        const centerX = rect.width / 2;
-        const centerY = rect.height / 2;
-        
-        const angle = Math.atan2(y - centerY, x - centerX) * (180 / Math.PI) + 90;
-        const normalizedAngle = angle < 0 ? angle + 360 : angle;
-        
-        element.style.setProperty("--start", String(normalizedAngle));
+          const { left, top, width, height } = element.getBoundingClientRect();
+          const mouseX = e?.x ?? lastPosition.current.x;
+          const mouseY = e?.y ?? lastPosition.current.y;
+
+          if (e) {
+            lastPosition.current = { x: mouseX, y: mouseY };
+          }
+
+          const center = [left + width * 0.5, top + height * 0.5];
+          const distanceFromCenter = Math.hypot(
+            mouseX - center[0],
+            mouseY - center[1]
+          );
+          const inactiveRadius = 0.5 * Math.min(width, height) * inactiveZone;
+
+          if (distanceFromCenter < inactiveRadius) {
+            element.style.setProperty("--active", "0");
+            return;
+          }
+
+          const isActive =
+            mouseX > left - proximity &&
+            mouseX < left + width + proximity &&
+            mouseY > top - proximity &&
+            mouseY < top + height + proximity;
+
+          element.style.setProperty("--active", isActive ? "1" : "0");
+
+          if (!isActive) return;
+
+          const currentAngle =
+            parseFloat(element.style.getPropertyValue("--start")) || 0;
+          let targetAngle =
+            (180 * Math.atan2(mouseY - center[1], mouseX - center[0])) /
+              Math.PI +
+            90;
+
+          const angleDiff = ((targetAngle - currentAngle + 180) % 360) - 180;
+          const newAngle = currentAngle + angleDiff;
+
+          animate(currentAngle, newAngle, {
+            duration: movementDuration,
+            ease: [0.16, 1, 0.3, 1],
+            onUpdate: (value) => {
+              element.style.setProperty("--start", String(value));
+            },
+          });
+        });
       },
-      [proximity]
+      [inactiveZone, proximity, movementDuration]
     );
 
     useEffect(() => {
       if (disabled) return;
 
-      const element = containerRef.current;
-      if (!element) return;
+      const handleScroll = () => handleMove();
+      const handlePointerMove = (e: PointerEvent) => handleMove(e);
 
-      document.addEventListener("mousemove", handleMove);
+      window.addEventListener("scroll", handleScroll, { passive: true });
+      document.body.addEventListener("pointermove", handlePointerMove, {
+        passive: true,
+      });
 
       return () => {
-        document.removeEventListener("mousemove", handleMove);
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
+        }
+        window.removeEventListener("scroll", handleScroll);
+        document.body.removeEventListener("pointermove", handlePointerMove);
       };
     }, [handleMove, disabled]);
 
