@@ -49,6 +49,8 @@ export function ClerkProvider({ children }: ClerkProviderProps) {
     <ClerkContext.Provider value={true}>
       <BaseClerkProvider
         publishableKey={publishableKey}
+        routerPush={(to) => window.history.pushState({}, '', to)}
+        routerReplace={(to) => window.history.replaceState({}, '', to)}
         appearance={{
           elements: {
             formButtonPrimary: "bg-primary text-primary-foreground hover:bg-primary/90",
@@ -71,6 +73,10 @@ export function ClerkProvider({ children }: ClerkProviderProps) {
         signUpFallbackRedirectUrl="/dashboard"
         signInUrl="/sign-in"
         signUpUrl="/sign-up"
+        allowedRedirectOrigins={[
+          window.location.origin,
+          `https://6017fd2d-e63c-400e-895b-07c85d97c0c3-00-rh9v8mjbsg02.picard.replit.dev`
+        ]}
       >
         {children}
       </BaseClerkProvider>
