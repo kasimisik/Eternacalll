@@ -33,7 +33,7 @@ export function Navigation() {
                     }`}
                     data-testid="button-dashboard"
                   >
-                    Dashboard
+                    How can I help you create your first eternal?
                   </button>
                 </Link>
                 {CLERK_CONFIG.publishableKey ? (
