@@ -235,7 +235,7 @@ export default function Landing() {
         title="Binlerce Türk işletmesi tarafından güveniliyor"
         description="AI sesli asistan teknolojimizle işlerini büyüten binlerce Türk girişimciye katılın"
         testimonials={testimonials}
-        className="bg-muted/50"
+        className="bg-black text-white"
       />
 
       {/* CTA Section */}
