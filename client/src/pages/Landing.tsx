@@ -10,6 +10,7 @@ import { Pricing } from "@/components/ui/pricing"
 import { Footerdemo } from "@/components/ui/footer-section"
 import { ExpandableChatDemo } from "@/components/ExpandableChatDemo"
 import { HeaderDemo } from "@/components/HeaderDemo"
+import { RainbowButton } from "@/components/ui/rainbow-button"
 import { Mic, Brain, Phone, Zap, MessageSquare } from 'lucide-react'
 
 export default function Landing() {
@@ -300,9 +301,9 @@ export default function Landing() {
           <div className="max-w-4xl mx-auto text-center">
             <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center">
               <Link href="/sign-up">
-                <button className="w-full sm:w-auto bg-primary text-primary-foreground px-6 md:px-8 py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors">
+                <RainbowButton className="w-full sm:w-auto">
                   Ücretsiz Deneyin
-                </button>
+                </RainbowButton>
               </Link>
               <Link href="/sign-in">
                 <button className="w-full sm:w-auto border border-border text-foreground px-6 md:px-8 py-3 rounded-lg font-semibold hover:bg-accent transition-colors">
