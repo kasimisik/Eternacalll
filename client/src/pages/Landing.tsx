@@ -119,29 +119,29 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section with Spline 3D */}
-      <Card className="w-full h-[600px] bg-black/[0.96] relative overflow-hidden border-0 rounded-none">
+      <Card className="w-full h-[600px] md:h-[700px] bg-black/[0.96] relative overflow-hidden border-0 rounded-none">
         <Spotlight
           className="-top-40 left-0 md:left-60 md:-top-20"
           fill="white"
         />
 
-        <div className="flex h-full">
+        <div className="flex flex-col md:flex-row h-full">
           {/* Left content */}
-          <div className="flex-1 p-8 relative z-10 flex flex-col justify-center">
-            <h1 className="text-4xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-neutral-50 to-neutral-400 mb-6">
+          <div className="flex-1 p-4 sm:p-8 relative z-10 flex flex-col justify-center">
+            <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-neutral-50 to-neutral-400 mb-4 md:mb-6">
               Azure AI
               <br />
               Voice Agent
             </h1>
-            <p className="mt-4 text-neutral-300 max-w-lg text-lg mb-8">
+            <p className="mt-2 md:mt-4 text-neutral-300 max-w-lg text-base md:text-lg mb-6 md:mb-8">
               AI-powered voice communication with SIP integration, Azure Speech Services, and real-time conversation processing powered by Anthropic Claude.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
               {isSignedIn ? (
                 <Link href="/dashboard">
                   <button 
-                    className="bg-white text-black px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+                    className="w-full sm:w-auto bg-white text-black px-6 md:px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
                     data-testid="button-dashboard-hero"
                   >
                     Go to Dashboard
@@ -150,7 +150,7 @@ export default function Landing() {
               ) : (
                 <Link href="/sign-in">
                   <button 
-                    className="bg-white text-black px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+                    className="w-full sm:w-auto bg-white text-black px-6 md:px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
                     data-testid="button-getstarted"
                   >
                     Get Started
@@ -159,7 +159,7 @@ export default function Landing() {
               )}
               <Link href="/dashboard">
                 <button 
-                  className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-black transition-colors"
+                  className="w-full sm:w-auto border-2 border-white text-white px-6 md:px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-black transition-colors"
                   data-testid="button-demo"
                 >
                   View Demo
@@ -169,7 +169,7 @@ export default function Landing() {
           </div>
 
           {/* Right content - 3D Scene */}
-          <div className="flex-1 relative">
+          <div className="flex-1 relative h-64 md:h-auto">
             <SplineScene
               scene="https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode"
               className="w-full h-full"
@@ -179,12 +179,12 @@ export default function Landing() {
       </Card>
 
       {/* Features Section */}
-      <section id="features" className="py-20 px-8 bg-black">
+      <section id="features" className="py-12 md:py-20 px-4 md:px-8 bg-black">
         <div className="max-w-6xl mx-auto">
 
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-3">
             {/* Azure Speech Services */}
-            <div className="relative rounded-[1rem] border border-gray-800 bg-gray-900/50 p-6 hover:bg-gray-900/70 transition-all">
+            <div className="relative rounded-[1rem] border border-gray-800 bg-gray-900/50 p-4 md:p-6 hover:bg-gray-900/70 transition-all">
               <GlowingEffect
                 spread={30}
                 glow={true}
@@ -196,16 +196,16 @@ export default function Landing() {
               <div className="w-fit rounded-lg bg-gray-800 p-3 mb-4">
                 <Mic className="h-5 w-5 text-blue-400" />
               </div>
-              <h3 className="text-lg font-semibold text-white mb-2">
-                Do things the right way
+              <h3 className="text-base md:text-lg font-semibold text-white mb-2">
+                Azure Speech Services
               </h3>
               <p className="text-sm text-gray-400">
-                Running out of copy so I'll write anything.
+                Yüksek kaliteli Türkçe ses tanıma ve sentezleme teknolojisi.
               </p>
             </div>
 
             {/* Anthropic Claude AI */}
-            <div className="relative rounded-[1rem] border border-gray-800 bg-gray-900/50 p-6 hover:bg-gray-900/70 transition-all">
+            <div className="relative rounded-[1rem] border border-gray-800 bg-gray-900/50 p-4 md:p-6 hover:bg-gray-900/70 transition-all">
               <GlowingEffect
                 spread={30}
                 glow={true}
@@ -217,16 +217,16 @@ export default function Landing() {
               <div className="w-fit rounded-lg bg-gray-800 p-3 mb-4">
                 <Brain className="h-5 w-5 text-purple-400" />
               </div>
-              <h3 className="text-lg font-semibold text-white mb-2">
-                The best AI code editor ever.
+              <h3 className="text-base md:text-lg font-semibold text-white mb-2">
+                Anthropic Claude AI
               </h3>
               <p className="text-sm text-gray-400">
-                Yes, it's true. I'm not even kidding. Ask my mom if you don't believe me.
+                Doğal dil işleme ve akıllı konuşma yetenekleri.
               </p>
             </div>
 
             {/* SIP Integration */}
-            <div className="relative rounded-[1rem] border border-gray-800 bg-gray-900/50 p-6 hover:bg-gray-900/70 transition-all">
+            <div className="relative rounded-[1rem] border border-gray-800 bg-gray-900/50 p-4 md:p-6 hover:bg-gray-900/70 transition-all">
               <GlowingEffect
                 spread={30}
                 glow={true}
@@ -238,16 +238,16 @@ export default function Landing() {
               <div className="w-fit rounded-lg bg-gray-800 p-3 mb-4">
                 <Phone className="h-5 w-5 text-green-400" />
               </div>
-              <h3 className="text-lg font-semibold text-white mb-2">
-                You should buy Aceternity UI Pro
+              <h3 className="text-base md:text-lg font-semibold text-white mb-2">
+                SIP Entegrasyonu
               </h3>
               <p className="text-sm text-gray-400">
-                It's the best money you'll ever spend
+                Mevcut telefon sistemlerinizle kolay entegrasyon.
               </p>
             </div>
 
             {/* Real-time Processing */}
-            <div className="relative rounded-[1rem] border border-gray-800 bg-gray-900/50 p-6 hover:bg-gray-900/70 transition-all">
+            <div className="relative rounded-[1rem] border border-gray-800 bg-gray-900/50 p-4 md:p-6 hover:bg-gray-900/70 transition-all">
               <GlowingEffect
                 spread={30}
                 glow={true}
@@ -259,16 +259,16 @@ export default function Landing() {
               <div className="w-fit rounded-lg bg-gray-800 p-3 mb-4">
                 <Zap className="h-5 w-5 text-yellow-400" />
               </div>
-              <h3 className="text-lg font-semibold text-white mb-2">
-                This card is also built by Cursor
+              <h3 className="text-base md:text-lg font-semibold text-white mb-2">
+                Gerçek Zamanlı İşleme
               </h3>
               <p className="text-sm text-gray-400">
-                I'm not even kidding. Ask my mom if you don't believe me.
+                Anında yanıt veren hızlı AI asistan teknolojisi.
               </p>
             </div>
 
             {/* Advanced Analytics */}
-            <div className="relative rounded-[1rem] border border-gray-800 bg-gray-900/50 p-6 hover:bg-gray-900/70 transition-all md:col-span-2 lg:col-span-1">
+            <div className="relative rounded-[1rem] border border-gray-800 bg-gray-900/50 p-4 md:p-6 hover:bg-gray-900/70 transition-all md:col-span-2 lg:col-span-1">
               <GlowingEffect
                 spread={30}
                 glow={true}
@@ -280,11 +280,11 @@ export default function Landing() {
               <div className="w-fit rounded-lg bg-gray-800 p-3 mb-4">
                 <MessageSquare className="h-5 w-5 text-cyan-400" />
               </div>
-              <h3 className="text-lg font-semibold text-white mb-2">
-                Coming soon on Aceternity UI
+              <h3 className="text-base md:text-lg font-semibold text-white mb-2">
+                Gelişmiş Analitik
               </h3>
               <p className="text-sm text-gray-400">
-                I'm writing the code as I record this, no shit.
+                Detaylı raporlar ve performans metrikleri.
               </p>
             </div>
           </div>
@@ -300,24 +300,26 @@ export default function Landing() {
       />
 
       {/* Pricing Section */}
-      <Pricing
-        plans={pricingPlans}
-        title="Basit ve Şeffaf Fiyatlandırma"
-        description="Size uygun planı seçin\nTüm planlar platformumuza erişim, müşteri kazanım araçları ve özel destek içerir."
-      />
+      <div className="bg-black">
+        <Pricing
+          plans={pricingPlans}
+          title="Basit ve Şeffaf Fiyatlandırma"
+          description="Size uygun planı seçin\nTüm planlar platformumuza erişim, müşteri kazanım araçları ve özel destek içerir."
+        />
+      </div>
 
       {/* CTA Section */}
       {!isSignedIn && (
-        <section className="py-20 px-8 bg-background">
+        <section className="py-12 md:py-20 px-4 md:px-8 bg-background">
           <div className="max-w-4xl mx-auto text-center">
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center">
               <Link href="/sign-up">
-                <button className="bg-primary text-primary-foreground px-8 py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors">
+                <button className="w-full sm:w-auto bg-primary text-primary-foreground px-6 md:px-8 py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors">
                   Ücretsiz Deneyin
                 </button>
               </Link>
               <Link href="/sign-in">
-                <button className="border border-border text-foreground px-8 py-3 rounded-lg font-semibold hover:bg-accent transition-colors">
+                <button className="w-full sm:w-auto border border-border text-foreground px-6 md:px-8 py-3 rounded-lg font-semibold hover:bg-accent transition-colors">
                   Giriş Yap
                 </button>
               </Link>

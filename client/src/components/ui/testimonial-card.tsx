@@ -27,9 +27,9 @@ export function TestimonialCard({
       {...(href ? { href } : {})}
       className={cn(
         "flex flex-col rounded-lg",
-        "bg-gradient-to-b from-muted/50 to-muted/10",
+        "bg-gradient-to-b from-gray-800/50 to-gray-900/30",
         "p-4 text-start sm:p-6",
-        "hover:from-muted/60 hover:to-muted/20",
+        "hover:from-gray-700/60 hover:to-gray-800/40",
         "max-w-[320px] sm:max-w-[320px]",
         "transition-colors duration-300",
         className
