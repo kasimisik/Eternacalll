@@ -193,7 +193,7 @@ export default function Landing() {
                 inactiveZone={0.01}
                 borderWidth={1}
               />
-              <div className="w-fit rounded-lg bg-gray-800 p-4 mb-6">
+              <div className="w-fit p-4 mb-6">
                 <Mic className="h-8 w-8 text-white" />
               </div>
               <h3 className="text-base md:text-lg font-semibold text-white mb-2">
@@ -214,7 +214,7 @@ export default function Landing() {
                 inactiveZone={0.01}
                 borderWidth={1}
               />
-              <div className="w-fit rounded-lg bg-gray-800 p-4 mb-6">
+              <div className="w-fit p-4 mb-6">
                 <Brain className="h-8 w-8 text-white" />
               </div>
               <h3 className="text-base md:text-lg font-semibold text-white mb-2">
@@ -235,7 +235,7 @@ export default function Landing() {
                 inactiveZone={0.01}
                 borderWidth={1}
               />
-              <div className="w-fit rounded-lg bg-gray-800 p-4 mb-6">
+              <div className="w-fit p-4 mb-6">
                 <Phone className="h-8 w-8 text-white" />
               </div>
               <h3 className="text-base md:text-lg font-semibold text-white mb-2">
@@ -256,7 +256,7 @@ export default function Landing() {
                 inactiveZone={0.01}
                 borderWidth={1}
               />
-              <div className="w-fit rounded-lg bg-gray-800 p-4 mb-6">
+              <div className="w-fit p-4 mb-6">
                 <Zap className="h-8 w-8 text-white" />
               </div>
               <h3 className="text-base md:text-lg font-semibold text-white mb-2">
@@ -277,7 +277,7 @@ export default function Landing() {
                 inactiveZone={0.01}
                 borderWidth={1}
               />
-              <div className="w-fit rounded-lg bg-gray-800 p-4 mb-6">
+              <div className="w-fit p-4 mb-6">
                 <MessageSquare className="h-8 w-8 text-white" />
               </div>
               <h3 className="text-base md:text-lg font-semibold text-white mb-2">
