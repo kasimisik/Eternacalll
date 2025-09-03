@@ -88,7 +88,7 @@ export default function Subscription() {
   return (
     <div
       className={cn(
-        "rounded-md flex flex-col md:flex-row bg-gray-100 dark:bg-neutral-800 w-full flex-1 min-h-screen mx-auto border border-neutral-200 dark:border-neutral-700 overflow-hidden"
+        "rounded-md flex flex-col md:flex-row bg-neutral-900 dark:bg-neutral-900 w-full flex-1 min-h-screen mx-auto border border-neutral-700 dark:border-neutral-700 overflow-hidden"
       )}
     >
       <Sidebar open={open} setOpen={setOpen}>
@@ -187,7 +187,7 @@ const SubscriptionContent = ({
   return (
     <div className="flex flex-1">
       {/* Main Content Area - Subscription Management */}
-      <div className="flex-1 p-4 md:p-8 rounded-tl-2xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900">
+      <div className="flex-1 p-4 md:p-8 rounded-tl-2xl border border-neutral-700 dark:border-neutral-700 bg-neutral-900 dark:bg-neutral-900">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-3xl font-bold text-foreground mb-8">Planım</h1>
           

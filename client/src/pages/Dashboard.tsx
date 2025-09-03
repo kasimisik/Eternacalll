@@ -90,7 +90,7 @@ export default function Dashboard() {
   return (
     <div
       className={cn(
-        "rounded-md flex flex-col md:flex-row bg-gray-100 dark:bg-neutral-800 w-full flex-1 min-h-screen mx-auto border border-neutral-200 dark:border-neutral-700 overflow-hidden"
+        "rounded-md flex flex-col md:flex-row bg-neutral-900 dark:bg-neutral-900 w-full flex-1 min-h-screen mx-auto border border-neutral-700 dark:border-neutral-700 overflow-hidden"
       )}
     >
       <Sidebar open={open} setOpen={setOpen}>
@@ -189,7 +189,7 @@ const DashboardContent = ({
   return (
     <div className="flex flex-1">
       {/* Main Content Area - V0 Chat Component - Full width and centered */}
-      <div className="flex-1 p-4 md:p-8 rounded-tl-2xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 flex items-center justify-center min-h-screen">
+      <div className="flex-1 p-4 md:p-8 rounded-tl-2xl border border-neutral-700 dark:border-neutral-700 bg-neutral-900 dark:bg-neutral-900 flex items-center justify-center min-h-screen">
         <VercelV0Chat />
       </div>
     </div>
