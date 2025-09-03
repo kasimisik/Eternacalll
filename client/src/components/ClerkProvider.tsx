@@ -36,7 +36,7 @@ export function ClerkProvider({ children }: ClerkProviderProps) {
     return <div>Loading...</div>;
   }
 
-  // If no Clerk key is configured, provide mock context
+  // If no Clerk key is configured or if Clerk fails, provide fallback auth
   if (!publishableKey) {
     return (
       <ClerkContext.Provider value={false}>
