@@ -152,36 +152,6 @@ export default function Landing() {
             <p className="mt-2 md:mt-4 text-neutral-300 max-w-lg text-base md:text-lg mb-6 md:mb-8">
               AI-powered voice communication with SIP integration, Azure Speech Services, and real-time conversation processing powered by Anthropic Claude.
             </p>
-            
-            <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
-              {isSignedIn ? (
-                <Link href="/dashboard">
-                  <button 
-                    className="w-full sm:w-auto bg-white text-black px-6 md:px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
-                    data-testid="button-dashboard-hero"
-                  >
-                    Go to Dashboard
-                  </button>
-                </Link>
-              ) : (
-                <Link href="/sign-in">
-                  <button 
-                    className="w-full sm:w-auto bg-white text-black px-6 md:px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
-                    data-testid="button-getstarted"
-                  >
-                    Get Started
-                  </button>
-                </Link>
-              )}
-              <Link href="/dashboard">
-                <button 
-                  className="w-full sm:w-auto border-2 border-white text-white px-6 md:px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-black transition-colors"
-                  data-testid="button-demo"
-                >
-                  View Demo
-                </button>
-              </Link>
-            </div>
           </div>
 
           {/* Right content - 3D Scene */}
