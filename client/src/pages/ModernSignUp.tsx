@@ -97,14 +97,14 @@ export function ModernSignUp() {
     try {
       await signUp.authenticateWithRedirect({
         strategy: 'oauth_google',
-        redirectUrl: '/dashboard',
-        redirectUrlComplete: '/dashboard',
+        redirectUrl: window.location.origin + '/dashboard',
+        redirectUrlComplete: window.location.origin + '/dashboard',
       });
     } catch (err: any) {
       console.error('Google sign up error:', err);
       toast({
-        title: "Google kayıt başarısız",
-        description: err.errors?.[0]?.message || "Bir hata oluştu",
+        title: "Google ile kayıt şu anda kullanılamıyor",
+        description: "Lütfen manuel olarak kayıt olun",
         variant: "destructive"
       });
       setIsLoading(false);

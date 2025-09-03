@@ -93,14 +93,14 @@ export function ModernSignIn() {
     try {
       await signIn.authenticateWithRedirect({
         strategy: 'oauth_google',
-        redirectUrl: '/dashboard',
-        redirectUrlComplete: '/dashboard',
+        redirectUrl: window.location.origin + '/dashboard',
+        redirectUrlComplete: window.location.origin + '/dashboard',
       });
     } catch (err: any) {
       console.error('Google sign in error:', err);
       toast({
-        title: "Google giriş başarısız",
-        description: err.errors?.[0]?.message || "Bir hata oluştu",
+        title: "Google ile giriş şu anda kullanılamıyor",
+        description: "Lütfen e-posta ve şifre ile giriş yapın",
         variant: "destructive"
       });
       setIsLoading(false);

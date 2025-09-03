@@ -69,8 +69,8 @@ export function ClerkProvider({ children }: ClerkProviderProps) {
             borderRadius: "0.5rem"
           }
         }}
-        signInFallbackRedirectUrl="/dashboard"
-        signUpFallbackRedirectUrl="/dashboard"
+        afterSignInUrl="/dashboard"
+        afterSignUpUrl="/dashboard"
         signInUrl="/sign-in"
         signUpUrl="/sign-up"
         allowedRedirectOrigins={[
