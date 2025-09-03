@@ -1,5 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { Sidebar, SidebarBody, SidebarLink } from "@/components/ui/sidebar";
+import {
+  SidebarProvider,
+  NewSidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarInset,
+  SidebarTrigger,
+} from "@/components/ui/new-sidebar";
 import { LayoutDashboard, UserCog, Settings, LogOut, Bot, Crown, CreditCard } from "lucide-react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
@@ -19,45 +31,32 @@ export default function Subscription() {
   } | null>(null);
   const [loadingSubscription, setLoadingSubscription] = useState(true);
 
-  const links = [
-    {
-      label: "Dashboard",
-      href: "/dashboard",
-      icon: (
-        <LayoutDashboard className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
-      ),
-    },
-    {
-      label: "Profile",
-      href: "/profile",
-      icon: (
-        <UserCog className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
-      ),
-    },
-    {
-      label: "Settings",
-      href: "/settings",
-      icon: (
-        <Settings className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
-      ),
-    },
-    {
-      label: "Planım",
-      href: "/subscription",
-      icon: (
-        <Crown className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
-      ),
-    },
-    {
-      label: "Logout",
-      href: "#",
-      icon: (
-        <LogOut className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
-      ),
-    },
-  ];
+  const data = {
+    navMain: [
+      {
+        title: "Dashboard",
+        url: "/dashboard",
+        icon: LayoutDashboard,
+      },
+      {
+        title: "Profile",
+        url: "/profile",
+        icon: UserCog,
+      },
+      {
+        title: "Settings",
+        url: "/settings",
+        icon: Settings,
+      },
+      {
+        title: "Planım",
+        url: "/subscription",
+        icon: Crown,
+        isActive: true,
+      },
+    ],
+  };
 
-  const [open, setOpen] = useState(false);
 
   // Kullanıcının abonelik durumunu kontrol et
   useEffect(() => {
@@ -86,93 +85,81 @@ export default function Subscription() {
   };
 
   return (
-    <div
-      className={cn(
-        "rounded-md flex flex-col md:flex-row bg-neutral-900 dark:bg-neutral-900 w-full flex-1 min-h-screen mx-auto border border-neutral-700 dark:border-neutral-700 overflow-hidden"
-      )}
-    >
-      <Sidebar open={open} setOpen={setOpen}>
-        <SidebarBody className="justify-between gap-10">
-          <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
-            {open ? <Logo /> : <LogoIcon />}
-            <div className="mt-8 flex flex-col gap-2">
-              {links.map((link, idx) => {
-                if (link.label === "Logout") {
-                  return (
-                    <div 
-                      key={idx}
-                      onClick={() => signOut()}
-                      className="flex items-center justify-start gap-2 group/sidebar py-2 cursor-pointer"
-                    >
-                      {link.icon}
-                      <motion.span
-                        animate={{
-                          display: open ? "inline-block" : "none",
-                          opacity: open ? 1 : 0,
-                        }}
-                        className="text-neutral-700 dark:text-neutral-200 text-sm group-hover/sidebar:translate-x-1 transition duration-150 whitespace-pre inline-block !p-0 !m-0"
-                      >
-                        {link.label}
-                      </motion.span>
-                    </div>
-                  );
-                }
-                return <SidebarLink key={idx} link={link} />;
-              })}
-            </div>
-          </div>
-          <div>
-            <SidebarLink
-              link={{
-                label: user?.firstName || "Kullanıcı",
-                href: "#",
-                icon: (
-                  <div className="h-7 w-7 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-semibold text-sm">
-                    {getInitials(user?.firstName || undefined, user?.lastName || undefined) || 'U'}
+    <SidebarProvider>
+      <NewSidebar>
+        <SidebarHeader>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton size="lg" asChild>
+                <Link href="/dashboard">
+                  <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                    <Bot className="size-4" />
                   </div>
-                ),
-              }}
-            />
+                  <div className="grid flex-1 text-left text-sm leading-tight">
+                    <span className="truncate font-semibold">Azure AI Platform</span>
+                    <span className="truncate text-xs">AI Assistant</span>
+                  </div>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarHeader>
+        <SidebarContent>
+          <SidebarGroup>
+            <SidebarMenu>
+              {data.navMain.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton tooltip={item.title} isActive={item.isActive} asChild>
+                    <Link href={item.url}>
+                      <item.icon />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Logout" onClick={() => signOut()}>
+                  <LogOut />
+                  <span>Logout</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroup>
+        </SidebarContent>
+        <SidebarFooter>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton size="lg">
+                <div className="h-8 w-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-semibold text-sm">
+                  {getInitials(user?.firstName || undefined, user?.lastName || undefined) || 'U'}
+                </div>
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-semibold">{user?.firstName || "Kullanıcı"}</span>
+                  <span className="truncate text-xs">{user?.emailAddresses?.[0]?.emailAddress}</span>
+                </div>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
+      </NewSidebar>
+      <SidebarInset>
+        <header className="flex h-16 shrink-0 items-center gap-2 px-4">
+          <SidebarTrigger className="-ml-1" />
+          <div className="ml-auto px-3">
+            <h1 className="text-lg font-semibold">Planım</h1>
           </div>
-        </SidebarBody>
-      </Sidebar>
-      <SubscriptionContent 
-        subscription={subscription}
-        loadingSubscription={loadingSubscription}
-        user={user}
-      />
-    </div>
+        </header>
+        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+          <SubscriptionContent 
+            subscription={subscription}
+            loadingSubscription={loadingSubscription}
+            user={user}
+          />
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
-
-export const Logo = () => {
-  return (
-    <Link
-      href="/dashboard"
-      className="font-normal flex space-x-2 items-center text-sm text-black py-1 relative z-20"
-    >
-      <Bot className="h-6 w-6 text-primary flex-shrink-0" />
-      <motion.span
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="font-medium text-black dark:text-white whitespace-pre"
-      >
-        Azure AI Platform
-      </motion.span>
-    </Link>
-  );
-};
-
-export const LogoIcon = () => {
-  return (
-    <Link
-      href="/dashboard"
-      className="font-normal flex space-x-2 items-center text-sm text-black py-1 relative z-20"
-    >
-      <Bot className="h-6 w-6 text-primary flex-shrink-0" />
-    </Link>
-  );
-};
 
 // Subscription content component
 const SubscriptionContent = ({ 
@@ -185,9 +172,8 @@ const SubscriptionContent = ({
   user: any;
 }) => {
   return (
-    <div className="flex flex-1">
-      {/* Main Content Area - Subscription Management */}
-      <div className="flex-1 p-4 md:p-8 rounded-tl-2xl border border-neutral-700 dark:border-neutral-700 bg-neutral-900 dark:bg-neutral-900">
+    <div className="flex flex-1 flex-col">
+      <div className="flex-1 rounded-xl bg-muted/50 p-8">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-3xl font-bold text-foreground mb-8">Planım</h1>
           
