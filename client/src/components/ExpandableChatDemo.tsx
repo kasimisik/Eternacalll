@@ -1,14 +1,13 @@
 "use client"
 
 import { useState, FormEvent } from "react"
-import { Send, Bot, Paperclip, Mic, CornerDownLeft } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Bot } from "lucide-react"
 import {
   ChatBubble,
   ChatBubbleAvatar,
   ChatBubbleMessage,
 } from "@/components/ui/chat-bubble"
-import { ChatInput } from "@/components/ui/chat-input"
+import { PromptBox } from "@/components/ui/chatgpt-prompt-input"
 import {
   ExpandableChat,
   ExpandableChatHeader,
@@ -57,13 +56,6 @@ export function ExpandableChatDemo() {
     }, 1000)
   }
 
-  const handleAttachFile = () => {
-    // File attachment functionality
-  }
-
-  const handleMicrophoneClick = () => {
-    // Voice input functionality
-  }
 
   return (
     <div className="relative">
@@ -117,49 +109,12 @@ export function ExpandableChatDemo() {
         </ExpandableChatBody>
 
         <ExpandableChatFooter>
-          <form
-            onSubmit={handleSubmit}
-            className="relative rounded-lg border bg-background focus-within:ring-1 focus-within:ring-ring p-1"
-          >
-            <ChatInput
+          <form onSubmit={handleSubmit} className="w-full">
+            <PromptBox
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Mesajınızı yazın..."
-              className="min-h-12 resize-none rounded-lg bg-background border-0 p-3 shadow-none focus-visible:ring-0"
             />
-            <div className="flex items-center p-3 pt-0 justify-between">
-              <div className="flex">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  type="button"
-                  onClick={handleAttachFile}
-                  data-testid="button-attach-file"
-                >
-                  <Paperclip className="size-4" />
-                </Button>
-
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  type="button"
-                  onClick={handleMicrophoneClick}
-                  data-testid="button-microphone"
-                >
-                  <Mic className="size-4" />
-                </Button>
-              </div>
-              <Button 
-                type="submit" 
-                size="sm" 
-                variant="outline"
-                className="ml-auto gap-1.5"
-                data-testid="button-send-message"
-              >
-                Mesaj Gönder
-                <CornerDownLeft className="size-3.5" />
-              </Button>
-            </div>
           </form>
         </ExpandableChatFooter>
       </ExpandableChat>
