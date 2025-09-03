@@ -7,8 +7,8 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useUserHook, useAuthHook } from '@/lib/auth-hook';
 import { Card, CardContent } from '@/components/ui/card';
-import { VoiceAssistantModal, VoiceAssistantTrigger } from '@/components/VoiceAssistantModal';
 import PaymentButton from '@/components/PaymentButton';
+import { VercelV0Chat } from '@/components/ui/v0-ai-chat';
 
 export default function Dashboard() {
   const { user } = useUserHook();
@@ -20,7 +20,6 @@ export default function Dashboard() {
     createdAt?: string;
   } | null>(null);
   const [loadingSubscription, setLoadingSubscription] = useState(true);
-  const [showVoiceAssistant, setShowVoiceAssistant] = useState(false);
 
   const links = [
     {
@@ -136,8 +135,6 @@ export default function Dashboard() {
         subscription={subscription}
         loadingSubscription={loadingSubscription}
         user={user}
-        showVoiceAssistant={showVoiceAssistant}
-        setShowVoiceAssistant={setShowVoiceAssistant}
       />
     </div>
   );
@@ -176,185 +173,120 @@ export const LogoIcon = () => {
 const DashboardContent = ({ 
   subscription, 
   loadingSubscription, 
-  user, 
-  showVoiceAssistant, 
-  setShowVoiceAssistant 
+  user
 }: {
   subscription: any;
   loadingSubscription: boolean;
   user: any;
-  showVoiceAssistant: boolean;
-  setShowVoiceAssistant: (show: boolean) => void;
 }) => {
   return (
-    <div className="flex flex-1">
-      <div className="p-2 md:p-10 rounded-tl-2xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 flex flex-col gap-6 flex-1 w-full h-full overflow-y-auto">
+    <div className="flex flex-1 flex-col lg:flex-row">
+      {/* Main Content Area - V0 Chat Component */}
+      <div className="flex-1 p-4 md:p-8 rounded-tl-2xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 flex items-center justify-center min-h-screen">
+        <VercelV0Chat />
+      </div>
+      
+      {/* Right Sidebar - Subscription Panel */}
+      <div className="w-full lg:w-80 xl:w-96 p-4 md:p-6 bg-gray-50 dark:bg-neutral-800 border-l border-neutral-200 dark:border-neutral-700 flex flex-col gap-4">
+        <h2 className="text-xl font-bold text-foreground mb-4">Planım</h2>
         
-        {/* Abonelik Durumu Kartları */}
+        {/* Current Plan Status */}
         {!loadingSubscription && (
-          <div className="flex gap-2">
-            <div className={`h-20 w-full rounded-lg p-4 flex items-center justify-between ${
-              subscription?.hasSubscription 
-                ? 'bg-green-100 dark:bg-green-900' 
-                : 'bg-amber-100 dark:bg-amber-900'
-            }`}>
-              <div>
-                <h3 className={`font-semibold text-sm ${
-                  subscription?.hasSubscription ? 'text-green-800 dark:text-green-200' : 'text-amber-800 dark:text-amber-200'
-                }`}>
-                  Hoş geldiniz, {user?.firstName || 'Kullanıcı'}!
-                </h3>
-                <p className={`text-xs ${
-                  subscription?.hasSubscription ? 'text-green-700 dark:text-green-300' : 'text-amber-700 dark:text-amber-300'
-                }`}>
-                  {subscription?.hasSubscription 
-                    ? `${subscription.plan} aktif`
-                    : 'Ücretsiz plan'
-                  }
-                </p>
-              </div>
+          <div className={`rounded-lg p-4 ${
+            subscription?.hasSubscription 
+              ? 'bg-green-100 dark:bg-green-900' 
+              : 'bg-amber-100 dark:bg-amber-900'
+          }`}>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className={`font-semibold ${
+                subscription?.hasSubscription ? 'text-green-800 dark:text-green-200' : 'text-amber-800 dark:text-amber-200'
+              }`}>
+                {subscription?.hasSubscription ? subscription.plan : 'Ücretsiz Plan'}
+              </h3>
               {subscription?.hasSubscription ? (
-                <Crown className="w-6 h-6 text-yellow-600" />
+                <Crown className="w-5 h-5 text-yellow-600" />
               ) : (
-                <CreditCard className="w-6 h-6 text-amber-600" />
+                <CreditCard className="w-5 h-5 text-amber-600" />
               )}
             </div>
-            <div className="h-20 w-full rounded-lg bg-blue-100 dark:bg-blue-900 p-4 flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold text-sm text-blue-800 dark:text-blue-200">AI Asistan</h3>
-                <p className="text-xs text-blue-700 dark:text-blue-300">Azure Destekli</p>
-              </div>
-              <Bot className="w-6 h-6 text-blue-600" />
-            </div>
-            <div className="h-20 w-full rounded-lg bg-purple-100 dark:bg-purple-900 p-4 flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold text-sm text-purple-800 dark:text-purple-200">Telefon API</h3>
-                <p className="text-xs text-purple-700 dark:text-purple-300">SIP Entegrasyonu</p>
-              </div>
-              <div className="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center">
-                <span className="text-white text-xs">📞</span>
-              </div>
-            </div>
-            <div className="h-20 w-full rounded-lg bg-gray-100 dark:bg-neutral-800 animate-pulse"></div>
+            <p className={`text-sm ${
+              subscription?.hasSubscription ? 'text-green-700 dark:text-green-300' : 'text-amber-700 dark:text-amber-300'
+            }`}>
+              Hoş geldiniz, {user?.firstName || 'Kullanıcı'}!
+            </p>
           </div>
         )}
 
-        {/* Ana İçerik Alanı */}
-        <div className="flex gap-2 flex-1">
-          {/* Sol Kolon - Ödeme ve Voice Assistant */}
-          <div className="h-full w-full rounded-lg bg-white dark:bg-neutral-800 p-6 border border-neutral-200 dark:border-neutral-700">
-            
-            {/* Ödeme Seçenekleri - Sadece aboneliği olmayanlara göster */}
-            {!loadingSubscription && !subscription?.hasSubscription && (
-              <Card className="mb-6 border-primary">
-                <CardContent className="p-4">
-                  <div className="text-center">
-                    <Crown className="w-8 h-8 text-yellow-600 mx-auto mb-3" />
-                    <h3 className="text-lg font-bold text-foreground mb-2">Profesyonel Plana Yükselt</h3>
-                    <p className="text-muted-foreground mb-3 text-sm">
-                      Tüm Voice Agent özelliklerine erişim
-                    </p>
-                    <div className="text-2xl font-bold text-primary mb-3">₺60/ay</div>
-                    <ul className="text-xs text-muted-foreground space-y-1 mb-4">
-                      <li>✓ Sınırsız AI ajanları</li>
-                      <li>✓ Azure ses sentezi</li>
-                      <li>✓ Özel telefon endpoint'leri</li>
-                      <li>✓ Gelişmiş ses ayarları</li>
-                    </ul>
-                    <PaymentButton />
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* SIP Voice Agent Info */}
-            <div className="bg-gradient-to-br from-blue-50 via-purple-50 to-indigo-50 dark:from-blue-950 dark:via-purple-950 dark:to-indigo-950 rounded-lg p-6 border border-blue-200 dark:border-blue-800">
-              <div className="text-center mb-4">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                  📞 Azure SIP Telefon Asistanı
-                </h2>
-                <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
-                  Azure Speech ve Anthropic AI ile güçlendirilmiş
+        {/* Upgrade Card - Only show for non-subscribers */}
+        {!loadingSubscription && !subscription?.hasSubscription && (
+          <Card className="border-primary">
+            <CardContent className="p-4">
+              <div className="text-center">
+                <Crown className="w-8 h-8 text-yellow-600 mx-auto mb-3" />
+                <h3 className="text-lg font-bold text-foreground mb-2">Profesyonel Plan</h3>
+                <p className="text-muted-foreground mb-3 text-sm">
+                  Tüm özelliklere erişim
                 </p>
-                <div className="flex flex-wrap justify-center gap-2 text-xs text-gray-500 dark:text-gray-400 mb-4">
-                  <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    Azure Speech
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                    Claude AI
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    Text-to-Speech
-                  </div>
-                </div>
+                <div className="text-2xl font-bold text-primary mb-3">₺60/ay</div>
+                <ul className="text-xs text-muted-foreground space-y-1 mb-4 text-left">
+                  <li>✓ Sınırsız AI ajanları</li>
+                  <li>✓ Azure ses sentezi</li>
+                  <li>✓ Özel telefon endpoint'leri</li>
+                  <li>✓ Gelişmiş ses ayarları</li>
+                  <li>✓ Premium destek</li>
+                </ul>
+                <PaymentButton />
               </div>
-              
-              <VoiceAssistantTrigger onOpen={() => setShowVoiceAssistant(true)} />
-              
-              <div className="mt-3 text-xs text-gray-500 dark:text-gray-400 text-center">
-                ✨ Mikrofona tıklayın ve Azure AI ile konuşun
-              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Features Overview */}
+        <div className="space-y-3">
+          <h4 className="font-semibold text-foreground">Platform Özellikleri</h4>
+          
+          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <Bot className="w-4 h-4 text-blue-600" />
+              <span className="font-medium text-blue-800 dark:text-blue-200 text-sm">AI Asistan</span>
             </div>
+            <p className="text-xs text-blue-700 dark:text-blue-300">Azure AI ile güçlendirilmiş</p>
           </div>
 
-          {/* Sağ Kolon - İstatistikler ve Dashboard */}
-          <div className="h-full w-full rounded-lg bg-white dark:bg-neutral-800 p-6 border border-neutral-200 dark:border-neutral-700">
-            <h3 className="text-lg font-semibold text-foreground mb-4">Sistem Durumu</h3>
-            
-            {/* İstatistik Kartları */}
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 text-center">
-                <div className="text-lg font-bold text-blue-600 dark:text-blue-400">100%</div>
-                <div className="text-xs text-blue-500 dark:text-blue-300">Sistem Çalışma</div>
+          <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-4 h-4 bg-purple-600 rounded-full flex items-center justify-center">
+                <span className="text-white text-xs">📞</span>
               </div>
-              <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 text-center">
-                <div className="text-lg font-bold text-green-600 dark:text-green-400">24/7</div>
-                <div className="text-xs text-green-500 dark:text-green-300">Aktif Destek</div>
-              </div>
-              <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3 text-center">
-                <div className="text-lg font-bold text-purple-600 dark:text-purple-400">AI</div>
-                <div className="text-xs text-purple-500 dark:text-purple-300">Voice Engine</div>
-              </div>
-              <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-3 text-center">
-                <div className="text-lg font-bold text-orange-600 dark:text-orange-400">SIP</div>
-                <div className="text-xs text-orange-500 dark:text-orange-300">Telefon API</div>
-              </div>
+              <span className="font-medium text-purple-800 dark:text-purple-200 text-sm">Telefon API</span>
             </div>
+            <p className="text-xs text-purple-700 dark:text-purple-300">SIP entegrasyonu</p>
+          </div>
 
-            {/* Aktivite Grafiği Simülasyonu */}
-            <div className="bg-gray-50 dark:bg-neutral-700 rounded-lg p-4">
-              <h4 className="text-sm font-medium text-foreground mb-3">Son 7 Gün Aktivite</h4>
-              <div className="flex items-end gap-1 h-16">
-                {[30, 50, 40, 60, 45, 70, 55].map((height, i) => (
-                  <div 
-                    key={i}
-                    className="bg-primary rounded-t flex-1"
-                    style={{ height: `${height}%` }}
-                  ></div>
-                ))}
-              </div>
-              <div className="flex justify-between text-xs text-muted-foreground mt-2">
-                <span>Pzt</span>
-                <span>Sal</span>
-                <span>Çar</span>
-                <span>Per</span>
-                <span>Cum</span>
-                <span>Cmt</span>
-                <span>Paz</span>
-              </div>
+          <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-4 h-4 bg-green-600 rounded-full"></div>
+              <span className="font-medium text-green-800 dark:text-green-200 text-sm">7/24 Aktif</span>
+            </div>
+            <p className="text-xs text-green-700 dark:text-green-300">Kesintisiz hizmet</p>
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="bg-gray-100 dark:bg-neutral-700 rounded-lg p-4">
+          <h4 className="font-medium text-foreground mb-3 text-sm">Sistem Durumu</h4>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="text-center">
+              <div className="text-lg font-bold text-primary">100%</div>
+              <div className="text-xs text-muted-foreground">Uptime</div>
+            </div>
+            <div className="text-center">
+              <div className="text-lg font-bold text-primary">AI</div>
+              <div className="text-xs text-muted-foreground">Engine</div>
             </div>
           </div>
         </div>
       </div>
-      
-      {/* Voice Assistant Modal */}
-      <VoiceAssistantModal 
-        isOpen={showVoiceAssistant} 
-        onClose={() => setShowVoiceAssistant(false)} 
-      />
     </div>
   );
 };
