@@ -321,9 +321,9 @@ export default function Landing() {
       <DisplayCardsDemo />
 
       {/* Globe Section */}
-      <section className="py-8 sm:py-12 md:py-20 px-2 sm:px-4 md:px-8 bg-black">
+      <section className="py-16 sm:py-20 md:py-28 px-2 sm:px-4 md:px-8 bg-black">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-8 sm:mb-12">
+          <div className="text-center mb-12 sm:mb-16 md:mb-20">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 sm:mb-4">
               Küresel Erişim
             </h2>
