@@ -34,74 +34,38 @@ const GlowingEffect = memo(
     const animationFrameRef = useRef<number>(0);
 
     const handleMove = useCallback(
-      (e: MouseEvent | PointerEvent) => {
-        if (!containerRef.current) return;
-        
+      (e: MouseEvent) => {
         const element = containerRef.current;
+        if (!element) return;
+
         const rect = element.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
         
-        // Mouse pozisyonunu container'a göre hesapla
-        const mouseX = e.clientX;
-        const mouseY = e.clientY;
-        
-        // Container'ın merkezi
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
-        
-        // Mouse ile container arasındaki mesafe
-        const distanceFromCenter = Math.hypot(mouseX - centerX, mouseY - centerY);
-        
-        // Proximity kontrolü - mouse kartın yakınında mı?
-        const isNear = 
-          mouseX >= rect.left - proximity &&
-          mouseX <= rect.right + proximity &&
-          mouseY >= rect.top - proximity &&
-          mouseY <= rect.bottom + proximity;
-        
-        if (!isNear) {
+        // Check if mouse is within the card bounds + proximity
+        const isInBounds = 
+          e.clientX >= rect.left - proximity &&
+          e.clientX <= rect.right + proximity &&
+          e.clientY >= rect.top - proximity &&
+          e.clientY <= rect.bottom + proximity;
+
+        if (!isInBounds) {
           element.style.setProperty("--active", "0");
           return;
         }
-        
-        // İnactive zone kontrolü
-        const minDimension = Math.min(rect.width, rect.height);
-        const inactiveRadius = (minDimension / 2) * inactiveZone;
-        
-        if (distanceFromCenter < inactiveRadius) {
-          element.style.setProperty("--active", "0");
-          return;
-        }
-        
-        // Effect'i aktif et
+
         element.style.setProperty("--active", "1");
+
+        // Calculate angle from center of card to mouse position
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
         
-        // Mouse'un container'a göre açısını hesapla
-        const deltaX = mouseX - centerX;
-        const deltaY = mouseY - centerY;
-        let angle = Math.atan2(deltaY, deltaX) * (180 / Math.PI) + 90;
+        const angle = Math.atan2(y - centerY, x - centerX) * (180 / Math.PI) + 90;
+        const normalizedAngle = angle < 0 ? angle + 360 : angle;
         
-        // Açıyı normalize et (0-360)
-        if (angle < 0) angle += 360;
-        
-        // Animasyonlu açı güncellemesi
-        const currentAngle = parseFloat(element.style.getPropertyValue("--start")) || 0;
-        
-        // En kısa yolu hesapla
-        let angleDiff = angle - currentAngle;
-        if (angleDiff > 180) angleDiff -= 360;
-        if (angleDiff < -180) angleDiff += 360;
-        
-        const targetAngle = currentAngle + angleDiff;
-        
-        animate(currentAngle, targetAngle, {
-          duration: movementDuration,
-          ease: [0.25, 0.46, 0.45, 0.94],
-          onUpdate: (value: number) => {
-            element.style.setProperty("--start", String(value % 360));
-          },
-        });
+        element.style.setProperty("--start", String(normalizedAngle));
       },
-      [proximity, inactiveZone, movementDuration]
+      [proximity]
     );
 
     useEffect(() => {
@@ -110,23 +74,10 @@ const GlowingEffect = memo(
       const element = containerRef.current;
       if (!element) return;
 
-      const handleMouseMove = (e: MouseEvent) => handleMove(e);
-      const handleMouseLeave = () => {
-        if (element) {
-          element.style.setProperty("--active", "0");
-        }
-      };
-
-      // Her card için ayrı mouse event listener'ları
-      document.addEventListener("mousemove", handleMouseMove);
-      element.addEventListener("mouseleave", handleMouseLeave);
+      document.addEventListener("mousemove", handleMove);
 
       return () => {
-        document.removeEventListener("mousemove", handleMouseMove);
-        element.removeEventListener("mouseleave", handleMouseLeave);
-        if (animationFrameRef.current) {
-          cancelAnimationFrame(animationFrameRef.current);
-        }
+        document.removeEventListener("mousemove", handleMove);
       };
     }, [handleMove, disabled]);
 
