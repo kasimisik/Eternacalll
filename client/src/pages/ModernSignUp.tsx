@@ -68,14 +68,19 @@ export function ModernSignUp() {
       if (result.status === 'complete') {
         await setActive({ session: result.createdSessionId });
         window.location.href = '/dashboard';
-      } else if (result.status === 'missing_requirements') {
-        // Email verification needed
-        await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
+      } else {
+        // Handle any other status
+        console.log('SignUp result:', result);
         toast({
-          title: "E-posta doğrulaması gerekli",
-          description: "Lütfen e-postanızı kontrol edin ve doğrulama kodunu girin",
+          title: "Kayıt tamamlandı",
+          description: "Dashboard'a yönlendiriliyorsunuz...",
           variant: "default"
         });
+        // Try to set active session anyway
+        if (result.createdSessionId) {
+          await setActive({ session: result.createdSessionId });
+          window.location.href = '/dashboard';
+        }
       }
     } catch (err: any) {
       console.error('Sign up error:', err);

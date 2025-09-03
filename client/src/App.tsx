@@ -10,6 +10,8 @@ import Landing from "@/pages/Landing";
 import SignIn from "@/pages/SignIn";
 import { ModernSignIn } from "@/pages/ModernSignIn";
 import { ModernSignUp } from "@/pages/ModernSignUp";
+import { SignInPage } from "@/components/ui/sign-in";
+import { SignUpPage } from "@/components/ui/sign-up";
 import SignUp from "@/pages/SignUp";
 import Dashboard from "@/pages/Dashboard";
 import NotFound from "@/pages/not-found";

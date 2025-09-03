@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { SignUp as ClerkSignUp } from '@clerk/clerk-react';
+import { BeamsBackground } from './beams-background';
+import { motion } from 'framer-motion';
 
 // --- HELPER COMPONENTS (ICONS) ---
 
@@ -67,73 +69,77 @@ export const SignUpPage: React.FC<SignUpPageProps> = ({
   const [showPassword, setShowPassword] = useState(false);
 
     return (
-     <div className="h-[100dvh] flex flex-col md:flex-row font-geist w-[100dvw]">
-       {/* Left column: sign-up form */}
-    <section className="flex-1 flex items-center justify-center p-8">
-     <div className="w-full max-w-md">
-      <div className="flex flex-col gap-6">
-       <h1 className="animate-element animate-delay-100 text-4xl md:text-5xl font-semibold leading-tight">{title}</h1>
-       <p className="animate-element animate-delay-200 text-muted-foreground">{description}</p>
+     <BeamsBackground>
+       <motion.div
+         initial={{ opacity: 0, y: 20 }}
+         animate={{ opacity: 1, y: 0 }}
+         transition={{ duration: 0.8 }}
+         className="w-full max-w-sm relative z-10"
+       >
+         <div className="relative bg-black/40 backdrop-blur-xl rounded-2xl p-6 border border-white/[0.05] shadow-2xl overflow-hidden">
+           {/* Logo and header */}
+           <div className="text-center space-y-1 mb-5">
+             <motion.div
+               initial={{ scale: 0.5, opacity: 0 }}
+               animate={{ scale: 1, opacity: 1 }}
+               transition={{ type: "spring", duration: 0.8 }}
+               className="mx-auto w-10 h-10 rounded-full border border-white/10 flex items-center justify-center relative overflow-hidden"
+             >
+               <span className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-b from-white to-white/70">K</span>
+               <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-50" />
+             </motion.div>
 
-       <div className="animate-element animate-delay-300">
-         <ClerkSignUp
-           appearance={{
-             elements: {
-               formButtonPrimary: "w-full rounded-2xl bg-primary py-4 font-medium text-primary-foreground hover:bg-primary/90 transition-colors",
-               card: "shadow-none border-none p-0 bg-transparent",
-               headerTitle: "hidden",
-               headerSubtitle: "hidden", 
-               socialButtonsBlockButton: "w-full flex items-center justify-center gap-3 border border-border rounded-2xl py-4 hover:bg-secondary transition-colors mb-3",
-               socialButtonsBlockButtonText: "font-medium",
-               formFieldInput: "w-full bg-transparent text-sm p-4 rounded-2xl focus:outline-none border border-border bg-foreground/5 backdrop-blur-sm transition-colors focus:border-violet-400/70 focus:bg-violet-500/10",
-               formFieldLabel: "text-sm font-medium text-muted-foreground mb-2 block",
-               footer: "mt-6 text-center",
-               footerActionText: "text-muted-foreground text-sm",
-               footerActionLink: "text-violet-400 hover:underline transition-colors ml-1",
-               dividerLine: "bg-border",
-               dividerText: "text-muted-foreground text-sm bg-background px-4",
-               formResendCodeLink: "text-violet-400 hover:underline text-sm",
-               identityPreviewText: "text-foreground",
-               identityPreviewEditButton: "text-violet-400 hover:underline",
-               formHeaderTitle: "text-foreground text-lg font-semibold",
-               formHeaderSubtitle: "text-muted-foreground text-sm",
-               otpCodeFieldInput: "border border-border rounded focus:ring-2 focus:ring-violet-400",
-               formButtonReset: "text-violet-400 hover:underline",
-               formFieldInputShowPasswordButton: "absolute inset-y-0 right-3 flex items-center text-muted-foreground hover:text-foreground transition-colors",
-               formFieldAction: "text-violet-400 hover:underline text-sm transition-colors",
-               formFieldSuccessText: "text-green-600 text-sm",
-               formFieldErrorText: "text-red-500 text-sm"
-             },
-             variables: {
-               colorPrimary: "hsl(221.2, 83.2%, 53.3%)",
-               colorBackground: "transparent",
-               colorInputBackground: "transparent", 
-               colorInputText: "hsl(var(--foreground))",
-               borderRadius: "1rem",
-               spacingUnit: "1rem"
-             }
-           }}
-           signInUrl="/sign-in"
-           redirectUrl="/dashboard"
-         />
-       </div>
-      </div>
-     </div>
-    </section>
+             <motion.h1
+               initial={{ opacity: 0, y: 10 }}
+               animate={{ opacity: 1, y: 0 }}
+               transition={{ delay: 0.2 }}
+               className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-white to-white/80"
+             >
+               Hesap Oluşturun
+             </motion.h1>
+             
+             <motion.p
+               initial={{ opacity: 0 }}
+               animate={{ opacity: 1 }}
+               transition={{ delay: 0.3 }}
+               className="text-white/60 text-xs"
+             >
+               Başlamak için kayıt olun
+             </motion.p>
+           </div>
 
-    {/* Right column: hero image + testimonials */}
-    {heroImageSrc && (
-      <section className="hidden md:block flex-1 relative p-4">
-        <div className="animate-slide-right animate-delay-300 absolute inset-4 rounded-3xl bg-cover bg-center" style={{ backgroundImage: `url(${heroImageSrc})` }}></div>
-        {testimonials.length > 0 && (
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-4 px-8 w-full justify-center">
-           <TestimonialCard testimonial={testimonials[0]} delay="animate-delay-1000" />
-           {testimonials[1] && <div className="hidden xl:flex"><TestimonialCard testimonial={testimonials[1]} delay="animate-delay-1200" /></div>}
-           {testimonials[2] && <div className="hidden 2xl:flex"><TestimonialCard testimonial={testimonials[2]} delay="animate-delay-1400" /></div>}
-          </div>
-        )}
-       </section>
-     )}
-    </div>
+           <ClerkSignUp
+             appearance={{
+               elements: {
+                 formButtonPrimary: "w-full rounded-lg bg-white text-black font-medium h-10 hover:bg-white/90 transition-colors",
+                 card: "shadow-none border-none p-0 bg-transparent",
+                 headerTitle: "hidden",
+                 headerSubtitle: "hidden", 
+                 socialButtonsBlockButton: "w-full flex items-center justify-center gap-2 border border-white/10 rounded-lg py-3 hover:bg-white/5 transition-colors bg-white/5 text-white/80",
+                 socialButtonsBlockButtonText: "font-medium text-white/80",
+                 formFieldInput: "w-full bg-white/5 border-transparent focus:border-white/20 text-white placeholder:text-white/30 h-10 transition-all duration-300 pl-3 pr-3 focus:bg-white/10 rounded-lg",
+                 formFieldLabel: "text-sm font-medium text-white/60 mb-2 block",
+                 footer: "mt-4 text-center",
+                 footerActionText: "text-white/60 text-xs",
+                 footerActionLink: "text-white hover:text-white/70 transition-colors ml-1 font-medium",
+                 dividerLine: "bg-white/5",
+                 dividerText: "text-white/40 text-xs bg-transparent px-3",
+                 formFieldSuccessText: "text-green-400 text-sm",
+                 formFieldErrorText: "text-red-400 text-sm"
+               },
+               variables: {
+                 colorPrimary: "white",
+                 colorBackground: "transparent",
+                 colorInputBackground: "transparent", 
+                 colorInputText: "white",
+                 borderRadius: "0.5rem"
+               }
+             }}
+             signInUrl="/sign-in"
+             redirectUrl="/dashboard"
+           />
+         </div>
+       </motion.div>
+     </BeamsBackground>
   );
 };

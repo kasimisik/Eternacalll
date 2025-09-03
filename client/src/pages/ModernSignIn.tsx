@@ -65,6 +65,13 @@ export function ModernSignIn() {
       if (result.status === 'complete') {
         await setActive({ session: result.createdSessionId });
         window.location.href = '/dashboard';
+      } else if (result.status === 'needs_factor_one') {
+        // Handle cases where first factor authentication is needed
+        toast({
+          title: "Giriş devam ediyor",
+          description: "Kimlik doğrulaması tamamlanıyor...",
+          variant: "default"
+        });
       } else {
         console.error('Sign in incomplete:', result);
         toast({
