@@ -8,6 +8,7 @@ import { GlowingEffect } from "@/components/ui/glowing-effect"
 import { TestimonialsSection } from "@/components/ui/testimonials-with-marquee"
 import { Pricing } from "@/components/ui/pricing"
 import { Footerdemo } from "@/components/ui/footer-section"
+import { ExpandableChatDemo } from "@/components/ExpandableChatDemo"
 import { Mic, Brain, Phone, Zap, MessageSquare } from 'lucide-react'
 
 export default function Landing() {
@@ -344,6 +345,9 @@ export default function Landing() {
         isDarkMode={isDarkMode} 
         setIsDarkMode={setIsDarkMode} 
       />
+
+      {/* Expandable Chat Demo */}
+      <ExpandableChatDemo />
     </div>
   );
 }
