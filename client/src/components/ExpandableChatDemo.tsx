@@ -18,23 +18,7 @@ import {
 import { ChatMessageList } from "@/components/ui/chat-message-list"
 
 export function ExpandableChatDemo() {
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      content: "Merhaba! Size bugün nasıl yardımcı olabilirim?",
-      sender: "ai",
-    },
-    {
-      id: 2,
-      content: "Bu component kütüphanesi hakkında bir sorum var.",
-      sender: "user",
-    },
-    {
-      id: 3,
-      content: "Tabii ki! Size yardımcı olmaktan memnuniyet duyarım. Ne öğrenmek istersiniz?",
-      sender: "ai",
-    },
-  ])
+  const [messages, setMessages] = useState<Array<{id: number, content: string, sender: string}>>([])
 
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
