@@ -97,7 +97,7 @@ export default function Dashboard() {
                   return (
                     <div 
                       key={idx}
-                      onClick={signOut}
+                      onClick={() => signOut()}
                       className="flex items-center justify-start gap-2 group/sidebar py-2 cursor-pointer"
                     >
                       {link.icon}
