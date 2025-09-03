@@ -296,10 +296,7 @@ export default function Landing() {
         />
       </div>
 
-      {/* Display Cards Section */}
-      <DisplayCardsDemo />
-
-      {/* CTA Section - Moved below Display Cards */}
+      {/* CTA Section - Right after Pricing */}
       {!isSignedIn && (
         <section className="py-12 md:py-20 px-4 md:px-8 bg-black">
           <div className="max-w-4xl mx-auto text-center">
@@ -318,6 +315,9 @@ export default function Landing() {
           </div>
         </section>
       )}
+
+      {/* Display Cards Section */}
+      <DisplayCardsDemo />
 
       {/* Footer Section */}
       <Footerdemo 
