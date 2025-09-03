@@ -146,6 +146,7 @@ export function ExpandableChatDemo() {
               <Button 
                 type="submit" 
                 size="sm" 
+                variant="outline"
                 className="ml-auto gap-1.5"
                 data-testid="button-send-message"
               >
