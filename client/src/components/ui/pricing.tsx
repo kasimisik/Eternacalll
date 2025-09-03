@@ -184,29 +184,21 @@ export function Pricing({
 
               <hr className="w-full my-4 border-gray-700" />
 
-              {plan.buttonText === "Ücretsiz Deneyin" || plan.buttonText === "Hemen Başlayın" ? (
-                <Link href={plan.href}>
-                  <RainbowButton className="w-full">
-                    {plan.buttonText}
-                  </RainbowButton>
-                </Link>
-              ) : (
-                <Link
-                  href={plan.href}
-                  className={cn(
-                    buttonVariants({
-                      variant: "outline",
-                    }),
-                    "group relative w-full gap-2 overflow-hidden text-lg font-semibold tracking-tighter",
-                    "transform-gpu ring-offset-current transition-all duration-300 ease-out hover:ring-2 hover:ring-white hover:ring-offset-1 hover:bg-white hover:text-black",
-                    plan.isPopular
-                      ? "bg-white text-black border-white"
-                      : "bg-transparent text-white border-gray-600 hover:border-white"
-                  )}
-                >
-                  {plan.buttonText}
-                </Link>
-              )}
+              <Link
+                href={plan.href}
+                className={cn(
+                  buttonVariants({
+                    variant: "outline",
+                  }),
+                  "group relative w-full gap-2 overflow-hidden text-lg font-semibold tracking-tighter",
+                  "transform-gpu ring-offset-current transition-all duration-300 ease-out hover:ring-2 hover:ring-white hover:ring-offset-1 hover:bg-white hover:text-black",
+                  plan.isPopular
+                    ? "bg-white text-black border-white"
+                    : "bg-transparent text-white border-gray-600 hover:border-white"
+                )}
+              >
+                {plan.buttonText}
+              </Link>
               <p className="mt-6 text-xs leading-5 text-gray-400">
                 {plan.description}
               </p>
