@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
+import { SignUp as ClerkSignUp } from '@clerk/clerk-react';
 
 // --- HELPER COMPONENTS (ICONS) ---
 
@@ -74,50 +75,48 @@ export const SignUpPage: React.FC<SignUpPageProps> = ({
        <h1 className="animate-element animate-delay-100 text-4xl md:text-5xl font-semibold leading-tight">{title}</h1>
        <p className="animate-element animate-delay-200 text-muted-foreground">{description}</p>
 
-       <form className="space-y-5" onSubmit={onSignUp}>
-        <div className="animate-element animate-delay-300">
-         <label className="text-sm font-medium text-muted-foreground">Email Address</label>
-         <GlassInputWrapper>
-           <input name="email" type="email" placeholder="Enter your email address" className="w-full bg-transparent text-sm p-4 rounded-2xl focus:outline-none" />
-         </GlassInputWrapper>
-        </div>
-
-         <div className="animate-element animate-delay-400">
-          <label className="text-sm font-medium text-muted-foreground">Password</label>
-          <GlassInputWrapper>
-            <div className="relative">
-             <input name="password" type={showPassword ? 'text' : 'password'} placeholder="Enter your password" className="w-full bg-transparent text-sm p-4 pr-12 rounded-2xl focus:outline-none" />
-             <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-3 flex items-center">
-              {showPassword ? <EyeOff className="w-5 h-5 text-muted-foreground hover:text-foreground transition-colors" /> : <Eye className="w-5 h-5 text-muted-foreground hover:text-foreground transition-colors" />}
-             </button>
-            </div>
-          </GlassInputWrapper>
-         </div>
-
-        <div className="animate-element animate-delay-500 flex items-center justify-between text-sm">
-          <label className="flex items-center gap-3 cursor-pointer">
-           <input type="checkbox" name="agreeToTerms" className="custom-checkbox" />
-           <span className="text-foreground/90">Kullanım şartlarını kabul ediyorum</span>
-          </label>
-        </div>
-          <button type="submit" className="animate-element animate-delay-600 w-full rounded-2xl bg-primary py-4 font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
-            Hesap Oluştur
-          </button>
-         </form>
-
-         <div className="animate-element animate-delay-700 relative flex items-center justify-center">
-          <span className="w-full border-t border-border"></span>
-          <span className="px-4 text-sm text-muted-foreground bg-background absolute">Or continue with</span>
-         </div>
-
-         <button onClick={onGoogleSignUp} className="animate-element animate-delay-800 w-full flex items-center justify-center gap-3 border border-border rounded-2xl py-4 hover:bg-secondary transition-colors">
-            <GoogleIcon />
-            Continue with Google
-         </button>
-
-        <p className="animate-element animate-delay-900 text-center text-sm text-muted-foreground">
-         Zaten hesabınız var mı? <a href="#" onClick={(e) => { e.preventDefault(); onSignIn?.(); }} className="text-violet-400 hover:underline transition-colors">Giriş Yap</a>
-        </p>
+       <div className="animate-element animate-delay-300">
+         <ClerkSignUp
+           appearance={{
+             elements: {
+               formButtonPrimary: "w-full rounded-2xl bg-primary py-4 font-medium text-primary-foreground hover:bg-primary/90 transition-colors",
+               card: "shadow-none border-none p-0 bg-transparent",
+               headerTitle: "hidden",
+               headerSubtitle: "hidden", 
+               socialButtonsBlockButton: "w-full flex items-center justify-center gap-3 border border-border rounded-2xl py-4 hover:bg-secondary transition-colors mb-3",
+               socialButtonsBlockButtonText: "font-medium",
+               formFieldInput: "w-full bg-transparent text-sm p-4 rounded-2xl focus:outline-none border border-border bg-foreground/5 backdrop-blur-sm transition-colors focus:border-violet-400/70 focus:bg-violet-500/10",
+               formFieldLabel: "text-sm font-medium text-muted-foreground mb-2 block",
+               footer: "mt-6 text-center",
+               footerActionText: "text-muted-foreground text-sm",
+               footerActionLink: "text-violet-400 hover:underline transition-colors ml-1",
+               dividerLine: "bg-border",
+               dividerText: "text-muted-foreground text-sm bg-background px-4",
+               formResendCodeLink: "text-violet-400 hover:underline text-sm",
+               identityPreviewText: "text-foreground",
+               identityPreviewEditButton: "text-violet-400 hover:underline",
+               formHeaderTitle: "text-foreground text-lg font-semibold",
+               formHeaderSubtitle: "text-muted-foreground text-sm",
+               otpCodeFieldInput: "border border-border rounded focus:ring-2 focus:ring-violet-400",
+               formButtonReset: "text-violet-400 hover:underline",
+               formFieldInputShowPasswordButton: "absolute inset-y-0 right-3 flex items-center text-muted-foreground hover:text-foreground transition-colors",
+               formFieldAction: "text-violet-400 hover:underline text-sm transition-colors",
+               formFieldSuccessText: "text-green-600 text-sm",
+               formFieldErrorText: "text-red-500 text-sm"
+             },
+             variables: {
+               colorPrimary: "hsl(221.2, 83.2%, 53.3%)",
+               colorBackground: "transparent",
+               colorInputBackground: "transparent", 
+               colorInputText: "hsl(var(--foreground))",
+               borderRadius: "1rem",
+               spacingUnit: "1rem"
+             }
+           }}
+           signInUrl="/sign-in"
+           redirectUrl="/dashboard"
+         />
+       </div>
       </div>
      </div>
     </section>

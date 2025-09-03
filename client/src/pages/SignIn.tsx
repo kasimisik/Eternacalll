@@ -23,32 +23,6 @@ const sampleTestimonials = [
 ];
 
 export default function SignInPageDemo() {
-  const [, setLocation] = useLocation();
-
-  const handleSignIn = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const data = Object.fromEntries(formData.entries());
-    console.log("Sign In submitted:", data);
-    
-    // Simulate successful login and redirect to dashboard
-    setLocation('/dashboard');
-  };
-
-  const handleGoogleSignIn = () => {
-    console.log("Continue with Google clicked");
-    // Simulate Google login and redirect to dashboard
-    setLocation('/dashboard');
-  };
-
-  const handleResetPassword = () => {
-    alert("Şifre sıfırlama isteği gönderildi. E-posta adresinizi kontrol edin.");
-  };
-
-  const handleCreateAccount = () => {
-    setLocation('/sign-up');
-  };
-
   return (
     <div className="bg-background text-foreground">
       <SignInPage
@@ -56,10 +30,6 @@ export default function SignInPageDemo() {
         description="Hesabınıza giriş yapın ve AI sesli asistan deneyiminize devam edin"
         heroImageSrc="https://images.unsplash.com/photo-1642615835477-d303d7dc9ee9?w=2160&q=80"
         testimonials={sampleTestimonials}
-        onSignIn={handleSignIn}
-        onGoogleSignIn={handleGoogleSignIn}
-        onResetPassword={handleResetPassword}
-        onCreateAccount={handleCreateAccount}
       />
     </div>
   );
