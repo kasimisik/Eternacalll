@@ -9,6 +9,7 @@ import { TestimonialsSection } from "@/components/ui/testimonials-with-marquee"
 import { Pricing } from "@/components/ui/pricing"
 import { Footerdemo } from "@/components/ui/footer-section"
 import { ExpandableChatDemo } from "@/components/ExpandableChatDemo"
+import { HeaderDemo } from "@/components/HeaderDemo"
 import { Mic, Brain, Phone, Zap, MessageSquare } from 'lucide-react'
 
 export default function Landing() {
@@ -130,8 +131,11 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Header */}
+      <HeaderDemo />
+      
       {/* Hero Section with Spline 3D */}
-      <Card className="w-full h-[600px] md:h-[700px] bg-black/[0.96] relative overflow-hidden border-0 rounded-none">
+      <Card className="w-full h-[600px] md:h-[700px] bg-black/[0.96] relative overflow-hidden border-0 rounded-none mt-20">
         <Spotlight
           className="-top-40 left-0 md:left-60 md:-top-20"
           fill="white"
