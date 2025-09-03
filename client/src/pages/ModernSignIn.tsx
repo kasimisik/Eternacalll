@@ -65,7 +65,7 @@ export function ModernSignIn() {
       if (result.status === 'complete') {
         await setActive({ session: result.createdSessionId });
         window.location.href = '/dashboard';
-      } else if (result.status === 'needs_factor_one') {
+      } else if (result.status === 'needs_first_factor') {
         // Handle cases where first factor authentication is needed
         toast({
           title: "Giriş devam ediyor",
