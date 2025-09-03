@@ -14,6 +14,7 @@ import { SignInPage } from "@/components/ui/sign-in";
 import { SignUpPage } from "@/components/ui/sign-up";
 import SignUp from "@/pages/SignUp";
 import Dashboard from "@/pages/Dashboard";
+import Subscription from "@/pages/Subscription";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -25,6 +26,11 @@ function Router() {
       <Route path="/dashboard">
         <ProtectedRoute>
           <Dashboard />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/subscription">
+        <ProtectedRoute>
+          <Subscription />
         </ProtectedRoute>
       </Route>
       {/* Fallback to 404 */}
