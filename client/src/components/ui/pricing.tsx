@@ -91,7 +91,7 @@ export function Pricing({
           </Label>
         </label>
         <span className="ml-2 font-semibold text-white">
-          Yıllık faturalama <span className="text-blue-400">(%20 tasarruf)</span>
+          Yıllık faturalama <span className="text-white">(%20 tasarruf)</span>
         </span>
       </div>
 
@@ -121,7 +121,7 @@ export function Pricing({
             }}
             className={cn(
               `rounded-2xl border-[1px] p-6 bg-gray-900 text-center lg:flex lg:flex-col lg:justify-center relative`,
-              plan.isPopular ? "border-blue-500 border-2" : "border-gray-700",
+              plan.isPopular ? "border-white border-2" : "border-gray-700",
               "flex flex-col",
               !plan.isPopular && "mt-5",
               index === 0 || index === 2
@@ -132,9 +132,9 @@ export function Pricing({
             )}
           >
             {plan.isPopular && (
-              <div className="absolute top-0 right-0 bg-blue-500 py-0.5 px-2 rounded-bl-xl rounded-tr-xl flex items-center">
-                <Star className="text-white h-4 w-4 fill-current" />
-                <span className="text-white ml-1 font-sans font-semibold">
+              <div className="absolute top-0 right-0 bg-white py-0.5 px-2 rounded-bl-xl rounded-tr-xl flex items-center">
+                <Star className="text-black h-4 w-4 fill-current" />
+                <span className="text-black ml-1 font-sans font-semibold">
                   Popüler
                 </span>
               </div>
@@ -175,7 +175,7 @@ export function Pricing({
               <ul className="mt-5 gap-2 flex flex-col">
                 {plan.features.map((feature, idx) => (
                   <li key={idx} className="flex items-start gap-2">
-                    <Check className="h-4 w-4 text-blue-400 mt-1 flex-shrink-0" />
+                    <Check className="h-4 w-4 text-white mt-1 flex-shrink-0" />
                     <span className="text-left text-gray-300">{feature}</span>
                   </li>
                 ))}
@@ -190,10 +190,10 @@ export function Pricing({
                     variant: "outline",
                   }),
                   "group relative w-full gap-2 overflow-hidden text-lg font-semibold tracking-tighter",
-                  "transform-gpu ring-offset-current transition-all duration-300 ease-out hover:ring-2 hover:ring-blue-500 hover:ring-offset-1 hover:bg-blue-500 hover:text-white",
+                  "transform-gpu ring-offset-current transition-all duration-300 ease-out hover:ring-2 hover:ring-white hover:ring-offset-1 hover:bg-white hover:text-black",
                   plan.isPopular
-                    ? "bg-blue-500 text-white border-blue-500"
-                    : "bg-transparent text-white border-gray-600 hover:border-blue-500"
+                    ? "bg-white text-black border-white"
+                    : "bg-transparent text-white border-gray-600 hover:border-white"
                 )}
               >
                 {plan.buttonText}
