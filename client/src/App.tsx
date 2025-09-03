@@ -5,8 +5,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ClerkProvider } from "@/components/ClerkProvider";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import Landing from "@/pages/Landing";
 import SignIn from "@/pages/SignIn";
+import { ModernSignIn } from "@/pages/ModernSignIn";
 import SignUp from "@/pages/SignUp";
 import Dashboard from "@/pages/Dashboard";
 import NotFound from "@/pages/not-found";
@@ -14,8 +16,8 @@ import NotFound from "@/pages/not-found";
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Landing} />
-      <Route path="/sign-in" component={SignIn} />
+      <Route path="/" component={ModernSignIn} />
+      <Route path="/sign-in" component={ModernSignIn} />
       <Route path="/sign-up" component={SignUp} />
       <Route path="/dashboard">
         <ProtectedRoute>
@@ -30,16 +32,18 @@ function Router() {
 
 function App() {
   return (
-    <ClerkProvider>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <div className="min-h-screen bg-background">
-            <Router />
-          </div>
-          <Toaster />
-        </TooltipProvider>
-      </QueryClientProvider>
-    </ClerkProvider>
+    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+      <ClerkProvider>
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <div className="min-h-screen bg-background text-foreground transition-colors">
+              <Router />
+            </div>
+            <Toaster />
+          </TooltipProvider>
+        </QueryClientProvider>
+      </ClerkProvider>
+    </ThemeProvider>
   );
 }
 

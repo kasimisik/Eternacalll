@@ -10,8 +10,10 @@
   --color-3: 210 100% 63%;
   --color-4: 195 100% 63%;
   --color-5: 90 100% 63%;
-  --background: hsl(210, 40%, 98%);
-  --foreground: hsl(222.2, 84%, 4.9%);
+  --background: hsl(0, 0%, 100%);
+  --foreground: hsl(0, 0%, 0%);
+  --skeleton: hsl(0, 0%, 90%);
+  --btn-border: hsl(214, 31.8%, 91.4%);
   --card: hsl(0, 0%, 100%);
   --card-foreground: hsl(222.2, 84%, 4.9%);
   --popover: hsl(0, 0%, 100%);
@@ -87,8 +89,10 @@
 }
 
 .dark {
-  --background: hsl(0, 0%, 0%);
-  --foreground: hsl(200, 6.6667%, 91.1765%);
+  --background: hsl(222, 94%, 5%);
+  --foreground: hsl(0, 0%, 100%);
+  --skeleton: hsl(218, 36%, 16%);
+  --btn-border: hsl(217, 32.6%, 17.5%);
   --card: hsl(228, 9.8039%, 10%);
   --card-foreground: hsl(0, 0%, 85.0980%);
   --popover: hsl(0, 0%, 0%);
@@ -104,7 +108,7 @@
   --destructive: hsl(0, 84.2%, 60.2%);
   --destructive-foreground: hsl(210, 40%, 98%);
   --border: hsl(210, 5.2632%, 14.9020%);
-  --input: hsl(207.6923, 27.6596%, 18.4314%);
+  --input: hsl(219, 63%, 16%);
   --ring: hsl(221.2, 83.2%, 53.3%);
   --chart-1: hsl(221.2, 83.2%, 53.3%);
   --chart-2: hsl(159.7826, 100%, 36.0784%);
@@ -211,5 +215,12 @@
     opacity: 1;
     filter: blur(0px);
     transform: translateY(0px) scale(1);
+  }
+}
+
+@layer components {
+  .g-button {
+    @apply rounded-[var(--radius)] border;
+    border-color: var(--btn-border);
   }
 }
