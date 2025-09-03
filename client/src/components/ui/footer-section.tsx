@@ -53,20 +53,20 @@ function Footerdemo() {
           <div>
             <h3 className="mb-4 text-lg font-semibold">Hızlı Bağlantılar</h3>
             <nav className="space-y-2 text-sm">
-              <a href="#" className="block transition-colors hover:text-primary">
+              <a href="#" className="block transition-colors hover:text-white">
                 Ana Sayfa
               </a>
-              <a href="#" className="block transition-colors hover:text-primary">
-                Hakkımızda
+              <a href="#features" className="block transition-colors hover:text-white">
+                Özellikler
               </a>
-              <a href="#" className="block transition-colors hover:text-primary">
-                Hizmetler
+              <a href="/dashboard" className="block transition-colors hover:text-white">
+                Dashboard
               </a>
-              <a href="#" className="block transition-colors hover:text-primary">
-                Ürünler
+              <a href="/sign-up" className="block transition-colors hover:text-white">
+                Ücretsiz Deneyin
               </a>
-              <a href="#" className="block transition-colors hover:text-primary">
-                İletişim
+              <a href="/sign-in" className="block transition-colors hover:text-white">
+                Giriş Yap
               </a>
             </nav>
           </div>
@@ -154,13 +154,13 @@ function Footerdemo() {
             © 2024 AI Voice Agent. Tüm hakları saklıdır.
           </p>
           <nav className="flex gap-4 text-sm">
-            <a href="#" className="transition-colors hover:text-primary">
+            <a href="#" className="transition-colors hover:text-white">
               Gizlilik Politikası
             </a>
-            <a href="#" className="transition-colors hover:text-primary">
+            <a href="#" className="transition-colors hover:text-white">
               Kullanım Şartları
             </a>
-            <a href="#" className="transition-colors hover:text-primary">
+            <a href="#" className="transition-colors hover:text-white">
               Çerez Ayarları
             </a>
           </nav>
