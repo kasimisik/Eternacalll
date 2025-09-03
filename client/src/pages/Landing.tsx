@@ -193,8 +193,8 @@ export default function Landing() {
                 inactiveZone={0.01}
                 borderWidth={1}
               />
-              <div className="w-fit rounded-lg bg-gray-800 p-3 mb-4">
-                <Mic className="h-5 w-5 text-blue-400" />
+              <div className="w-fit rounded-lg bg-gray-800 p-4 mb-6">
+                <Mic className="h-8 w-8 text-white" />
               </div>
               <h3 className="text-base md:text-lg font-semibold text-white mb-2">
                 Azure Speech Services
@@ -214,8 +214,8 @@ export default function Landing() {
                 inactiveZone={0.01}
                 borderWidth={1}
               />
-              <div className="w-fit rounded-lg bg-gray-800 p-3 mb-4">
-                <Brain className="h-5 w-5 text-purple-400" />
+              <div className="w-fit rounded-lg bg-gray-800 p-4 mb-6">
+                <Brain className="h-8 w-8 text-white" />
               </div>
               <h3 className="text-base md:text-lg font-semibold text-white mb-2">
                 Anthropic Claude AI
@@ -235,8 +235,8 @@ export default function Landing() {
                 inactiveZone={0.01}
                 borderWidth={1}
               />
-              <div className="w-fit rounded-lg bg-gray-800 p-3 mb-4">
-                <Phone className="h-5 w-5 text-green-400" />
+              <div className="w-fit rounded-lg bg-gray-800 p-4 mb-6">
+                <Phone className="h-8 w-8 text-white" />
               </div>
               <h3 className="text-base md:text-lg font-semibold text-white mb-2">
                 SIP Entegrasyonu
@@ -256,8 +256,8 @@ export default function Landing() {
                 inactiveZone={0.01}
                 borderWidth={1}
               />
-              <div className="w-fit rounded-lg bg-gray-800 p-3 mb-4">
-                <Zap className="h-5 w-5 text-yellow-400" />
+              <div className="w-fit rounded-lg bg-gray-800 p-4 mb-6">
+                <Zap className="h-8 w-8 text-white" />
               </div>
               <h3 className="text-base md:text-lg font-semibold text-white mb-2">
                 Gerçek Zamanlı İşleme
@@ -277,8 +277,8 @@ export default function Landing() {
                 inactiveZone={0.01}
                 borderWidth={1}
               />
-              <div className="w-fit rounded-lg bg-gray-800 p-3 mb-4">
-                <MessageSquare className="h-5 w-5 text-cyan-400" />
+              <div className="w-fit rounded-lg bg-gray-800 p-4 mb-6">
+                <MessageSquare className="h-8 w-8 text-white" />
               </div>
               <h3 className="text-base md:text-lg font-semibold text-white mb-2">
                 Gelişmiş Analitik
