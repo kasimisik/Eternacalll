@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card"
 import { Spotlight } from "@/components/ui/spotlight"
 import { GlowingEffect } from "@/components/ui/glowing-effect"
 import { TestimonialsSection } from "@/components/ui/testimonials-with-marquee"
+import { Pricing } from "@/components/ui/pricing"
 import { Mic, Brain, Phone, Zap, MessageSquare } from 'lucide-react'
 
 export default function Landing() {
@@ -52,6 +53,66 @@ export default function Landing() {
       },
       text: "Anthropic Claude'nin doğal konuşma yeteneği inanılmaz. Müşteriler bot olduğunu anlamıyor bile!"
     }
+  ];
+
+  // Türkçe fiyatlandırma planları
+  const pricingPlans = [
+    {
+      name: "BAŞLANGIÇ",
+      price: "199",
+      yearlyPrice: "159",
+      period: "aylık",
+      features: [
+        "100 dakikaya kadar arama",
+        "Temel AI sesli asistan",
+        "Email destek",
+        "Türkçe dil desteği",
+        "Temel raporlama",
+      ],
+      description: "Küçük işletmeler ve girişimciler için",
+      buttonText: "Ücretsiz Deneyin",
+      href: "/sign-up",
+      isPopular: false,
+    },
+    {
+      name: "PROFESYONEL",
+      price: "599",
+      yearlyPrice: "479",
+      period: "aylık",
+      features: [
+        "Sınırsız arama süresi",
+        "Gelişmiş AI özellikleri",
+        "SIP entegrasyonu",
+        "24/7 telefon desteği",
+        "Detaylı analitik",
+        "Özel entegrasyonlar",
+        "Çoklu dil desteği",
+      ],
+      description: "Büyüyen firmalar için ideal çözüm",
+      buttonText: "Hemen Başlayın",
+      href: "/sign-up",
+      isPopular: true,
+    },
+    {
+      name: "KURUMSAl",
+      price: "1999",
+      yearlyPrice: "1599",
+      period: "aylık",
+      features: [
+        "Professional'daki tüm özellikler",
+        "Özel AI modeli geliştirme",
+        "Dedicated hesap yöneticisi",
+        "1 saat içinde destek",
+        "SSO kimlik doğrulama",
+        "Gelişmiş güvenlik",
+        "Özel sözleşme",
+        "SLA garantisi",
+      ],
+      description: "Büyük organizasyonlar için",
+      buttonText: "Satış Ekibiyle İletişim",
+      href: "/sign-up",
+      isPopular: false,
+    },
   ];
 
 
@@ -236,6 +297,13 @@ export default function Landing() {
         description="AI sesli asistan teknolojimizle işlerini büyüten binlerce Türk girişimciye katılın"
         testimonials={testimonials}
         className="bg-black text-white"
+      />
+
+      {/* Pricing Section */}
+      <Pricing
+        plans={pricingPlans}
+        title="Basit ve Şeffaf Fiyatlandırma"
+        description="Size uygun planı seçin\nTüm planlar platformumuza erişim, müşteri kazanım araçları ve özel destek içerir."
       />
 
       {/* CTA Section */}
