@@ -3,12 +3,29 @@ import { useAuthHook } from '@/lib/auth-hook';
 import { SplineScene } from "@/components/ui/splite";
 import { Card } from "@/components/ui/card"
 import { Spotlight } from "@/components/ui/spotlight"
+import { NavBar } from "@/components/ui/tubelight-navbar"
+import { Home, User, Briefcase, LogIn, UserPlus, Bot } from 'lucide-react'
 
 export default function Landing() {
   const { isSignedIn } = useAuthHook();
 
+  // Navigation items based on auth status
+  const navItems = isSignedIn ? [
+    { name: 'Home', url: '/', icon: Home },
+    { name: 'Dashboard', url: '/dashboard', icon: Bot },
+    { name: 'Profile', url: '/profile', icon: User },
+    { name: 'Features', url: '#features', icon: Briefcase }
+  ] : [
+    { name: 'Home', url: '/', icon: Home },
+    { name: 'Features', url: '#features', icon: Briefcase },
+    { name: 'Sign In', url: '/sign-in', icon: LogIn },
+    { name: 'Sign Up', url: '/sign-up', icon: UserPlus }
+  ];
+
   return (
     <div className="min-h-screen bg-background">
+      {/* Tubelight Navbar */}
+      <NavBar items={navItems} />
       {/* Hero Section with Spline 3D */}
       <Card className="w-full h-[600px] bg-black/[0.96] relative overflow-hidden border-0 rounded-none">
         <Spotlight
@@ -70,7 +87,7 @@ export default function Landing() {
       </Card>
 
       {/* Features Section */}
-      <section className="py-20 px-8">
+      <section id="features" className="py-20 px-8">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
