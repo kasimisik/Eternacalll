@@ -31,11 +31,11 @@ function createBeam(width: number, height: number): Beam {
         width: 30 + Math.random() * 60,
         length: height * 2.5,
         angle: angle,
-        speed: 0.6 + Math.random() * 1.2,
-        opacity: 0.12 + Math.random() * 0.16,
+        speed: 1.5 + Math.random() * 2.5,
+        opacity: 0.15 + Math.random() * 0.25,
         hue: 190 + Math.random() * 70,
         pulse: Math.random() * Math.PI * 2,
-        pulseSpeed: 0.02 + Math.random() * 0.03,
+        pulseSpeed: 0.05 + Math.random() * 0.08,
     };
 }
 
@@ -70,7 +70,7 @@ export function BeamsBackground({
             canvas.style.height = `${window.innerHeight}px`;
             ctx.scale(dpr, dpr);
 
-            const totalBeams = MINIMUM_BEAMS * 1.5;
+            const totalBeams = MINIMUM_BEAMS * 2;
             beamsRef.current = Array.from({ length: totalBeams }, () =>
                 createBeam(canvas.width, canvas.height)
             );
@@ -90,10 +90,10 @@ export function BeamsBackground({
                 column * spacing +
                 spacing / 2 +
                 (Math.random() - 0.5) * spacing * 0.5;
-            beam.width = 100 + Math.random() * 100;
-            beam.speed = 0.5 + Math.random() * 0.4;
+            beam.width = 80 + Math.random() * 120;
+            beam.speed = 1.2 + Math.random() * 1.8;
             beam.hue = 190 + (index * 70) / totalBeams;
-            beam.opacity = 0.2 + Math.random() * 0.1;
+            beam.opacity = 0.15 + Math.random() * 0.2;
             return beam;
         }
 
@@ -147,7 +147,7 @@ export function BeamsBackground({
                 beam.pulse += beam.pulseSpeed;
 
                 // Reset beam when it goes off screen
-                if (beam.y + beam.length < -100) {
+                if (beam.y + beam.length < -50) {
                     resetBeam(beam, index, totalBeams);
                 }
 
