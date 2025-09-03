@@ -4,7 +4,7 @@ import { useAuthHook } from '@/lib/auth-hook';
 import { SplineScene } from "@/components/ui/splite";
 import { Card } from "@/components/ui/card"
 import { Spotlight } from "@/components/ui/spotlight"
-import { GlowingEffect } from "@/components/ui/glowing-effect"
+import { GlowingEffectDemo } from "@/components/ui/glowing-effect-demo"
 import { TestimonialsSection } from "@/components/ui/testimonials-with-marquee"
 import { Pricing } from "@/components/ui/pricing"
 import { Footerdemo } from "@/components/ui/footer-section"
@@ -170,113 +170,7 @@ export default function Landing() {
       {/* Features Section */}
       <section id="features" className="py-8 sm:py-12 md:py-20 px-2 sm:px-4 md:px-8 bg-black">
         <div className="max-w-6xl mx-auto">
-
-          <div className="grid grid-cols-1 gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {/* Azure Speech Services */}
-            <div className="relative rounded-[1rem] border border-gray-800 bg-gray-900/50 p-4 md:p-6 hover:bg-gray-900/70 transition-all">
-              <GlowingEffect
-                spread={30}
-                glow={true}
-                disabled={false}
-                proximity={32}
-                inactiveZone={0.01}
-                borderWidth={1}
-              />
-              <div className="w-fit p-4 mb-6">
-                <Mic className="h-8 w-8 text-white" />
-              </div>
-              <h3 className="text-base md:text-lg font-semibold text-white mb-2">
-                Azure Speech Services
-              </h3>
-              <p className="text-sm text-gray-400">
-                Yüksek kaliteli Türkçe ses tanıma ve sentezleme teknolojisi.
-              </p>
-            </div>
-
-            {/* Anthropic Claude AI */}
-            <div className="relative rounded-[1rem] border border-gray-800 bg-gray-900/50 p-4 md:p-6 hover:bg-gray-900/70 transition-all">
-              <GlowingEffect
-                spread={30}
-                glow={true}
-                disabled={false}
-                proximity={32}
-                inactiveZone={0.01}
-                borderWidth={1}
-              />
-              <div className="w-fit p-4 mb-6">
-                <Brain className="h-8 w-8 text-white" />
-              </div>
-              <h3 className="text-base md:text-lg font-semibold text-white mb-2">
-                Anthropic Claude AI
-              </h3>
-              <p className="text-sm text-gray-400">
-                Doğal dil işleme ve akıllı konuşma yetenekleri.
-              </p>
-            </div>
-
-            {/* SIP Integration */}
-            <div className="relative rounded-[1rem] border border-gray-800 bg-gray-900/50 p-4 md:p-6 hover:bg-gray-900/70 transition-all">
-              <GlowingEffect
-                spread={30}
-                glow={true}
-                disabled={false}
-                proximity={32}
-                inactiveZone={0.01}
-                borderWidth={1}
-              />
-              <div className="w-fit p-4 mb-6">
-                <Phone className="h-8 w-8 text-white" />
-              </div>
-              <h3 className="text-base md:text-lg font-semibold text-white mb-2">
-                SIP Entegrasyonu
-              </h3>
-              <p className="text-sm text-gray-400">
-                Mevcut telefon sistemlerinizle kolay entegrasyon.
-              </p>
-            </div>
-
-            {/* Real-time Processing */}
-            <div className="relative rounded-[1rem] border border-gray-800 bg-gray-900/50 p-4 md:p-6 hover:bg-gray-900/70 transition-all">
-              <GlowingEffect
-                spread={30}
-                glow={true}
-                disabled={false}
-                proximity={32}
-                inactiveZone={0.01}
-                borderWidth={1}
-              />
-              <div className="w-fit p-4 mb-6">
-                <Zap className="h-8 w-8 text-white" />
-              </div>
-              <h3 className="text-base md:text-lg font-semibold text-white mb-2">
-                Gerçek Zamanlı İşleme
-              </h3>
-              <p className="text-sm text-gray-400">
-                Anında yanıt veren hızlı AI asistan teknolojisi.
-              </p>
-            </div>
-
-            {/* Advanced Analytics */}
-            <div className="relative rounded-[1rem] border border-gray-800 bg-gray-900/50 p-4 md:p-6 hover:bg-gray-900/70 transition-all md:col-span-2 lg:col-span-1">
-              <GlowingEffect
-                spread={30}
-                glow={true}
-                disabled={false}
-                proximity={32}
-                inactiveZone={0.01}
-                borderWidth={1}
-              />
-              <div className="w-fit p-4 mb-6">
-                <MessageSquare className="h-8 w-8 text-white" />
-              </div>
-              <h3 className="text-base md:text-lg font-semibold text-white mb-2">
-                Gelişmiş Analitik
-              </h3>
-              <p className="text-sm text-gray-400">
-                Detaylı raporlar ve performans metrikleri.
-              </p>
-            </div>
-          </div>
+          <GlowingEffectDemo />
         </div>
       </section>
 
