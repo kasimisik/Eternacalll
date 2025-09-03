@@ -111,16 +111,16 @@ export default function Landing() {
                   inactiveZone={0.01}
                   borderWidth={3}
                 />
-                <div className="relative flex h-full flex-col justify-between gap-6 overflow-hidden rounded-xl border-[0.75px] bg-background p-6 shadow-sm dark:shadow-[0px_0px_27px_0px_rgba(45,45,45,0.3)] md:p-6">
+                <div className="relative flex h-full flex-col justify-between gap-6 overflow-hidden rounded-xl border-[0.75px] bg-black/90 p-6 shadow-sm dark:shadow-[0px_0px_27px_0px_rgba(45,45,45,0.3)] md:p-6">
                   <div className="relative flex flex-1 flex-col justify-between gap-3">
                     <div className="w-fit rounded-lg border-[0.75px] border-border bg-muted p-2">
                       <Mic className="h-4 w-4" />
                     </div>
                     <div className="space-y-3">
-                      <h3 className="pt-0.5 text-xl leading-[1.375rem] font-semibold font-sans tracking-[-0.04em] md:text-2xl md:leading-[1.875rem] text-balance text-foreground">
+                      <h3 className="pt-0.5 text-xl leading-[1.375rem] font-semibold font-sans tracking-[-0.04em] md:text-2xl md:leading-[1.875rem] text-balance text-white">
                         Azure Speech Services
                       </h3>
-                      <p className="font-sans text-sm leading-[1.125rem] md:text-base md:leading-[1.375rem] text-muted-foreground">
+                      <p className="font-sans text-sm leading-[1.125rem] md:text-base md:leading-[1.375rem] text-gray-300">
                         Real-time speech-to-text and text-to-speech powered by Microsoft Azure's advanced AI models
                       </p>
                     </div>
@@ -140,16 +140,16 @@ export default function Landing() {
                   inactiveZone={0.01}
                   borderWidth={3}
                 />
-                <div className="relative flex h-full flex-col justify-between gap-6 overflow-hidden rounded-xl border-[0.75px] bg-background p-6 shadow-sm dark:shadow-[0px_0px_27px_0px_rgba(45,45,45,0.3)] md:p-6">
+                <div className="relative flex h-full flex-col justify-between gap-6 overflow-hidden rounded-xl border-[0.75px] bg-black/90 p-6 shadow-sm dark:shadow-[0px_0px_27px_0px_rgba(45,45,45,0.3)] md:p-6">
                   <div className="relative flex flex-1 flex-col justify-between gap-3">
                     <div className="w-fit rounded-lg border-[0.75px] border-border bg-muted p-2">
                       <Brain className="h-4 w-4" />
                     </div>
                     <div className="space-y-3">
-                      <h3 className="pt-0.5 text-xl leading-[1.375rem] font-semibold font-sans tracking-[-0.04em] md:text-2xl md:leading-[1.875rem] text-balance text-foreground">
+                      <h3 className="pt-0.5 text-xl leading-[1.375rem] font-semibold font-sans tracking-[-0.04em] md:text-2xl md:leading-[1.875rem] text-balance text-white">
                         Anthropic Claude AI
                       </h3>
-                      <p className="font-sans text-sm leading-[1.125rem] md:text-base md:leading-[1.375rem] text-muted-foreground">
+                      <p className="font-sans text-sm leading-[1.125rem] md:text-base md:leading-[1.375rem] text-gray-300">
                         Natural language understanding and generation with context-aware conversation handling
                       </p>
                     </div>
@@ -169,16 +169,16 @@ export default function Landing() {
                   inactiveZone={0.01}
                   borderWidth={3}
                 />
-                <div className="relative flex h-full flex-col justify-between gap-6 overflow-hidden rounded-xl border-[0.75px] bg-background p-6 shadow-sm dark:shadow-[0px_0px_27px_0px_rgba(45,45,45,0.3)] md:p-6">
+                <div className="relative flex h-full flex-col justify-between gap-6 overflow-hidden rounded-xl border-[0.75px] bg-black/90 p-6 shadow-sm dark:shadow-[0px_0px_27px_0px_rgba(45,45,45,0.3)] md:p-6">
                   <div className="relative flex flex-1 flex-col justify-between gap-3">
                     <div className="w-fit rounded-lg border-[0.75px] border-border bg-muted p-2">
                       <Phone className="h-4 w-4" />
                     </div>
                     <div className="space-y-3">
-                      <h3 className="pt-0.5 text-xl leading-[1.375rem] font-semibold font-sans tracking-[-0.04em] md:text-2xl md:leading-[1.875rem] text-balance text-foreground">
+                      <h3 className="pt-0.5 text-xl leading-[1.375rem] font-semibold font-sans tracking-[-0.04em] md:text-2xl md:leading-[1.875rem] text-balance text-white">
                         SIP Integration
                       </h3>
-                      <p className="font-sans text-sm leading-[1.125rem] md:text-base md:leading-[1.375rem] text-muted-foreground">
+                      <p className="font-sans text-sm leading-[1.125rem] md:text-base md:leading-[1.375rem] text-gray-300">
                         Seamless telephone system integration with NetGSM and enterprise SIP providers
                       </p>
                     </div>
@@ -198,16 +198,16 @@ export default function Landing() {
                   inactiveZone={0.01}
                   borderWidth={3}
                 />
-                <div className="relative flex h-full flex-col justify-between gap-6 overflow-hidden rounded-xl border-[0.75px] bg-background p-6 shadow-sm dark:shadow-[0px_0px_27px_0px_rgba(45,45,45,0.3)] md:p-6">
+                <div className="relative flex h-full flex-col justify-between gap-6 overflow-hidden rounded-xl border-[0.75px] bg-black/90 p-6 shadow-sm dark:shadow-[0px_0px_27px_0px_rgba(45,45,45,0.3)] md:p-6">
                   <div className="relative flex flex-1 flex-col justify-between gap-3">
                     <div className="w-fit rounded-lg border-[0.75px] border-border bg-muted p-2">
                       <Zap className="h-4 w-4" />
                     </div>
                     <div className="space-y-3">
-                      <h3 className="pt-0.5 text-xl leading-[1.375rem] font-semibold font-sans tracking-[-0.04em] md:text-2xl md:leading-[1.875rem] text-balance text-foreground">
+                      <h3 className="pt-0.5 text-xl leading-[1.375rem] font-semibold font-sans tracking-[-0.04em] md:text-2xl md:leading-[1.875rem] text-balance text-white">
                         Real-time Processing
                       </h3>
-                      <p className="font-sans text-sm leading-[1.125rem] md:text-base md:leading-[1.375rem] text-muted-foreground">
+                      <p className="font-sans text-sm leading-[1.125rem] md:text-base md:leading-[1.375rem] text-gray-300">
                         Lightning-fast voice processing with low latency for seamless conversations
                       </p>
                     </div>
@@ -227,16 +227,16 @@ export default function Landing() {
                   inactiveZone={0.01}
                   borderWidth={3}
                 />
-                <div className="relative flex h-full flex-col justify-between gap-6 overflow-hidden rounded-xl border-[0.75px] bg-background p-6 shadow-sm dark:shadow-[0px_0px_27px_0px_rgba(45,45,45,0.3)] md:p-6">
+                <div className="relative flex h-full flex-col justify-between gap-6 overflow-hidden rounded-xl border-[0.75px] bg-black/90 p-6 shadow-sm dark:shadow-[0px_0px_27px_0px_rgba(45,45,45,0.3)] md:p-6">
                   <div className="relative flex flex-1 flex-col justify-between gap-3">
                     <div className="w-fit rounded-lg border-[0.75px] border-border bg-muted p-2">
                       <MessageSquare className="h-4 w-4" />
                     </div>
                     <div className="space-y-3">
-                      <h3 className="pt-0.5 text-xl leading-[1.375rem] font-semibold font-sans tracking-[-0.04em] md:text-2xl md:leading-[1.875rem] text-balance text-foreground">
+                      <h3 className="pt-0.5 text-xl leading-[1.375rem] font-semibold font-sans tracking-[-0.04em] md:text-2xl md:leading-[1.875rem] text-balance text-white">
                         Conversation Analytics
                       </h3>
-                      <p className="font-sans text-sm leading-[1.125rem] md:text-base md:leading-[1.375rem] text-muted-foreground">
+                      <p className="font-sans text-sm leading-[1.125rem] md:text-base md:leading-[1.375rem] text-gray-300">
                         Advanced insights and analytics for call quality, sentiment analysis, and performance metrics
                       </p>
                     </div>
