@@ -88,161 +88,113 @@ export default function Landing() {
       </Card>
 
       {/* Features Section */}
-      <section id="features" className="py-20 px-8 bg-black/95 dark:bg-black/98">
+      <section id="features" className="py-20 px-8 bg-black">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              Modern Voice AI Technology
-            </h2>
-            <p className="text-lg text-gray-300 max-w-2xl mx-auto">
-              Advanced speech processing with enterprise-grade security and scalability
-            </p>
-          </div>
 
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-12 md:grid-rows-3 lg:gap-6 xl:max-h-[40rem] xl:grid-rows-2">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {/* Azure Speech Services */}
-            <div className="min-h-[14rem] list-none md:[grid-area:1/1/2/7] xl:[grid-area:1/1/2/5]">
-              <div className="relative h-full rounded-[1.25rem] border-[0.75px] border-border p-2 md:rounded-[1.5rem] md:p-3">
-                <GlowingEffect
-                  spread={40}
-                  glow={true}
-                  disabled={false}
-                  proximity={64}
-                  inactiveZone={0.01}
-                  borderWidth={3}
-                />
-                <div className="relative flex h-full flex-col justify-between gap-6 overflow-hidden rounded-xl border-[0.75px] bg-black/90 p-6 shadow-sm dark:shadow-[0px_0px_27px_0px_rgba(45,45,45,0.3)] md:p-6">
-                  <div className="relative flex flex-1 flex-col justify-between gap-3">
-                    <div className="w-fit rounded-lg border-[0.75px] border-border bg-muted p-2">
-                      <Mic className="h-4 w-4" />
-                    </div>
-                    <div className="space-y-3">
-                      <h3 className="pt-0.5 text-xl leading-[1.375rem] font-semibold font-sans tracking-[-0.04em] md:text-2xl md:leading-[1.875rem] text-balance text-white">
-                        Azure Speech Services
-                      </h3>
-                      <p className="font-sans text-sm leading-[1.125rem] md:text-base md:leading-[1.375rem] text-gray-300">
-                        Real-time speech-to-text and text-to-speech powered by Microsoft Azure's advanced AI models
-                      </p>
-                    </div>
-                  </div>
-                </div>
+            <div className="relative rounded-[1rem] border border-gray-800 bg-gray-900/50 p-6 hover:bg-gray-900/70 transition-all">
+              <GlowingEffect
+                spread={30}
+                glow={true}
+                disabled={false}
+                proximity={32}
+                inactiveZone={0.01}
+                borderWidth={1}
+              />
+              <div className="w-fit rounded-lg bg-gray-800 p-3 mb-4">
+                <Mic className="h-5 w-5 text-blue-400" />
               </div>
+              <h3 className="text-lg font-semibold text-white mb-2">
+                Do things the right way
+              </h3>
+              <p className="text-sm text-gray-400">
+                Running out of copy so I'll write anything.
+              </p>
             </div>
 
             {/* Anthropic Claude AI */}
-            <div className="min-h-[14rem] list-none md:[grid-area:1/7/2/13] xl:[grid-area:2/1/3/5]">
-              <div className="relative h-full rounded-[1.25rem] border-[0.75px] border-border p-2 md:rounded-[1.5rem] md:p-3">
-                <GlowingEffect
-                  spread={40}
-                  glow={true}
-                  disabled={false}
-                  proximity={64}
-                  inactiveZone={0.01}
-                  borderWidth={3}
-                />
-                <div className="relative flex h-full flex-col justify-between gap-6 overflow-hidden rounded-xl border-[0.75px] bg-black/90 p-6 shadow-sm dark:shadow-[0px_0px_27px_0px_rgba(45,45,45,0.3)] md:p-6">
-                  <div className="relative flex flex-1 flex-col justify-between gap-3">
-                    <div className="w-fit rounded-lg border-[0.75px] border-border bg-muted p-2">
-                      <Brain className="h-4 w-4" />
-                    </div>
-                    <div className="space-y-3">
-                      <h3 className="pt-0.5 text-xl leading-[1.375rem] font-semibold font-sans tracking-[-0.04em] md:text-2xl md:leading-[1.875rem] text-balance text-white">
-                        Anthropic Claude AI
-                      </h3>
-                      <p className="font-sans text-sm leading-[1.125rem] md:text-base md:leading-[1.375rem] text-gray-300">
-                        Natural language understanding and generation with context-aware conversation handling
-                      </p>
-                    </div>
-                  </div>
-                </div>
+            <div className="relative rounded-[1rem] border border-gray-800 bg-gray-900/50 p-6 hover:bg-gray-900/70 transition-all">
+              <GlowingEffect
+                spread={30}
+                glow={true}
+                disabled={false}
+                proximity={32}
+                inactiveZone={0.01}
+                borderWidth={1}
+              />
+              <div className="w-fit rounded-lg bg-gray-800 p-3 mb-4">
+                <Brain className="h-5 w-5 text-purple-400" />
               </div>
+              <h3 className="text-lg font-semibold text-white mb-2">
+                The best AI code editor ever.
+              </h3>
+              <p className="text-sm text-gray-400">
+                Yes, it's true. I'm not even kidding. Ask my mom if you don't believe me.
+              </p>
             </div>
 
             {/* SIP Integration */}
-            <div className="min-h-[14rem] list-none md:[grid-area:2/1/3/7] xl:[grid-area:1/5/3/8]">
-              <div className="relative h-full rounded-[1.25rem] border-[0.75px] border-border p-2 md:rounded-[1.5rem] md:p-3">
-                <GlowingEffect
-                  spread={40}
-                  glow={true}
-                  disabled={false}
-                  proximity={64}
-                  inactiveZone={0.01}
-                  borderWidth={3}
-                />
-                <div className="relative flex h-full flex-col justify-between gap-6 overflow-hidden rounded-xl border-[0.75px] bg-black/90 p-6 shadow-sm dark:shadow-[0px_0px_27px_0px_rgba(45,45,45,0.3)] md:p-6">
-                  <div className="relative flex flex-1 flex-col justify-between gap-3">
-                    <div className="w-fit rounded-lg border-[0.75px] border-border bg-muted p-2">
-                      <Phone className="h-4 w-4" />
-                    </div>
-                    <div className="space-y-3">
-                      <h3 className="pt-0.5 text-xl leading-[1.375rem] font-semibold font-sans tracking-[-0.04em] md:text-2xl md:leading-[1.875rem] text-balance text-white">
-                        SIP Integration
-                      </h3>
-                      <p className="font-sans text-sm leading-[1.125rem] md:text-base md:leading-[1.375rem] text-gray-300">
-                        Seamless telephone system integration with NetGSM and enterprise SIP providers
-                      </p>
-                    </div>
-                  </div>
-                </div>
+            <div className="relative rounded-[1rem] border border-gray-800 bg-gray-900/50 p-6 hover:bg-gray-900/70 transition-all">
+              <GlowingEffect
+                spread={30}
+                glow={true}
+                disabled={false}
+                proximity={32}
+                inactiveZone={0.01}
+                borderWidth={1}
+              />
+              <div className="w-fit rounded-lg bg-gray-800 p-3 mb-4">
+                <Phone className="h-5 w-5 text-green-400" />
               </div>
+              <h3 className="text-lg font-semibold text-white mb-2">
+                You should buy Aceternity UI Pro
+              </h3>
+              <p className="text-sm text-gray-400">
+                It's the best money you'll ever spend
+              </p>
             </div>
 
             {/* Real-time Processing */}
-            <div className="min-h-[14rem] list-none md:[grid-area:2/7/3/13] xl:[grid-area:1/8/2/13]">
-              <div className="relative h-full rounded-[1.25rem] border-[0.75px] border-border p-2 md:rounded-[1.5rem] md:p-3">
-                <GlowingEffect
-                  spread={40}
-                  glow={true}
-                  disabled={false}
-                  proximity={64}
-                  inactiveZone={0.01}
-                  borderWidth={3}
-                />
-                <div className="relative flex h-full flex-col justify-between gap-6 overflow-hidden rounded-xl border-[0.75px] bg-black/90 p-6 shadow-sm dark:shadow-[0px_0px_27px_0px_rgba(45,45,45,0.3)] md:p-6">
-                  <div className="relative flex flex-1 flex-col justify-between gap-3">
-                    <div className="w-fit rounded-lg border-[0.75px] border-border bg-muted p-2">
-                      <Zap className="h-4 w-4" />
-                    </div>
-                    <div className="space-y-3">
-                      <h3 className="pt-0.5 text-xl leading-[1.375rem] font-semibold font-sans tracking-[-0.04em] md:text-2xl md:leading-[1.875rem] text-balance text-white">
-                        Real-time Processing
-                      </h3>
-                      <p className="font-sans text-sm leading-[1.125rem] md:text-base md:leading-[1.375rem] text-gray-300">
-                        Lightning-fast voice processing with low latency for seamless conversations
-                      </p>
-                    </div>
-                  </div>
-                </div>
+            <div className="relative rounded-[1rem] border border-gray-800 bg-gray-900/50 p-6 hover:bg-gray-900/70 transition-all">
+              <GlowingEffect
+                spread={30}
+                glow={true}
+                disabled={false}
+                proximity={32}
+                inactiveZone={0.01}
+                borderWidth={1}
+              />
+              <div className="w-fit rounded-lg bg-gray-800 p-3 mb-4">
+                <Zap className="h-5 w-5 text-yellow-400" />
               </div>
+              <h3 className="text-lg font-semibold text-white mb-2">
+                This card is also built by Cursor
+              </h3>
+              <p className="text-sm text-gray-400">
+                I'm not even kidding. Ask my mom if you don't believe me.
+              </p>
             </div>
 
             {/* Advanced Analytics */}
-            <div className="min-h-[14rem] list-none md:[grid-area:3/1/4/13] xl:[grid-area:2/8/3/13]">
-              <div className="relative h-full rounded-[1.25rem] border-[0.75px] border-border p-2 md:rounded-[1.5rem] md:p-3">
-                <GlowingEffect
-                  spread={40}
-                  glow={true}
-                  disabled={false}
-                  proximity={64}
-                  inactiveZone={0.01}
-                  borderWidth={3}
-                />
-                <div className="relative flex h-full flex-col justify-between gap-6 overflow-hidden rounded-xl border-[0.75px] bg-black/90 p-6 shadow-sm dark:shadow-[0px_0px_27px_0px_rgba(45,45,45,0.3)] md:p-6">
-                  <div className="relative flex flex-1 flex-col justify-between gap-3">
-                    <div className="w-fit rounded-lg border-[0.75px] border-border bg-muted p-2">
-                      <MessageSquare className="h-4 w-4" />
-                    </div>
-                    <div className="space-y-3">
-                      <h3 className="pt-0.5 text-xl leading-[1.375rem] font-semibold font-sans tracking-[-0.04em] md:text-2xl md:leading-[1.875rem] text-balance text-white">
-                        Conversation Analytics
-                      </h3>
-                      <p className="font-sans text-sm leading-[1.125rem] md:text-base md:leading-[1.375rem] text-gray-300">
-                        Advanced insights and analytics for call quality, sentiment analysis, and performance metrics
-                      </p>
-                    </div>
-                  </div>
-                </div>
+            <div className="relative rounded-[1rem] border border-gray-800 bg-gray-900/50 p-6 hover:bg-gray-900/70 transition-all md:col-span-2 lg:col-span-1">
+              <GlowingEffect
+                spread={30}
+                glow={true}
+                disabled={false}
+                proximity={32}
+                inactiveZone={0.01}
+                borderWidth={1}
+              />
+              <div className="w-fit rounded-lg bg-gray-800 p-3 mb-4">
+                <MessageSquare className="h-5 w-5 text-cyan-400" />
               </div>
+              <h3 className="text-lg font-semibold text-white mb-2">
+                Coming soon on Aceternity UI
+              </h3>
+              <p className="text-sm text-gray-400">
+                I'm writing the code as I record this, no shit.
+              </p>
             </div>
           </div>
         </div>
