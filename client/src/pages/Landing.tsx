@@ -3,30 +3,15 @@ import { useAuthHook } from '@/lib/auth-hook';
 import { SplineScene } from "@/components/ui/splite";
 import { Card } from "@/components/ui/card"
 import { Spotlight } from "@/components/ui/spotlight"
-import { NavBar } from "@/components/ui/tubelight-navbar"
 import { GlowingEffect } from "@/components/ui/glowing-effect"
-import { Home, User, Briefcase, LogIn, UserPlus, Bot, Mic, Brain, Phone, Zap, MessageSquare } from 'lucide-react'
+import { Mic, Brain, Phone, Zap, MessageSquare } from 'lucide-react'
 
 export default function Landing() {
   const { isSignedIn } = useAuthHook();
 
-  // Navigation items based on auth status
-  const navItems = isSignedIn ? [
-    { name: 'Home', url: '/', icon: Home },
-    { name: 'Dashboard', url: '/dashboard', icon: Bot },
-    { name: 'Profile', url: '/profile', icon: User },
-    { name: 'Features', url: '#features', icon: Briefcase }
-  ] : [
-    { name: 'Home', url: '/', icon: Home },
-    { name: 'Features', url: '#features', icon: Briefcase },
-    { name: 'Sign In', url: '/sign-in', icon: LogIn },
-    { name: 'Sign Up', url: '/sign-up', icon: UserPlus }
-  ];
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Tubelight Navbar */}
-      <NavBar items={navItems} />
       {/* Hero Section with Spline 3D */}
       <Card className="w-full h-[600px] bg-black/[0.96] relative overflow-hidden border-0 rounded-none">
         <Spotlight
