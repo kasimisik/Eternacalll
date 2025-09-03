@@ -88,13 +88,13 @@ export default function Landing() {
       </Card>
 
       {/* Features Section */}
-      <section id="features" className="py-20 px-8">
+      <section id="features" className="py-20 px-8 bg-black/95 dark:bg-black/98">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
               Modern Voice AI Technology
             </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-lg text-gray-300 max-w-2xl mx-auto">
               Advanced speech processing with enterprise-grade security and scalability
             </p>
           </div>
