@@ -34,84 +34,99 @@ const GlowingEffect = memo(
     const animationFrameRef = useRef<number>(0);
 
     const handleMove = useCallback(
-      (e?: MouseEvent | { x: number; y: number }) => {
+      (e: MouseEvent | PointerEvent) => {
         if (!containerRef.current) return;
-        if (animationFrameRef.current) {
-          cancelAnimationFrame(animationFrameRef.current);
+        
+        const element = containerRef.current;
+        const rect = element.getBoundingClientRect();
+        
+        // Mouse pozisyonunu container'a göre hesapla
+        const mouseX = e.clientX;
+        const mouseY = e.clientY;
+        
+        // Container'ın merkezi
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        
+        // Mouse ile container arasındaki mesafe
+        const distanceFromCenter = Math.hypot(mouseX - centerX, mouseY - centerY);
+        
+        // Proximity kontrolü - mouse kartın yakınında mı?
+        const isNear = 
+          mouseX >= rect.left - proximity &&
+          mouseX <= rect.right + proximity &&
+          mouseY >= rect.top - proximity &&
+          mouseY <= rect.bottom + proximity;
+        
+        if (!isNear) {
+          element.style.setProperty("--active", "0");
+          return;
         }
-
-        animationFrameRef.current = requestAnimationFrame(() => {
-          const element = containerRef.current;
-          if (!element) return;
-
-          const { left, top, width, height } = element.getBoundingClientRect();
-          const mouseX = e?.x ?? lastPosition.current.x;
-          const mouseY = e?.y ?? lastPosition.current.y;
-
-          if (e) {
-            lastPosition.current = { x: mouseX, y: mouseY };
-          }
-
-          const center = [left + width * 0.5, top + height * 0.5];
-          const distanceFromCenter = Math.hypot(
-            mouseX - center[0],
-            mouseY - center[1]
-          );
-          const inactiveRadius = 0.5 * Math.min(width, height) * inactiveZone;
-
-          if (distanceFromCenter < inactiveRadius) {
-            element.style.setProperty("--active", "0");
-            return;
-          }
-
-          const isActive =
-            mouseX > left - proximity &&
-            mouseX < left + width + proximity &&
-            mouseY > top - proximity &&
-            mouseY < top + height + proximity;
-
-          element.style.setProperty("--active", isActive ? "1" : "0");
-
-          if (!isActive) return;
-
-          const currentAngle =
-            parseFloat(element.style.getPropertyValue("--start")) || 0;
-          let targetAngle =
-            (180 * Math.atan2(mouseY - center[1], mouseX - center[0])) /
-              Math.PI +
-            90;
-          const angleDiff = ((targetAngle - currentAngle + 180) % 360) - 180;
-          const newAngle = currentAngle + angleDiff;
-
-          animate(currentAngle, newAngle, {
-            duration: movementDuration,
-            ease: [0.16, 1, 0.3, 1],
-            onUpdate: (value: number) => {
-              element.style.setProperty("--start", String(value));
-            },
-          });
+        
+        // İnactive zone kontrolü
+        const minDimension = Math.min(rect.width, rect.height);
+        const inactiveRadius = (minDimension / 2) * inactiveZone;
+        
+        if (distanceFromCenter < inactiveRadius) {
+          element.style.setProperty("--active", "0");
+          return;
+        }
+        
+        // Effect'i aktif et
+        element.style.setProperty("--active", "1");
+        
+        // Mouse'un container'a göre açısını hesapla
+        const deltaX = mouseX - centerX;
+        const deltaY = mouseY - centerY;
+        let angle = Math.atan2(deltaY, deltaX) * (180 / Math.PI) + 90;
+        
+        // Açıyı normalize et (0-360)
+        if (angle < 0) angle += 360;
+        
+        // Animasyonlu açı güncellemesi
+        const currentAngle = parseFloat(element.style.getPropertyValue("--start")) || 0;
+        
+        // En kısa yolu hesapla
+        let angleDiff = angle - currentAngle;
+        if (angleDiff > 180) angleDiff -= 360;
+        if (angleDiff < -180) angleDiff += 360;
+        
+        const targetAngle = currentAngle + angleDiff;
+        
+        animate(currentAngle, targetAngle, {
+          duration: movementDuration,
+          ease: [0.25, 0.46, 0.45, 0.94],
+          onUpdate: (value: number) => {
+            element.style.setProperty("--start", String(value % 360));
+          },
         });
       },
-      [inactiveZone, proximity, movementDuration]
+      [proximity, inactiveZone, movementDuration]
     );
 
     useEffect(() => {
       if (disabled) return;
 
-      const handleScroll = () => handleMove();
-      const handlePointerMove = (e: PointerEvent) => handleMove(e);
+      const element = containerRef.current;
+      if (!element) return;
 
-      window.addEventListener("scroll", handleScroll, { passive: true });
-      document.body.addEventListener("pointermove", handlePointerMove, {
-        passive: true,
-      });
+      const handleMouseMove = (e: MouseEvent) => handleMove(e);
+      const handleMouseLeave = () => {
+        if (element) {
+          element.style.setProperty("--active", "0");
+        }
+      };
+
+      // Her card için ayrı mouse event listener'ları
+      document.addEventListener("mousemove", handleMouseMove);
+      element.addEventListener("mouseleave", handleMouseLeave);
 
       return () => {
+        document.removeEventListener("mousemove", handleMouseMove);
+        element.removeEventListener("mouseleave", handleMouseLeave);
         if (animationFrameRef.current) {
           cancelAnimationFrame(animationFrameRef.current);
         }
-        window.removeEventListener("scroll", handleScroll);
-        document.body.removeEventListener("pointermove", handlePointerMove);
       };
     }, [handleMove, disabled]);
 
