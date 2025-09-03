@@ -225,7 +225,7 @@ export function ModernSignUp() {
                       transition={{ type: "spring", stiffness: 400, damping: 25 }}
                     >
                       <div className="relative flex items-center overflow-hidden rounded-lg">
-                        <User className={`absolute left-3 w-4 h-4 transition-all duration-300 ${
+                        <LucideUser className={`absolute left-3 w-4 h-4 transition-all duration-300 ${
                           focusedInput === "firstName" ? 'text-white' : 'text-white/40'
                         }`} />
                         
@@ -250,7 +250,7 @@ export function ModernSignUp() {
                       transition={{ type: "spring", stiffness: 400, damping: 25 }}
                     >
                       <div className="relative flex items-center overflow-hidden rounded-lg">
-                        <User className={`absolute left-3 w-4 h-4 transition-all duration-300 ${
+                        <LucideUser className={`absolute left-3 w-4 h-4 transition-all duration-300 ${
                           focusedInput === "lastName" ? 'text-white' : 'text-white/40'
                         }`} />
                         
