@@ -299,9 +299,9 @@ export default function Landing() {
       {/* Display Cards Section */}
       <DisplayCardsDemo />
 
-      {/* CTA Section */}
+      {/* CTA Section - Moved below Display Cards */}
       {!isSignedIn && (
-        <section className="py-12 md:py-20 px-4 md:px-8 bg-background">
+        <section className="py-12 md:py-20 px-4 md:px-8 bg-black">
           <div className="max-w-4xl mx-auto text-center">
             <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center">
               <Link href="/sign-up">
@@ -310,7 +310,7 @@ export default function Landing() {
                 </RainbowButton>
               </Link>
               <Link href="/sign-in">
-                <button className="w-full sm:w-auto border border-border text-foreground px-6 md:px-8 py-3 rounded-lg font-semibold hover:bg-accent transition-colors">
+                <button className="w-full sm:w-auto border border-white/20 text-white px-6 md:px-8 py-3 rounded-lg font-semibold hover:bg-white/10 transition-colors">
                   Giriş Yap
                 </button>
               </Link>
