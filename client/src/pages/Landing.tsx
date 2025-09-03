@@ -11,6 +11,7 @@ import { Footerdemo } from "@/components/ui/footer-section"
 import { ExpandableChatDemo } from "@/components/ExpandableChatDemo"
 import { HeaderDemo } from "@/components/HeaderDemo"
 import { RainbowButton } from "@/components/ui/rainbow-button"
+import { DisplayCardsDemo } from "@/components/ui/display-cards-demo"
 import { Mic, Brain, Phone, Zap, MessageSquare } from 'lucide-react'
 
 export default function Landing() {
@@ -294,6 +295,9 @@ export default function Landing() {
           description="Size uygun planı seçin\nTüm planlar platformumuza erişim, müşteri kazanım araçları ve özel destek içerir."
         />
       </div>
+
+      {/* Display Cards Section */}
+      <DisplayCardsDemo />
 
       {/* CTA Section */}
       {!isSignedIn && (
