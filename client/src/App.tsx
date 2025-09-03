@@ -9,6 +9,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import Landing from "@/pages/Landing";
 import SignIn from "@/pages/SignIn";
 import { ModernSignIn } from "@/pages/ModernSignIn";
+import { ModernSignUp } from "@/pages/ModernSignUp";
 import SignUp from "@/pages/SignUp";
 import Dashboard from "@/pages/Dashboard";
 import NotFound from "@/pages/not-found";
@@ -16,9 +17,9 @@ import NotFound from "@/pages/not-found";
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={ModernSignIn} />
+      <Route path="/" component={Landing} />
       <Route path="/sign-in" component={ModernSignIn} />
-      <Route path="/sign-up" component={SignUp} />
+      <Route path="/sign-up" component={ModernSignUp} />
       <Route path="/dashboard">
         <ProtectedRoute>
           <Dashboard />
