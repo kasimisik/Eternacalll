@@ -69,7 +69,7 @@ export function Pricing({
   };
 
   return (
-    <div className="container py-20 text-white">
+    <div className="w-full max-w-7xl mx-auto py-20 text-white px-4">
       <div className="text-center space-y-4 mb-12">
         <h2 className="text-4xl font-bold tracking-tight sm:text-5xl text-white">
           {title}
@@ -95,7 +95,7 @@ export function Pricing({
         </span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 px-4 sm:px-0">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
         {plans.map((plan, index) => (
           <motion.div
             key={index}
@@ -120,7 +120,7 @@ export function Pricing({
               opacity: { duration: 0.5 },
             }}
             className={cn(
-              `rounded-2xl border-[1px] p-6 bg-gray-900 text-center lg:flex lg:flex-col lg:justify-center relative`,
+              `rounded-2xl border-[1px] p-6 bg-gray-900 text-center lg:flex lg:flex-col lg:justify-center relative w-full`,
               plan.isPopular ? "border-white border-2" : "border-gray-700",
               "flex flex-col",
               !plan.isPopular && "mt-5",
