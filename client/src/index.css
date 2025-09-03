@@ -224,3 +224,30 @@
     border-color: var(--btn-border);
   }
 }
+
+/* Glowing Effect Styles */
+.glow {
+  position: relative;
+}
+
+.glow:after {
+  content: "";
+  position: absolute;
+  border-radius: inherit;
+  inset: calc(-1 * var(--glowingeffect-border-width, 1px));
+  border: var(--glowingeffect-border-width, 1px) solid transparent;
+  background: var(--gradient);
+  background-attachment: fixed;
+  opacity: var(--active, 0);
+  transition: opacity 0.3s ease;
+  mask-clip: padding-box, border-box;
+  mask-composite: intersect;
+  mask-image: 
+    linear-gradient(transparent, transparent),
+    conic-gradient(
+      from calc((var(--start, 0) - var(--spread, 30)) * 1deg),
+      transparent 0deg,
+      white,
+      transparent calc(var(--spread, 30) * 2deg)
+    );
+}

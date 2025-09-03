@@ -59,10 +59,11 @@ const GridItem = ({ area, icon, title, description }: GridItemProps) => {
       <GlowingEffect
         disabled={false}
         glow={true}
-        spread={30}
-        proximity={32}
-        inactiveZone={0.01}
-        borderWidth={1}
+        spread={50}
+        proximity={100}
+        inactiveZone={0.1}
+        borderWidth={2}
+        movementDuration={1}
       />
       <div className="flex h-[180px] flex-col justify-between">
         <div className="space-y-2">
