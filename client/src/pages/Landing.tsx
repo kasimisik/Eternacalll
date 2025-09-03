@@ -4,10 +4,55 @@ import { SplineScene } from "@/components/ui/splite";
 import { Card } from "@/components/ui/card"
 import { Spotlight } from "@/components/ui/spotlight"
 import { GlowingEffect } from "@/components/ui/glowing-effect"
+import { TestimonialsSection } from "@/components/ui/testimonials-with-marquee"
 import { Mic, Brain, Phone, Zap, MessageSquare } from 'lucide-react'
 
 export default function Landing() {
   const { isSignedIn } = useAuthHook();
+
+  // Türkçe kullanıcı yorumları
+  const testimonials = [
+    {
+      author: {
+        name: "Ahmet Yılmaz",
+        handle: "@ahmetyilmaz",
+        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
+      },
+      text: "AI sesli asistanımızı kullanmaya başladığımızdan beri müşteri memnuniyetimiz %80 arttı. Gerçekten çok etkileyici bir teknoloji!"
+    },
+    {
+      author: {
+        name: "Zeynep Demir",
+        handle: "@zeynepdemir",
+        avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face"
+      },
+      text: "SIP entegrasyonu sayesinde mevcut telefon sistemimizi değiştirmeden AI'dan faydalanmaya başladık. Kurulum çok kolaydı."
+    },
+    {
+      author: {
+        name: "Mehmet Kaya",
+        handle: "@mehmetkaya",
+        avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face"
+      },
+      text: "Azure Speech Services ile Türkçe konuşma tanıma kalitesi mükemmel. Müşterilerimiz robotla değil, gerçek bir kişiyle konuştuğunu düşünüyor."
+    },
+    {
+      author: {
+        name: "Fatma Özkan",
+        handle: "@fatmaozkan",
+        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&crop=face"
+      },
+      text: "24/7 müşteri destek hizmetimizi otomatikleştirdik. Artık gece yarısı bile müşterilerimize anında yanıt verebiliyoruz."
+    },
+    {
+      author: {
+        name: "Can Erdoğan",
+        handle: "@canerdogan",
+        avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face"
+      },
+      text: "Anthropic Claude'nin doğal konuşma yeteneği inanılmaz. Müşteriler bot olduğunu anlamıyor bile!"
+    }
+  ];
 
 
   return (
@@ -185,32 +230,33 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Testimonials Section */}
+      <TestimonialsSection
+        title="Binlerce Türk işletmesi tarafından güveniliyor"
+        description="AI sesli asistan teknolojimizle işlerini büyüten binlerce Türk girişimciye katılın"
+        testimonials={testimonials}
+        className="bg-muted/50"
+      />
+
       {/* CTA Section */}
-      <section className="py-20 px-8 bg-muted/50">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Ready to Transform Your Voice Communications?
-          </h2>
-          <p className="text-lg text-muted-foreground mb-8">
-            Join thousands of businesses using our AI voice technology
-          </p>
-          
-          {!isSignedIn && (
+      {!isSignedIn && (
+        <section className="py-20 px-8 bg-background">
+          <div className="max-w-4xl mx-auto text-center">
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/sign-up">
                 <button className="bg-primary text-primary-foreground px-8 py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors">
-                  Start Free Trial
+                  Ücretsiz Deneyin
                 </button>
               </Link>
               <Link href="/sign-in">
                 <button className="border border-border text-foreground px-8 py-3 rounded-lg font-semibold hover:bg-accent transition-colors">
-                  Sign In
+                  Giriş Yap
                 </button>
               </Link>
             </div>
-          )}
-        </div>
-      </section>
+          </div>
+        </section>
+      )}
     </div>
   );
 }
