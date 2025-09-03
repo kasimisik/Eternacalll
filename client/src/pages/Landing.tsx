@@ -12,6 +12,7 @@ import { ExpandableChatDemo } from "@/components/ExpandableChatDemo"
 import { HeaderDemo } from "@/components/HeaderDemo"
 import { RainbowButton } from "@/components/ui/rainbow-button"
 import { DisplayCardsDemo } from "@/components/ui/display-cards-demo"
+import { GlobeDemo } from "@/components/ui/globe-demo"
 import { Mic, Brain, Phone, Zap, MessageSquare } from 'lucide-react'
 
 export default function Landing() {
@@ -318,6 +319,23 @@ export default function Landing() {
 
       {/* Display Cards Section */}
       <DisplayCardsDemo />
+
+      {/* Globe Section */}
+      <section className="py-12 md:py-20 px-4 md:px-8 bg-black">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+              Küresel Erişim
+            </h2>
+            <p className="text-gray-300 text-lg">
+              Dünya çapında müşterilerinize ulaşın
+            </p>
+          </div>
+          <div className="flex justify-center">
+            <GlobeDemo />
+          </div>
+        </div>
+      </section>
 
       {/* Footer Section */}
       <Footerdemo 
