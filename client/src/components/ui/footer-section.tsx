@@ -13,16 +13,15 @@ import {
 } from "@/components/ui/tooltip"
 import { Facebook, Instagram, Linkedin, Moon, Send, Sun, Twitter } from "lucide-react"
 
-function Footerdemo() {
-  const [isDarkMode, setIsDarkMode] = React.useState(true)
+interface FooterdemoProps {
+  isDarkMode?: boolean;
+  setIsDarkMode?: (value: boolean) => void;
+}
 
-  React.useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add("dark")
-    } else {
-      document.documentElement.classList.remove("dark")
-    }
-  }, [isDarkMode])
+function Footerdemo({ 
+  isDarkMode = true, 
+  setIsDarkMode = () => {} 
+}: FooterdemoProps) {
 
   return (
     <footer className="relative border-t bg-background text-foreground transition-colors duration-300">

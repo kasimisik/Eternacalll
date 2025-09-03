@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { Link } from 'wouter';
 import { useAuthHook } from '@/lib/auth-hook';
 import { SplineScene } from "@/components/ui/splite";
@@ -11,6 +12,15 @@ import { Mic, Brain, Phone, Zap, MessageSquare } from 'lucide-react'
 
 export default function Landing() {
   const { isSignedIn } = useAuthHook();
+  const [isDarkMode, setIsDarkMode] = React.useState(true);
+
+  React.useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add("dark")
+    } else {
+      document.documentElement.classList.remove("dark")
+    }
+  }, [isDarkMode]);
 
   // Türkçe kullanıcı yorumları
   const testimonials = [
@@ -330,7 +340,10 @@ export default function Landing() {
       )}
 
       {/* Footer Section */}
-      <Footerdemo />
+      <Footerdemo 
+        isDarkMode={isDarkMode} 
+        setIsDarkMode={setIsDarkMode} 
+      />
     </div>
   );
 }
