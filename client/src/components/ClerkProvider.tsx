@@ -73,7 +73,11 @@ export function ClerkProvider({ children }: ClerkProviderProps) {
         afterSignUpUrl="/dashboard"
         signInUrl="/sign-in"
         signUpUrl="/sign-up"
-        allowedRedirectOrigins={[window.location.origin]}
+        allowedRedirectOrigins={[
+          window.location.origin,
+          "https://dae9d9ab-f619-4585-99b9-d23266a0f07a-00-3mlzmj70cdlca.sisko.replit.dev",
+          "https://*.replit.dev"
+        ]}
       >
         {children}
       </BaseClerkProvider>
