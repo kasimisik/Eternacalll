@@ -98,16 +98,22 @@ export function ModernSignIn() {
     setIsLoading(true);
     
     try {
+      console.log('Starting Google OAuth...');
       await signIn.authenticateWithRedirect({
         strategy: 'oauth_google',
         redirectUrl: window.location.origin + '/dashboard',
         redirectUrlComplete: window.location.origin + '/dashboard',
       });
+      console.log('Google OAuth redirect initiated');
     } catch (err: any) {
-      console.error('Google sign in error:', err);
+      console.error('Google sign in error details:', err);
+      console.error('Error message:', err.message);
+      console.error('Error code:', err.code);
+      console.error('Full error object:', JSON.stringify(err, null, 2));
+      
       toast({
-        title: "Google ile giriş şu anda kullanılamıyor",
-        description: "Lütfen e-posta ve şifre ile giriş yapın",
+        title: "Google ile giriş hatası",
+        description: err.message || "Lütfen tekrar deneyin veya e-posta ile giriş yapın",
         variant: "destructive"
       });
       setIsLoading(false);
