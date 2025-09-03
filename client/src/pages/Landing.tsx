@@ -138,7 +138,7 @@ export default function Landing() {
       <HeaderDemo />
       
       {/* Hero Section with Spline 3D */}
-      <Card className="w-full h-[600px] md:h-[700px] bg-black/[0.96] relative overflow-hidden border-0 rounded-none mt-20">
+      <Card className="w-full h-[500px] sm:h-[600px] md:h-[700px] bg-black/[0.96] relative overflow-hidden border-0 rounded-none mt-16 sm:mt-20">
         <Spotlight
           className="-top-40 left-0 md:left-60 md:-top-20"
           fill="white"
@@ -146,7 +146,7 @@ export default function Landing() {
 
         <div className="flex flex-col md:flex-row h-full">
           {/* Left content */}
-          <div className="flex-1 p-4 sm:p-8 relative z-10 flex flex-col justify-center">
+          <div className="flex-1 p-2 sm:p-4 md:p-8 relative z-10 flex flex-col justify-center">
             <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-neutral-50 to-neutral-400 mb-4 md:mb-6">
               Azure AI
               <br />
@@ -168,7 +168,7 @@ export default function Landing() {
       </Card>
 
       {/* Features Section */}
-      <section id="features" className="py-12 md:py-20 px-4 md:px-8 bg-black">
+      <section id="features" className="py-8 sm:py-12 md:py-20 px-2 sm:px-4 md:px-8 bg-black">
         <div className="max-w-6xl mx-auto">
 
           <div className="grid grid-cols-1 gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -299,7 +299,7 @@ export default function Landing() {
 
       {/* CTA Section - Right after Pricing */}
       {!isSignedIn && (
-        <section className="py-12 md:py-20 px-4 md:px-8 bg-black">
+        <section className="py-8 sm:py-12 md:py-20 px-2 sm:px-4 md:px-8 bg-black">
           <div className="max-w-4xl mx-auto text-center">
             <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center">
               <Link href="/sign-up">
@@ -321,7 +321,7 @@ export default function Landing() {
       <DisplayCardsDemo />
 
       {/* Globe Section */}
-      <section className="py-8 sm:py-12 md:py-20 px-4 md:px-8 bg-black">
+      <section className="py-8 sm:py-12 md:py-20 px-2 sm:px-4 md:px-8 bg-black">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-8 sm:mb-12">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 sm:mb-4">
