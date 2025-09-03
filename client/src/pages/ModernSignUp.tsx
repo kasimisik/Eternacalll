@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'wouter';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
-import { Mail, Lock, Eye, EyeOff, ArrowRight, User } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, User as LucideUser } from 'lucide-react';
 import { cn } from "@/lib/utils"
 import { useSignUp } from '@clerk/clerk-react';
 import { useToast } from "@/hooks/use-toast";
