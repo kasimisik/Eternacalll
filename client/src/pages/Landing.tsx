@@ -4,8 +4,8 @@ import { useAuthHook } from '@/lib/auth-hook';
 import { SplineScene } from "@/components/ui/splite";
 import { Card } from "@/components/ui/card"
 import { Spotlight } from "@/components/ui/spotlight"
-import { GlowingEffectDemo } from "@/components/ui/glowing-effect-demo"
 import { TestimonialsSection } from "@/components/ui/testimonials-with-marquee"
+import { GlowingEffectDemo } from "@/components/ui/glowing-effect-demo"
 import { Pricing } from "@/components/ui/pricing"
 import { Footerdemo } from "@/components/ui/footer-section"
 import { ExpandableChatDemo } from "@/components/ExpandableChatDemo"
