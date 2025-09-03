@@ -1,69 +1,66 @@
-import { SignUp as ClerkSignUp } from '@clerk/clerk-react';
-import { CLERK_CONFIG } from '../lib/clerk';
+import { SignUpPage } from "@/components/ui/sign-up";
+import { useLocation } from 'wouter';
 
-export default function SignUp() {
-  // If Clerk is not configured, show a fallback message
-  if (!CLERK_CONFIG.publishableKey) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-card rounded-lg shadow-xl p-8 text-center">
-          <h2 className="text-3xl font-bold text-foreground mb-4">Authentication Setup Required</h2>
-          <p className="text-muted-foreground mb-4">
-            Clerk authentication needs to be configured to enable sign-up functionality.
-          </p>
-          <a href="/" className="text-primary hover:underline">← Back to Home</a>
-        </div>
-      </div>
-    );
-  }
+const sampleTestimonials = [
+  {
+    avatarSrc: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&crop=face",
+    name: "Fatma Özkan",
+    handle: "@fatmaozkan",
+    text: "24/7 müşteri destek hizmetimizi otomatikleştirdik. Artık gece yarısı bile müşterilerimize anında yanıt verebiliyoruz."
+  },
+  {
+    avatarSrc: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face",
+    name: "Can Erdoğan",
+    handle: "@canerdogan",
+    text: "Anthropic Claude'nin doğal konuşma yeteneği inanılmaz. Müşteriler bot olduğunu anlamıyor bile!"
+  },
+  {
+    avatarSrc: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
+    name: "Ahmet Yılmaz",
+    handle: "@ahmetyilmaz",
+    text: "AI sesli asistanımızı kullanmaya başladığımızdan beri müşteri memnuniyetimiz %80 arttı."
+  },
+];
+
+export default function SignUpPageDemo() {
+  const [, setLocation] = useLocation();
+
+  const handleSignUp = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const data = Object.fromEntries(formData.entries());
+    console.log("Sign Up submitted:", data);
+    
+    // Simulate successful registration and redirect to dashboard
+    setLocation('/dashboard');
+  };
+
+  const handleGoogleSignUp = () => {
+    console.log("Continue with Google clicked");
+    // Simulate Google signup and redirect to dashboard
+    setLocation('/dashboard');
+  };
+
+  const handleResetPassword = () => {
+    alert("Şifre sıfırlama isteği gönderildi. E-posta adresinizi kontrol edin.");
+  };
+
+  const handleSignIn = () => {
+    setLocation('/sign-in');
+  };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-card rounded-lg shadow-xl p-8">
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-foreground mb-2">Hesap Oluştur</h2>
-          <p className="text-muted-foreground">Yeni hesap oluşturun</p>
-        </div>
-
-        <ClerkSignUp
-          appearance={{
-            elements: {
-              formButtonPrimary: "bg-primary text-primary-foreground hover:bg-primary/90 w-full py-3 rounded-lg font-semibold transition-colors",
-              card: "shadow-none border-none p-0",
-              headerTitle: "hidden",
-              headerSubtitle: "hidden",
-              socialButtonsBlockButton: "social-button w-full flex items-center justify-center px-4 py-3 border border-border rounded-lg hover:bg-accent transition-colors mb-3",
-              socialButtonsBlockButtonText: "font-medium",
-              formFieldInput: "w-full px-3 py-3 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring",
-              formFieldLabel: "text-muted-foreground text-sm font-medium mb-2 block",
-              footer: "mt-6 text-center",
-              footerActionText: "text-muted-foreground",
-              footerActionLink: "text-primary hover:underline font-semibold ml-1",
-              dividerLine: "bg-border",
-              dividerText: "text-muted-foreground text-sm",
-              formResendCodeLink: "text-primary hover:underline text-sm",
-              identityPreviewText: "text-foreground",
-              identityPreviewEditButton: "text-primary hover:underline",
-              formHeaderTitle: "text-foreground text-lg font-semibold",
-              formHeaderSubtitle: "text-muted-foreground text-sm",
-              otpCodeFieldInput: "border border-input rounded focus:ring-2 focus:ring-ring",
-              formButtonReset: "text-primary hover:underline",
-              formFieldInputShowPasswordButton: "text-muted-foreground hover:text-foreground",
-              formFieldSuccessText: "text-green-600 text-sm",
-              formFieldErrorText: "text-destructive text-sm"
-            },
-            variables: {
-              colorPrimary: "hsl(221.2, 83.2%, 53.3%)",
-              colorBackground: "hsl(0, 0%, 100%)",
-              colorInputBackground: "hsl(0, 0%, 100%)",
-              colorInputText: "hsl(222.2, 84%, 4.9%)",
-              borderRadius: "0.5rem",
-              spacingUnit: "1rem"
-            }
-          }}
-          redirectUrl="/dashboard"
-        />
-      </div>
+    <div className="bg-background text-foreground">
+      <SignUpPage
+        title={<span className="font-light text-foreground tracking-tighter">Hesap Oluşturun</span>}
+        description="AI sesli asistan deneyiminize hemen başlayın - ücretsiz hesap oluşturun"
+        heroImageSrc="https://images.unsplash.com/photo-1661956602116-aa6865609028?w=2160&q=80"
+        testimonials={sampleTestimonials}
+        onSignUp={handleSignUp}
+        onGoogleSignUp={handleGoogleSignUp}
+        onResetPassword={handleResetPassword}
+        onSignIn={handleSignIn}
+      />
     </div>
   );
 }
