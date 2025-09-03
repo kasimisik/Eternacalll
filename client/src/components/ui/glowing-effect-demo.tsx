@@ -52,7 +52,7 @@ const GridItem = ({ area, icon, title, description }: GridItemProps) => {
   return (
     <li
       className={cn(
-        "relative overflow-hidden rounded-lg border bg-background p-4",
+        "relative overflow-hidden rounded-lg border border-gray-800 bg-gray-900/50 p-4 hover:bg-gray-900/70 transition-all",
         area
       )}
     >
@@ -66,12 +66,12 @@ const GridItem = ({ area, icon, title, description }: GridItemProps) => {
       />
       <div className="flex h-[180px] flex-col justify-between">
         <div className="space-y-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted">
+          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-white/10 text-white">
             {icon}
           </div>
-          <h3 className="font-semibold text-foreground">{title}</h3>
+          <h3 className="font-semibold text-white">{title}</h3>
         </div>
-        <p className="text-sm text-muted-foreground">{description}</p>
+        <p className="text-sm text-gray-400">{description}</p>
       </div>
     </li>
   );
