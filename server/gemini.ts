@@ -6,7 +6,7 @@ import { GoogleGenAI } from "@google/genai";
 //   - do not change this unless explicitly requested by the user
 
 // This API key is from Gemini Developer API Key, not vertex AI API Key
-const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY || "" });
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
 // Konuşma geçmişini saklamak için basit bir hafıza sistemi
 const conversationMemory = new Map<string, Array<{role: 'user' | 'assistant', content: string}>>();
@@ -25,7 +25,7 @@ export function setConversationHistory(sessionId: string, history: Array<{role: 
 
 export async function getAIResponse(userInput: string, userId?: string): Promise<string> {
     try {
-        if (!process.env.GOOGLE_AI_API_KEY) {
+        if (!process.env.GEMINI_API_KEY) {
             console.warn("🤖 Gemini Mock: User said:", userInput);
             const mockResponses = [
                 "Anlıyorum, bu konu gerçekten ilginç. Peki bu durumla ilgili ne düşünüyorsun?",
@@ -65,21 +65,13 @@ Kısa cevap ver.`;
             ? `${systemPrompt}\n\nGeçmiş:\n${conversationContext.slice(-300)}\n\nSon mesaj: ${userInput}`
             : `${systemPrompt}\n\nKullanıcı: ${userInput}`;
 
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: [{ parts: [{ text: fullPrompt }] }],
-            generationConfig: {
-                temperature: 0.7,
-                maxOutputTokens: 150,
-                topK: 20,
-                topP: 0.8,
-            }
-        });
+        const model = ai.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+        const response = await model.generateContent(fullPrompt);
 
-        const responseText = response.text || "Üzgünüm, yanıt oluşturamadım.";
+        const responseText = response.response.text() || "Üzgünüm, yanıt oluşturamadım.";
         
         // Hata ayıklama için response kontrolü
-        if (!response.text) {
+        if (!response.response.text()) {
             console.error('⚠️ Gemini API Response boş:', response);
         }
         
