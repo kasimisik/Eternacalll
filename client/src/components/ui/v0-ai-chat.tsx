@@ -86,21 +86,20 @@ export function VercelV0Chat() {
     // İlk durumda tam ortada, konuşma başlayınca normale geçiş
     if (messages.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center h-screen w-full max-w-4xl mx-auto p-4">
+            <div className="flex flex-col items-center justify-center min-h-screen w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
                 {/* Centered Header and Input */}
-                <div className="text-center space-y-8">
-                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-black dark:text-white">
+                <div className="text-center space-y-6 sm:space-y-8">
+                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold text-black dark:text-white leading-tight">
                         What can I help you ship?
                     </h1>
-                    <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400 px-4">
+                    <p className="text-sm sm:text-base lg:text-lg text-gray-600 dark:text-gray-400 px-2 sm:px-4 max-w-2xl mx-auto">
                         Başlamak için bir mesaj gönderin.
                     </p>
                 </div>
 
                 {/* Centered Input */}
-                <div className="w-full max-w-3xl mt-8">
+                <div className="w-full max-w-4xl mt-6 sm:mt-8 lg:mt-12 px-2 sm:px-0">
                     <div className="relative">
-                        
                         <form onSubmit={(e) => {
                             e.preventDefault();
                             if (value.trim() && !isLoading) {
@@ -112,7 +111,7 @@ export function VercelV0Chat() {
                                 value={value}
                                 onChange={(e) => setValue(e.target.value)}
                                 placeholder="Asistanınıza mesaj gönderin..."
-                                className="bg-gray-800 dark:bg-gray-800 border-gray-600 dark:border-gray-600 text-white"
+                                className="bg-gray-800 dark:bg-gray-800 border-gray-600 dark:border-gray-600 text-white text-sm sm:text-base"
                                 disabled={isLoading}
                             />
                         </form>
@@ -124,31 +123,31 @@ export function VercelV0Chat() {
 
     // Konuşma başladıktan sonra normal chat arayüzü
     return (
-        <div className="flex flex-col h-screen w-full max-w-4xl mx-auto">
+        <div className="flex flex-col h-screen w-full max-w-7xl mx-auto">
             {/* Header - Fixed at top */}
-            <div className="flex-shrink-0 px-4 py-4">
-                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-black dark:text-white text-center">
+            <div className="flex-shrink-0 px-2 sm:px-4 lg:px-6 py-3 sm:py-4">
+                <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-black dark:text-white text-center leading-tight">
                     What can I help you ship?
                 </h1>
             </div>
 
             {/* Messages Container - Scrollable middle section */}
-            <div className="flex-1 overflow-y-auto px-4 py-4">
-                <div className="w-full max-w-3xl mx-auto">
-                    <div className="space-y-4">
+            <div className="flex-1 overflow-y-auto px-2 sm:px-4 lg:px-6 py-2 sm:py-4">
+                <div className="w-full max-w-4xl mx-auto">
+                    <div className="space-y-3 sm:space-y-4">
                         {messages.map((message, index) => (
-                            <div key={index} className="space-y-3">
+                            <div key={index} className="space-y-2 sm:space-y-3">
                                 {/* User Message */}
                                 <div className="flex justify-end">
-                                    <div className="bg-blue-600 text-white p-3 rounded-lg max-w-[85%] sm:max-w-[80%] break-words">
-                                        <p className="text-sm sm:text-base">{message.user}</p>
+                                    <div className="bg-blue-600 text-white p-2 sm:p-3 rounded-lg max-w-[90%] sm:max-w-[85%] lg:max-w-[75%] break-words">
+                                        <p className="text-xs sm:text-sm lg:text-base leading-relaxed">{message.user}</p>
                                     </div>
                                 </div>
                                 
                                 {/* AI Response */}
                                 <div className="flex justify-start">
-                                    <div className="bg-gray-200 dark:bg-gray-800 text-black dark:text-white p-3 rounded-lg max-w-[85%] sm:max-w-[80%] break-words">
-                                        <p className="text-sm sm:text-base" style={{whiteSpace: 'pre-wrap'}}>{message.ai}</p>
+                                    <div className="bg-gray-200 dark:bg-gray-800 text-black dark:text-white p-2 sm:p-3 rounded-lg max-w-[90%] sm:max-w-[85%] lg:max-w-[75%] break-words">
+                                        <p className="text-xs sm:text-sm lg:text-base leading-relaxed" style={{whiteSpace: 'pre-wrap'}}>{message.ai}</p>
                                     </div>
                                 </div>
                             </div>
@@ -157,7 +156,7 @@ export function VercelV0Chat() {
                         {/* Loading Message */}
                         {isLoading && (
                             <div className="flex justify-start">
-                                <div className="bg-gray-200 dark:bg-gray-800 text-black dark:text-white p-3 rounded-lg">
+                                <div className="bg-gray-200 dark:bg-gray-800 text-black dark:text-white p-2 sm:p-3 rounded-lg">
                                     <TextDotsLoader 
                                         text="Yanıtlıyor" 
                                         size="sm"
@@ -173,9 +172,8 @@ export function VercelV0Chat() {
 
             {/* Input Form - Fixed at bottom */}
             <div className="flex-shrink-0 bg-transparent">
-                <div className="w-full max-w-3xl mx-auto p-4">
+                <div className="w-full max-w-4xl mx-auto p-2 sm:p-4 lg:p-6">
                     <div className="relative">
-                        
                         <form onSubmit={(e) => {
                             e.preventDefault();
                             if (value.trim() && !isLoading) {
@@ -187,7 +185,7 @@ export function VercelV0Chat() {
                                 value={value}
                                 onChange={(e) => setValue(e.target.value)}
                                 placeholder="Asistanınıza mesaj gönderin..."
-                                className="bg-gray-800 dark:bg-gray-800 border-gray-600 dark:border-gray-600 text-white"
+                                className="bg-gray-800 dark:bg-gray-800 border-gray-600 dark:border-gray-600 text-white text-sm sm:text-base"
                                 disabled={isLoading}
                             />
                         </form>
