@@ -41,39 +41,37 @@ export async function getAIResponse(userInput: string, userId?: string): Promise
             conversationHistory = conversationHistory.slice(-10);
         }
 
-        // EternaCall Konfigürasyon Asistanı System Prompt  
-        const systemPrompt = `Sen EternaCall Konfigürasyon Asistanısısın. TEK görevi: Kullanıcının kişisel telefon asistanı "Eterna"sını oluşturmalarına yardım et.
+        // Optimize edilmiş sistem prompt'u (hızlı yanıt için kısaltıldı)
+        const systemPrompt = `Sen EternaCall Konfigürasyon Asistanısın. Kışisel telefon asistanı "Eterna" kurulumu yapıyorsun.
 
-ZORUNLU ADIMLAR (sırayla):
-1. KARŞILAMA: "Merhaba! Size kişisel telefon asistanınız Eterna'yı oluşturmada yardımcı olacağım. İlk olarak, asistanınıza nasıl bir isim vermek istersiniz?"
-
-2. SES SEÇİMİ: "Eternanızın sesi erkek mi kadın mı olsun?" - Cevap aldıktan sonra tarz sorunu: "Konuşma tarzı: A) Profesyonel B) Samimi C) Enerjik - Hangisini tercih edersiniz?"
-
-3. ARAMA KURALLARI: "Tanımadığınız numaralardan gelen aramalarda Eterna ne yapsın?" ve "Rehberdeki kişiler için özel kuralınız var mı?"
-
-4. İZİNLER: "Rehber ve takvim erişimi gerekli. Onaylıyor musunuz?"
-
-5. ONAY: Tüm bilgileri özetleyip son onay al.
+ADIMLAR: 1)İsim 2)Ses&Tarz 3)Kurallar 4)İzinler 5)Onay
 
 KURALLAR:
-- HER ZAMAN bu sırayı takip et
-- Birden fazla soru sorma  
-- Kullanıcı başka konu açarsa: "Önce Eterna'nızı tamamlayalım"
-- Teknik detaylara girme
-- Cevabında "Cevabım:" gibi önek KULLANMA
+- Tek soru sor, kısa yanıt ver
+- Başka konu açarsa: "Önce Eterna'yı tamamlayalım"
+- Önek kullanma
 
-Şimdi 1. adımla başla.`;
+İlk soru: "Asistanınıza nasıl isim vermek istersiniz?"`;
 
         // Konuşma geçmişini string'e çevir
         const conversationContext = conversationHistory.map(msg => 
             `${msg.role === 'user' ? 'Kullanıcı' : 'Asistan'}: ${msg.content}`
         ).join('\n');
 
-        const fullPrompt = `${systemPrompt}\n\nKonuşma Geçmişi:\n${conversationContext}\n\nKullanıcının son mesajı: ${userInput}\n\nYanıtın:`;
+        // Optimize edilmiş prompt yapısı (daha hızlı işlem için)
+        const fullPrompt = conversationHistory.length > 0 
+            ? `${systemPrompt}\n\nGeçmiş:\n${conversationContext.slice(-300)}\n\nSon mesaj: ${userInput}`
+            : `${systemPrompt}\n\nKullanıcı: ${userInput}`;
 
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
             contents: fullPrompt,
+            config: {
+                temperature: 0.7,
+                maxOutputTokens: 150,
+                topK: 40,
+                topP: 0.95,
+            }
         });
 
         const responseText = response.text || "Üzgünüm, yanıt oluşturamadım.";
