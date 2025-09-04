@@ -209,7 +209,7 @@ const DashboardContent = ({
   user: any;
 }) => {
   return (
-    <div className="flex flex-1 items-center justify-center min-h-[calc(100vh-8rem)] rounded-xl bg-muted/50">
+    <div className="flex flex-1 h-full max-h-[calc(100vh-4rem)] overflow-hidden">
       <VercelV0Chat />
     </div>
   );

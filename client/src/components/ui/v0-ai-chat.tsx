@@ -86,7 +86,7 @@ export function VercelV0Chat() {
     // İlk durumda tam ortada, konuşma başlayınca normale geçiş
     if (messages.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-screen w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+            <div className="flex flex-col items-center justify-center h-full w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
                 {/* Centered Header and Input */}
                 <div className="text-center space-y-6 sm:space-y-8">
                     <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold text-black dark:text-white leading-tight">
@@ -123,7 +123,7 @@ export function VercelV0Chat() {
 
     // Konuşma başladıktan sonra normal chat arayüzü
     return (
-        <div className="flex flex-col h-screen w-full max-w-7xl mx-auto">
+        <div className="flex flex-col h-full w-full max-w-7xl mx-auto">
             {/* Header - Fixed at top */}
             <div className="flex-shrink-0 px-2 sm:px-4 lg:px-6 py-3 sm:py-4">
                 <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-black dark:text-white text-center leading-tight">
