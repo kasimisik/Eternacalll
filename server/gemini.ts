@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 
 // DON'T DELETE THIS COMMENT
 // Follow these instructions when using this blueprint:
@@ -6,7 +6,7 @@ import { GoogleGenerativeAI } from "@google/genai";
 //   - do not change this unless explicitly requested by the user
 
 // This API key is from Gemini Developer API Key, not vertex AI API Key
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+const genAI = new GoogleGenAI({apiKey: process.env.GEMINI_API_KEY || ""});
 
 // Konuşma geçmişini saklamak için basit bir hafıza sistemi
 const conversationMemory = new Map<string, Array<{role: 'user' | 'assistant', content: string}>>();
@@ -69,14 +69,15 @@ Samimi ve doğal bir dille konuş.`;
             ? `${systemPrompt}\n\nGeçmiş:\n${conversationContext.slice(-300)}\n\nSon mesaj: ${userInput}`
             : `${systemPrompt}\n\nKullanıcı: ${userInput}`;
 
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-        const result = await model.generateContent(fullPrompt);
+        const result = await genAI.models.generateContent({
+            model: "gemini-1.5-flash",
+            contents: fullPrompt
+        });
 
-        const response = await result.response;
-        const responseText = response.text() || "Üzgünüm, yanıt oluşturamadım.";
+        const responseText = result.text || "Üzgünüm, yanıt oluşturamadım.";
         
         // Hata ayıklama için response kontrolü
-        if (!response.text()) {
+        if (!result.text) {
             console.error('⚠️ Gemini API Response boş:', result);
         }
         
@@ -112,11 +113,11 @@ from 1 to 5 stars and a confidence score between 0 and 1.
 Respond with JSON in this format: 
 {'rating': number, 'confidence': number}`;
 
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-        const result = await model.generateContent(`${systemPrompt}\n\nText to analyze: ${text}`);
-        const response = await result.response;
-
-        const rawJson = response.text();
+        const result = await genAI.models.generateContent({
+            model: "gemini-1.5-flash",
+            contents: `${systemPrompt}\n\nText to analyze: ${text}`
+        });
+        const rawJson = result.text;
 
         if (rawJson) {
             const data: Sentiment = JSON.parse(rawJson);
