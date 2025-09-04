@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { PromptBox } from "@/components/ui/chatgpt-prompt-input";
+import { TextDotsLoader } from "@/components/ui/loader";
 
 interface Message {
   user: string;
@@ -102,10 +103,11 @@ export function VercelV0Chat() {
                         {isLoading && (
                             <div className="flex justify-start">
                                 <div className="bg-gray-200 dark:bg-gray-800 text-black dark:text-white p-3 rounded-lg">
-                                    <div className="flex items-center space-x-2">
-                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
-                                        <p>EternaCall asistanı yanıtlıyor...</p>
-                                    </div>
+                                    <TextDotsLoader 
+                                        text="Yanıtlıyor" 
+                                        size="sm"
+                                        className="text-gray-600 dark:text-gray-300"
+                                    />
                                 </div>
                             </div>
                         )}
