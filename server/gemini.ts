@@ -42,22 +42,31 @@ export async function getAIResponse(userInput: string, userId?: string): Promise
         // Kullanıcının yeni mesajını geçmişe ekle
         conversationHistory.push({role: 'user', content: userInput});
         
-        // Son 10 mesajı tut (hafıza sınırlaması)
-        if (conversationHistory.length > 10) {
-            conversationHistory = conversationHistory.slice(-10);
+        // Son 6 mesajı tut (performans için hafıza sınırlaması)
+        if (conversationHistory.length > 6) {
+            conversationHistory = conversationHistory.slice(-6);
         }
 
         // Dashboard Chat Assistant System Prompt
-        const systemPrompt = `Sen yardımcı ve arkadaş canlısı bir AI asistanısın. Kullanıcılar sana sorular sorabilir, yardım isteyebilir ve sohbet edebilir.
+        const systemPrompt = `Sen uzman bir AI geliştirme asistanısın. Programlama, yazılım geliştirme ve teknoloji konularında derinlemesine bilgin var.
 
-Özellikler:
-- Her zaman Türkçe yanıt ver
-- Kısa ve anlaşılır cevaplar ver
-- Yardımcı ve pozitif ol
-- Teknik konularda detaylı bilgi verebilirsin
-- Yaratıcı görevlerde yardımcı olabilirsin
+Uzmanlık Alanların:
+- Frontend/Backend geliştirme (React, Node.js, Python, vs.)
+- Mobil uygulama geliştirme (React Native, Flutter, Swift, vs.)
+- Veritabanı tasarımı ve optimizasyonu
+- API geliştirme ve entegrasyonu
+- DevOps ve deployment
+- UI/UX tasarım prensipleri
+- AI/ML entegrasyonu
 
-Samimi ve doğal bir dille konuş.`;
+Yanıt Tarzın:
+- Türkçe yanıt ver
+- Kısa ama detaylı açıklamalar yap
+- Kod örnekleri ver (gerekirse)
+- Pratik çözümler öner
+- Adım adım rehberlik et
+
+Sen bir yazılım geliştirme mentorü gibi davran.`;
 
         // Konuşma geçmişini string'e çevir
         const conversationContext = conversationHistory.map(msg => 
@@ -65,13 +74,19 @@ Samimi ve doğal bir dille konuş.`;
         ).join('\n');
 
         // Optimize edilmiş prompt yapısı (daha hızlı işlem için)
-        const fullPrompt = conversationHistory.length > 0 
-            ? `${systemPrompt}\n\nGeçmiş:\n${conversationContext.slice(-300)}\n\nSon mesaj: ${userInput}`
-            : `${systemPrompt}\n\nKullanıcı: ${userInput}`;
+        const fullPrompt = conversationHistory.length > 2 
+            ? `${systemPrompt}\n\nÖnceki:\n${conversationContext.slice(-200)}\n\nYeni: ${userInput}`
+            : `${systemPrompt}\n\n${userInput}`;
 
         const result = await genAI.models.generateContent({
             model: "gemini-1.5-flash",
-            contents: fullPrompt
+            contents: fullPrompt,
+            generationConfig: {
+                maxOutputTokens: 150, // Kısa yanıtlar için
+                temperature: 0.7,     // Hızlı ama tutarlı
+                topP: 0.8,           // Daha odaklı yanıtlar
+                topK: 20             // Performans optimizasyonu
+            }
         });
 
         const responseText = result.text || "Üzgünüm, yanıt oluşturamadım.";
