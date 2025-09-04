@@ -112,7 +112,7 @@ export function VercelV0Chat() {
                                 value={value}
                                 onChange={(e) => setValue(e.target.value)}
                                 placeholder="Asistanınıza mesaj gönderin..."
-                                className="bg-neutral-100 dark:bg-neutral-900 border-neutral-300 dark:border-neutral-800"
+                                className="bg-gray-800 dark:bg-gray-800 border-gray-600 dark:border-gray-600 text-white"
                                 disabled={isLoading}
                             />
                         </form>
@@ -126,7 +126,7 @@ export function VercelV0Chat() {
     return (
         <div className="flex flex-col h-screen w-full max-w-4xl mx-auto">
             {/* Header - Fixed at top */}
-            <div className="flex-shrink-0 px-4 py-4 border-b border-gray-200 dark:border-gray-800">
+            <div className="flex-shrink-0 px-4 py-4">
                 <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-black dark:text-white text-center">
                     What can I help you ship?
                 </h1>
@@ -172,7 +172,7 @@ export function VercelV0Chat() {
             </div>
 
             {/* Input Form - Fixed at bottom */}
-            <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
+            <div className="flex-shrink-0 bg-transparent">
                 <div className="w-full max-w-3xl mx-auto p-4">
                     <div className="relative">
                         
@@ -187,7 +187,7 @@ export function VercelV0Chat() {
                                 value={value}
                                 onChange={(e) => setValue(e.target.value)}
                                 placeholder="Asistanınıza mesaj gönderin..."
-                                className="bg-neutral-100 dark:bg-neutral-900 border-neutral-300 dark:border-neutral-800"
+                                className="bg-gray-800 dark:bg-gray-800 border-gray-600 dark:border-gray-600 text-white"
                                 disabled={isLoading}
                             />
                         </form>
