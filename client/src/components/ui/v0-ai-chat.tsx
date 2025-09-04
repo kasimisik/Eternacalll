@@ -67,7 +67,7 @@ export function VercelV0Chat() {
         <div className="flex flex-col items-center w-full max-w-4xl mx-auto p-4 space-y-6 min-h-screen">
             {/* Header */}
             <h1 className="text-4xl font-bold text-black dark:text-white text-center pt-8">
-                EternaCall Konfigürasyon Asistanı
+                What can I help you ship?
             </h1>
 
             {/* Messages Container */}
@@ -75,7 +75,7 @@ export function VercelV0Chat() {
                 {messages.length === 0 ? (
                     <div className="flex items-center justify-center h-64">
                         <p className="text-lg text-gray-600 dark:text-gray-400 text-center">
-                            Merhaba! Size kişisel Eterna sesli asistanınızı oluşturmada yardımcı olmak için buradayım. Başlamak için bir mesaj gönderin.
+                            Başlamak için bir mesaj gönderin.
                         </p>
                     </div>
                 ) : (

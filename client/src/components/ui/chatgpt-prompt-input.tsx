@@ -62,10 +62,9 @@ const toolsList = [
 
 // --- The Final, Self-Contained PromptBox Component ---
 export const PromptBox = React.forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>(
-  ({ className, ...props }, ref) => {
+  ({ className, value = "", ...props }, ref) => {
     const internalTextareaRef = React.useRef<HTMLTextAreaElement>(null);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
-    const [value, setValue] = React.useState("");
     const [imagePreview, setImagePreview] = React.useState<string | null>(null);
     const [selectedTool, setSelectedTool] = React.useState<string | null>(null);
     const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
@@ -83,7 +82,6 @@ export const PromptBox = React.forwardRef<HTMLTextAreaElement, React.TextareaHTM
     }, [value]);
     
     const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      setValue(e.target.value); 
       if (props.onChange) props.onChange(e); 
     };
     
@@ -111,7 +109,7 @@ export const PromptBox = React.forwardRef<HTMLTextAreaElement, React.TextareaHTM
       } 
     };
     
-    const hasValue = value.trim().length > 0 || imagePreview;
+    const hasValue = (typeof value === 'string' ? value.trim().length > 0 : false) || imagePreview;
     const activeTool = selectedTool ? toolsList.find(t => t.id === selectedTool) : null;
     const ActiveToolIcon = activeTool?.icon;
 
@@ -140,7 +138,7 @@ export const PromptBox = React.forwardRef<HTMLTextAreaElement, React.TextareaHTM
           rows={1} 
           value={value}
           onChange={handleInputChange} 
-          placeholder="Mesajınızı yazın..." 
+          placeholder={props.placeholder || "Mesajınızı yazın..."} 
           className="custom-scrollbar w-full resize-none border-0 bg-transparent p-3 text-foreground dark:text-white placeholder:text-muted-foreground dark:placeholder:text-gray-300 focus:ring-0 focus-visible:outline-none min-h-12" 
           {...props} 
         />
