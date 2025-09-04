@@ -22,19 +22,29 @@ export async function handleProcessConversation(req: Request, res: Response) {
     console.log(`💬 Kullanıcı mesajı: "${userMessage}"`);
     console.log(`📚 Konuşma geçmişi: ${conversationHistory.length} mesaj`);
 
-    // Konuşma bağlamını oluştur
-    let conversationContext = '';
+    // Her oturum için unique session ID oluştur
+    const sessionId = req.headers['x-user-id'] as string || `session_${Date.now()}`;
+    console.log(`🔑 Session ID: ${sessionId}`);
+
+    // Konuşma geçmişini Gemini'ye geçmeden önce sıfırla (fresh start için)
+    // Çünkü frontend'den gelen conversationHistory'yi kullanacağız
+    
+    // Eğer conversationHistory varsa, bunu kullan
     if (conversationHistory.length > 0) {
-      // Son 5 konuşmayı al
+      // Son 5 konuşmayı al ve Gemini formatına çevir
       const recentHistory = conversationHistory.slice(-5) as ConversationMessage[];
-      conversationContext = recentHistory.map((msg: ConversationMessage) => 
-        `Kullanıcı: ${msg.user}\nAsistan: ${msg.ai}`
-      ).join('\n\n');
+      const historyForGemini = recentHistory.flatMap((msg: ConversationMessage) => [
+        { role: 'user' as const, content: msg.user },
+        { role: 'assistant' as const, content: msg.ai }
+      ]);
+      
+      // Gemini'nin memory'sini bu session için güncelle
+      const { setConversationHistory } = await import('../../gemini');
+      setConversationHistory(sessionId, historyForGemini);
     }
 
-    // Anthropic AI'ye gönder - getAIResponse fonksiyonunu kullan
-    const userId = 'voice_assistant_user'; // Sesli asistan için sabit ID
-    const aiResponse = await getAIResponse(userMessage, userId);
+    // AI yanıtını al
+    const aiResponse = await getAIResponse(userMessage, sessionId);
 
     if (!aiResponse) {
       return res.status(500).json({ 

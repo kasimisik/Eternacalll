@@ -33,10 +33,16 @@ export function VercelV0Chat() {
         const userMsg = userMessage.trim();
 
         try {
+            // Unique session ID oluştur (bir kez oluştur ve session boyunca kullan)
+            const sessionId = sessionStorage.getItem('chat-session-id') || 
+                             `chat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            sessionStorage.setItem('chat-session-id', sessionId);
+
             const response = await fetch('/api/azure/process-conversation', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'x-user-id': sessionId
                 },
                 body: JSON.stringify({
                     userMessage: userMsg,
