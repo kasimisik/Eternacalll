@@ -78,16 +78,21 @@ Bu formatı kesinlikle takip et!`;
             `${msg.role === 'user' ? 'Kullanıcı' : 'Asistan'}: ${msg.content}`
         ).join('\n');
 
-        // Optimize edilmiş prompt yapısı (daha hızlı işlem için)
-        const fullPrompt = conversationHistory.length > 2 
-            ? `${systemPrompt}\n\nÖnceki:\n${conversationContext.slice(-200)}\n\nYeni: ${userInput}`
-            : `${systemPrompt}\n\n${userInput}`;
+        // Sadece kullanıcı mesajlarını dahil et (AI yanıtlarını tekrarlamamak için)
+        const userOnlyHistory = conversationHistory.filter(msg => msg.role === 'user')
+            .slice(-2)
+            .map(msg => msg.content)
+            .join(', ');
+        
+        const fullPrompt = userOnlyHistory.length > 0 
+            ? `${systemPrompt}\n\nÖnceki kullanıcı mesajları: ${userOnlyHistory}\nYeni mesaj: ${userInput}`
+            : `${systemPrompt}\n\nKullanıcı mesajı: ${userInput}`;
 
         const result = await genAI.models.generateContent({
             model: "gemini-1.5-flash",
             contents: fullPrompt,
             generationConfig: {
-                maxOutputTokens: 150, // Kısa yanıtlar için
+                maxOutputTokens: 80,  // Çok kısa yanıtlar
                 temperature: 0.7,     // Hızlı ama tutarlı
                 topP: 0.8,           // Daha odaklı yanıtlar
                 topK: 20             // Performans optimizasyonu
