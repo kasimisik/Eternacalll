@@ -3,8 +3,6 @@
 import { useState, useEffect, useRef } from "react";
 import { PromptBox } from "@/components/ui/chatgpt-prompt-input";
 import { TextDotsLoader } from "@/components/ui/loader";
-import { RainbowButton } from "@/components/ui/rainbow-button";
-import { ModalPricing } from "@/components/ui/modal-pricing";
 import { useUserHook } from '@/lib/auth-hook';
 
 interface Message {
@@ -17,8 +15,6 @@ export function VercelV0Chat() {
     const [value, setValue] = useState("");
     const [messages, setMessages] = useState<Message[]>([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [showPricingModal, setShowPricingModal] = useState(false);
-    const [hasSubscription, setHasSubscription] = useState(true); // Default to true to avoid flash
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const { user } = useUserHook();
 
@@ -26,23 +22,6 @@ export function VercelV0Chat() {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
 
-    // Check subscription status
-    useEffect(() => {
-        const checkSubscription = async () => {
-            if (!user?.id) return;
-            
-            try {
-                const response = await fetch(`/api/user/subscription/${user.id}`);
-                const data = await response.json();
-                setHasSubscription(data.hasSubscription);
-            } catch (error) {
-                console.error('Subscription check failed:', error);
-                setHasSubscription(false);
-            }
-        };
-
-        checkSubscription();
-    }, [user?.id]);
 
     useEffect(() => {
         if (messages.length > 0) {
@@ -118,20 +97,9 @@ export function VercelV0Chat() {
                     </p>
                 </div>
 
-                {/* Centered Input with Premium Button */}
+                {/* Centered Input */}
                 <div className="w-full max-w-3xl mt-8">
                     <div className="relative">
-                        {/* Premium Button - Show only if no subscription */}
-                        {!hasSubscription && (
-                            <div className="absolute -top-16 right-0 z-10">
-                                <RainbowButton 
-                                    onClick={() => setShowPricingModal(true)}
-                                    className="text-sm px-4 py-2 h-9"
-                                >
-                                    🚀 Premium Özellikleri Aç
-                                </RainbowButton>
-                            </div>
-                        )}
                         
                         <form onSubmit={(e) => {
                             e.preventDefault();
@@ -207,17 +175,6 @@ export function VercelV0Chat() {
             <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
                 <div className="w-full max-w-3xl mx-auto p-4">
                     <div className="relative">
-                        {/* Premium Button - Show only if no subscription */}
-                        {!hasSubscription && (
-                            <div className="absolute -top-16 right-0 z-10">
-                                <RainbowButton 
-                                    onClick={() => setShowPricingModal(true)}
-                                    className="text-sm px-4 py-2 h-9"
-                                >
-                                    🚀 Premium Özellikleri Aç
-                                </RainbowButton>
-                            </div>
-                        )}
                         
                         <form onSubmit={(e) => {
                             e.preventDefault();
@@ -237,12 +194,6 @@ export function VercelV0Chat() {
                     </div>
                 </div>
             </div>
-
-            {/* Pricing Modal */}
-            <ModalPricing
-                isOpen={showPricingModal}
-                onClose={() => setShowPricingModal(false)}
-            />
         </div>
     );
 }
