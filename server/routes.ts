@@ -6,11 +6,7 @@ import { db } from './db';
 import { users } from '../shared/schema';
 import { eq } from 'drizzle-orm';
 import crypto from 'crypto';
-import { textToSpeech } from './azure';
 import { getAIResponse } from './gemini';
-import { withSubscriptionCheck } from '../client/src/lib/subscription-check';
-import { NetGSMSipAgent, NetGSMConfig } from './netgsm-sip-agent';
-import { SipVoiceAgent } from './sip-voice-agent';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // put application routes here
@@ -485,139 +481,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
-  // SIP Voice Agent kontrolü
-  let sipAgent: NetGSMSipAgent | null = null;
-  let voiceAgent: SipVoiceAgent | null = null;
-
   // HTTP Server oluşturma
   const httpServer = createServer(app);
 
 
-  // SIP Voice Agent'ı başlat
-  app.post('/api/sip/start-agent', async (req, res) => {
+  // Dashboard Chat API Route - uses Gemini AI
+  app.post('/api/chat/message', async (req, res) => {
     try {
-      if (voiceAgent) {
-        return res.json({ success: false, message: 'SIP Voice Agent zaten çalışıyor' });
+      const { userMessage, sessionId } = req.body;
+      
+      if (!userMessage) {
+        return res.status(400).json({ error: 'Kullanıcı mesajı bulunamadı', message: 'Lütfen bir mesaj gönderin' });
       }
 
-      console.log("🚀 Modern SIP Voice Agent başlatılıyor...");
-      
-      // Yeni SipVoiceAgent instance'ını oluştur
-      voiceAgent = new SipVoiceAgent();
-      voiceAgent.initializeWithServer(httpServer);
-      await voiceAgent.start();
-
-      // NetGSM konfigürasyonu
-      const netgsmConfig: NetGSMConfig = {
-        username: process.env.NETGSM_USERNAME || 'test',
-        password: process.env.NETGSM_PASSWORD || 'test',
-        sipHost: process.env.NETGSM_SIP_HOST || 'sip.netgsm.com.tr',
-        sipPort: parseInt(process.env.NETGSM_SIP_PORT || '5060')
-      };
-
-      // NetGSM SIP Agent'ını da başlat
-      sipAgent = new NetGSMSipAgent(netgsmConfig);
-      await sipAgent.start();
-      
-      res.json({ 
-        success: true, 
-        message: 'SIP Voice Agent ve NetGSM trunk başarıyla başlatıldı',
-        details: {
-          voiceAgent: true,
-          netgsmTrunk: sipAgent ? true : false,
-          activeCallsCount: voiceAgent.getActiveCallsCount()
-        }
-      });
-    } catch (error) {
-      console.error('SIP Agent başlatma hatası:', error);
-      res.status(500).json({ success: false, error: 'SIP Agent başlatılamadı' });
-    }
-  });
-
-  // SIP Agent'ı durdur
-  app.post('/api/sip/stop-agent', (req, res) => {
-    try {
-      let stopped = false;
-      
-      if (voiceAgent) {
-        voiceAgent.stop();
-        voiceAgent = null;
-        stopped = true;
-      }
-      
-      if (sipAgent) {
-        // sipAgent.stop() method check
-        sipAgent = null;
-        stopped = true;
-      }
-      
-      if (stopped) {
-        res.json({ success: true, message: 'SIP Voice Agent ve NetGSM trunk durduruldu' });
-      } else {
-        res.json({ success: false, message: 'SIP Agent zaten durmuş durumda' });
-      }
-    } catch (error) {
-      console.error('SIP Agent durdurma hatası:', error);
-      res.status(500).json({ success: false, error: 'SIP Agent durdurulamadı' });
-    }
-  });
-
-  // SIP Agent durumu ve aktif çağrılar
-  app.get('/api/sip/status', (req, res) => {
-    try {
-      const voiceAgentRunning = voiceAgent !== null;
-      const netgsmConnected = sipAgent !== null;
-      
-      res.json({ 
-        running: voiceAgentRunning,
-        netgsmConnected,
-        activeCallsCount: voiceAgent ? voiceAgent.getActiveCallsCount() : 0,
-        activeCalls: voiceAgent ? voiceAgent.getAllActiveCalls() : [],
-        message: voiceAgentRunning ? 'SIP Voice Agent aktif' : 'SIP Voice Agent pasif',
-        websocketEndpoint: voiceAgentRunning ? 'ws://localhost:5000/sip-voice' : null,
-        twilioAgent: 'kaldırıldı'
-      });
-    } catch (error) {
-      res.status(500).json({ message: String(error) });
-    }
-  });
-
-  // Test için speech simulation endpoint
-  app.post('/api/sip/simulate-speech', async (req, res) => {
-    try {
-      const { text } = req.body;
-      
-      if (!sipAgent || !text) {
-        return res.status(400).json({ 
-          success: false, 
-          error: 'NetGSM Agent çalışmıyor veya text parametresi eksik' 
-        });
-      }
-
-      const aiResponse = await sipAgent.simulateUserSpeech(text);
+      const response = await getAIResponse(userMessage, sessionId || 'default');
       
       res.json({
         success: true,
-        userInput: text,
-        aiResponse: aiResponse,
-        message: 'Konuşma simülasyonu başarılı'
+        response: response
       });
-      
     } catch (error) {
-      console.error('Speech simulation error:', error);
-      res.status(500).json({ success: false, error: 'Konuşma simülasyonu başarısız' });
+      console.error('Chat API Error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Chat hatası', 
+        message: 'Üzgünüm, şu anda yanıt veremiyorum.' 
+      });
     }
   });
-
-
-  // Azure Voice Assistant API Routes
-  const { handleSpeechToText, uploadMiddleware } = await import('./api/azure/speech-to-text');
-  const { handleTextToSpeech } = await import('./api/azure/text-to-speech');
-  const { handleProcessConversation } = await import('./api/azure/process-conversation');
-
-  app.post('/api/azure/speech-to-text', uploadMiddleware, handleSpeechToText);
-  app.post('/api/azure/text-to-speech', handleTextToSpeech);
-  app.post('/api/azure/process-conversation', handleProcessConversation);
 
   return httpServer;
 }

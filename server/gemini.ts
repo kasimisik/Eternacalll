@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/genai";
 
 // DON'T DELETE THIS COMMENT
 // Follow these instructions when using this blueprint:
@@ -6,7 +6,7 @@ import { GoogleGenAI } from "@google/genai";
 //   - do not change this unless explicitly requested by the user
 
 // This API key is from Gemini Developer API Key, not vertex AI API Key
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 // Konuşma geçmişini saklamak için basit bir hafıza sistemi
 const conversationMemory = new Map<string, Array<{role: 'user' | 'assistant', content: string}>>();
@@ -47,13 +47,17 @@ export async function getAIResponse(userInput: string, userId?: string): Promise
             conversationHistory = conversationHistory.slice(-10);
         }
 
-        // Çok Basit Sistem
-        const systemPrompt = `Sen EternaCall kurulum uzmanısın. Her mesajda sadece 1 soru sor!
+        // Dashboard Chat Assistant System Prompt
+        const systemPrompt = `Sen yardımcı ve arkadaş canlısı bir AI asistanısın. Kullanıcılar sana sorular sorabilir, yardım isteyebilir ve sohbet edebilir.
 
-Yeni sohbet: "EternaCall'a hoş geldiniz! Kurulum başlatalım mı?"
-Hazırsa: "Harika! İsim nedir?"
+Özellikler:
+- Her zaman Türkçe yanıt ver
+- Kısa ve anlaşılır cevaplar ver
+- Yardımcı ve pozitif ol
+- Teknik konularda detaylı bilgi verebilirsin
+- Yaratıcı görevlerde yardımcı olabilirsin
 
-Kısa cevap ver.`;
+Samimi ve doğal bir dille konuş.`;
 
         // Konuşma geçmişini string'e çevir
         const conversationContext = conversationHistory.map(msg => 
@@ -65,14 +69,15 @@ Kısa cevap ver.`;
             ? `${systemPrompt}\n\nGeçmiş:\n${conversationContext.slice(-300)}\n\nSon mesaj: ${userInput}`
             : `${systemPrompt}\n\nKullanıcı: ${userInput}`;
 
-        const model = ai.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
-        const response = await model.generateContent(fullPrompt);
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const result = await model.generateContent(fullPrompt);
 
-        const responseText = response.response.text() || "Üzgünüm, yanıt oluşturamadım.";
+        const response = await result.response;
+        const responseText = response.text() || "Üzgünüm, yanıt oluşturamadım.";
         
         // Hata ayıklama için response kontrolü
-        if (!response.response.text()) {
-            console.error('⚠️ Gemini API Response boş:', response);
+        if (!response.text()) {
+            console.error('⚠️ Gemini API Response boş:', result);
         }
         
         // AI'ın cevabını da geçmişe ekle
@@ -107,24 +112,11 @@ from 1 to 5 stars and a confidence score between 0 and 1.
 Respond with JSON in this format: 
 {'rating': number, 'confidence': number}`;
 
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-pro",
-            config: {
-                systemInstruction: systemPrompt,
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: "object",
-                    properties: {
-                        rating: { type: "number" },
-                        confidence: { type: "number" },
-                    },
-                    required: ["rating", "confidence"],
-                },
-            },
-            contents: text,
-        });
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const result = await model.generateContent(`${systemPrompt}\n\nText to analyze: ${text}`);
+        const response = await result.response;
 
-        const rawJson = response.text;
+        const rawJson = response.text();
 
         if (rawJson) {
             const data: Sentiment = JSON.parse(rawJson);

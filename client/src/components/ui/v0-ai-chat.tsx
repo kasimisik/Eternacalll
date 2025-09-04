@@ -38,15 +38,14 @@ export function VercelV0Chat() {
                              `chat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
             sessionStorage.setItem('chat-session-id', sessionId);
 
-            const response = await fetch('/api/azure/process-conversation', {
+            const response = await fetch('/api/chat/message', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'x-user-id': sessionId
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     userMessage: userMsg,
-                    conversationHistory: messages
+                    sessionId: sessionId
                 })
             });
 
