@@ -84,6 +84,17 @@ export const PromptBox = React.forwardRef<HTMLTextAreaElement, React.TextareaHTM
     const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       if (props.onChange) props.onChange(e); 
     };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        // Form'un submit event'ini tetikle
+        const form = internalTextareaRef.current?.closest('form');
+        if (form && hasValue) {
+          form.requestSubmit();
+        }
+      }
+    };
     
     const handlePlusClick = () => { 
       fileInputRef.current?.click(); 
@@ -137,7 +148,8 @@ export const PromptBox = React.forwardRef<HTMLTextAreaElement, React.TextareaHTM
           ref={internalTextareaRef} 
           rows={1} 
           value={value}
-          onChange={handleInputChange} 
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
           placeholder={props.placeholder || "Mesajınızı yazın..."} 
           className="custom-scrollbar w-full resize-none border-0 bg-transparent p-3 text-foreground dark:text-white placeholder:text-muted-foreground dark:placeholder:text-gray-300 focus:ring-0 focus-visible:outline-none min-h-12" 
           {...props} 
