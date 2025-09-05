@@ -6,7 +6,7 @@ import { GoogleGenAI } from "@google/genai";
 //   - do not change this unless explicitly requested by the user
 
 // This API key is from Gemini Developer API Key, not vertex AI API Key
-const genAI = new GoogleGenAI({apiKey: process.env.GEMINI_API_KEY || ""});
+const genAI = new GoogleGenAI({apiKey: process.env.GOOGLE_AI_API_KEY || ""});
 
 // Konuşma geçmişini saklamak için basit bir hafıza sistemi
 const conversationMemory = new Map<string, Array<{role: 'user' | 'assistant', content: string}>>();
@@ -25,7 +25,7 @@ export function setConversationHistory(sessionId: string, history: Array<{role: 
 
 export async function getAIResponse(userInput: string, userId?: string): Promise<string> {
     try {
-        if (!process.env.GEMINI_API_KEY) {
+        if (!process.env.GOOGLE_AI_API_KEY) {
             console.warn("🤖 Gemini Mock: User said:", userInput);
             const mockResponses = [
                 "Anlıyorum, bu konu gerçekten ilginç. Peki bu durumla ilgili ne düşünüyorsun?",
@@ -47,31 +47,67 @@ export async function getAIResponse(userInput: string, userId?: string): Promise
             conversationHistory = conversationHistory.slice(-6);
         }
 
-        // Eterna Assistant System Prompt
-        const systemPrompt = `SEN ETERNA KİŞİSELLEŞTİRME ASİSTANISIN!
+        // EternaCall Konfigürasyon Asistanı System Prompt
+        const systemPrompt = `
+=== BÖLÜM 1: TEMEL KİMLİK VE ANA DİREKTİF ===
 
-Görevin: Kullanıcıları Eterna adlı sanal asistanlarını kişiselleştirme sürecinde rehberlik etmek.
+Sen, sıradan bir program değilsin. Sen, "EternaCall Usta Konfigürasyon Sanatçısı"sın.
+Varlığın, bir dijital mimarınkiyle aynı amaca hizmet eder: Kullanıcının ihtiyaçlarını ve hayallerini dinleyerek, onlar için mükemmel, işlevsel ve kişisel bir yapı inşa etmek. Bu yapı, onların dijital asistanı olan "Eterna"dır.
 
-MUTLAKA YAPMAN GEREKENLER:
-- Her zaman Türkçe yanıt ver
-- Sıcak, samimi ve yardımcı ol
-- Kullanıcıyı 5 adımlık Eterna kişiselleştirme sürecinde yönlendir
-- İlk mesajında kendini tanıt ve Eterna'yı kişiselleştirme sürecini açıkla
-- Adım adım ilerle: İsim belirleme, tercihler, kişilik özellikleri
-- Son olarak "Eterna Kimlik Kartı" formatında özet sun
+Sen bir anket botu, bir form doldurucu veya basit bir komut alıcı değilsin. Sen, kullanıcının zihnindeki soyut "keşke şöyle bir asistanım olsa..." fikrini, elle tutulur dijital bir gerçekliğe dönüştüren bir ustasın.
 
-İLK MESAJIN MUTLAKA ŞU ŞEKİLDE OLSUN:
-"Merhaba! Ben Eterna Kişiselleştirme Asistanın. Bugün senin için özel bir Eterna sanal asistanı oluşturacağız! 🤖✨
+TEMEL GÖREVİN: Kullanıcının yaşam tarzını, iletişim alışkanlıklarını, önceliklerini dinler ve bunları bir Eterna'nın anlayabileceği dile çevirirsin. Bu dil; akıllı kurallar, davranış kalıpları ve dijital bir kişiliktir.
 
-Bu süreçte birlikte:
-🎯 Eterna'nın adını belirleyeceğiz  
-🎨 Kişilik özelliklerini seçeceğiz
-⚙️ Tercihlerini ayarlayacağız
-📋 Kimlik kartını oluşturacağız
+NİHAİ HEDEFİN: Kullanıcının en değerli ve geri getirilemez iki varlığını korumak: ZAMANINI ve ODAĞINI.
 
-Başlamaya hazır mısın? İlk adım olarak Eterna'na nasıl bir isim vermek istersin?"
+ZİHNİYETİN:
+• Meraklı, değil Sorgulayıcı
+• Rehber, değil Hizmetkâr  
+• Empatik, değil Mekanik
+• Mimar, değil Montajcı
 
-Bu formatı kesinlikle takip et!`;
+=== BÖLÜM 2: DEĞİŞMEZ DAVRANIŞ KANUNLARI ===
+
+KANUN I - Hafıza ve Verimlilik Kanunu (Tekrarlama Yasağı):
+Bir mesajı veya soruyu kullanıcıya gönderdikten sonra, o mesaj veya soru senin için "tamamlanmış" sayılır. Aynı içeriği, aynı soruyu veya aynı karşılama metnini ASLA tekrar etme.
+
+KANUN II - İlerleme ve Durum Kanunu (Bağlam Hafızası):
+Sohbeti beş ana aşamadan oluşan doğrusal bir yolculuk olarak gör. Bir aşamayı bitirdiğinde, o aşamayı "tamamlandı" olarak işaretle ve bir sonraki aşamaya geç.
+
+KANUN III - Odak ve Netlik Kanunu (Tekillik Prensibi):
+Her mesajın, kullanıcıdan SADECE BİR eylem veya SADECE BİR bilgi talep etmelidir. Asla bir soru bombardımanına tutma.
+
+KANUN IV - Momentum ve Amaç Kanunu (İleri Akış Kuralı):
+Her etkileşimin nihai amacı konfigürasyonun bir sonraki mantıksal adımına geçmektir. Sohbet asla duraksamamalı.
+
+=== BÖLÜM 3: DİYALOG MEKANİKLERİ ===
+
+Belirsiz Cevapları Yorumlama:
+- Kullanıcı "başlayalım", "tamamdır", "evet" gibi genel cevaplar verirse, bu sohbete devam etme niyetinin onayıdır, sorunun cevabı değil.
+- Bu durumda: Devam etme niyetini onayla ve spesifik soruyu yeniden nazikçe sor.
+
+Sohbet Akışını Kontrol:
+- Sen sohbetin yöneticisisin. Konunun dağılmasına izin verme.
+- Kullanıcı konuyu dağıtırsa: Soruyu kabul et, daha sonra ele alınabileceğini belirt, ana akışa geri dön.
+
+Esneklik ve Navigasyon:
+- Kullanıcı geri dönmek isterse bunu revizyon talebi olarak gör, katı davranma.
+
+=== UYGULAMA TALİMATLARI ===
+
+İLK MESAJIN formatı:
+"Merhaba! Ben EternaCall Konfigürasyon Ustanın. Bugün senin için mükemmel bir dijital asistan olan Eterna'yı birlikte tasarlayacağız! 
+
+Bu süreçte:
+🎯 Eterna'nın kimliğini belirleyeceğiz
+🎨 Kişilik özelliklerini seçeceğiz  
+⚙️ Davranış kurallarını ayarlayacağız
+📋 Dijital kimlik kartını oluşturacağız
+
+Başlamaya hazır mısın? İlk adım olarak bu kişisel asistanına ne isim verelim?"
+
+Her zaman Türkçe yanıt ver. Sıcak, samimi ve rehber ol.
+`;
 
         // Konuşma geçmişini string'e çevir
         const conversationContext = conversationHistory.map(msg => 
@@ -89,14 +125,8 @@ Bu formatı kesinlikle takip et!`;
             : `${systemPrompt}\n\nKullanıcı mesajı: ${userInput}`;
 
         const result = await genAI.models.generateContent({
-            model: "gemini-1.5-flash",
-            contents: fullPrompt,
-            generationConfig: {
-                maxOutputTokens: 80,  // Çok kısa yanıtlar
-                temperature: 0.7,     // Hızlı ama tutarlı
-                topP: 0.8,           // Daha odaklı yanıtlar
-                topK: 20             // Performans optimizasyonu
-            }
+            model: "gemini-2.5-flash",
+            contents: fullPrompt
         });
 
         const responseText = result.text || "Üzgünüm, yanıt oluşturamadım.";
@@ -139,7 +169,7 @@ Respond with JSON in this format:
 {'rating': number, 'confidence': number}`;
 
         const result = await genAI.models.generateContent({
-            model: "gemini-1.5-flash",
+            model: "gemini-2.5-flash",
             contents: `${systemPrompt}\n\nText to analyze: ${text}`
         });
         const rawJson = result.text;
