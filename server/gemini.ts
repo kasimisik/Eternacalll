@@ -11,6 +11,10 @@ const genAI = new GoogleGenAI({apiKey: process.env.GOOGLE_AI_API_KEY || ""});
 // Konuşma geçmişini saklamak için basit bir hafıza sistemi
 const conversationMemory = new Map<string, Array<{role: 'user' | 'assistant', content: string}>>();
 
+// Başlangıçta hafızayı temizle
+conversationMemory.clear();
+console.log('🔄 Chat hafızası sıfırlandı - yeni sohbet için hazır!');
+
 // Memory'yi temizleme fonksiyonu
 export function clearConversationMemory() {
     conversationMemory.clear();
