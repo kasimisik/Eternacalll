@@ -154,25 +154,25 @@ export default function VoiceAssistant() {
         </SidebarFooter>
       </NewSidebar>
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 px-4">
-          <SidebarTrigger className="-ml-1" />
-        </header>
-        <div className="flex flex-1">
-          {/* Voice Assistant Content */}
-          <div className="relative w-full h-[calc(100vh-4rem)]">
-            {/* Animated background */}
-            <div className="absolute inset-0 z-0">
-              <AnoAI />
-            </div>
-            
-            {/* Siri Orb overlay */}
-            <div className="absolute inset-0 z-10 flex items-center justify-center">
-              <SiriOrb
-                size="256px"
-                animationDuration={15}
-                className="drop-shadow-2xl"
-              />
-            </div>
+        {/* Sidebar Trigger - Floating over content */}
+        <div className="absolute top-4 left-4 z-20">
+          <SidebarTrigger className="bg-background/80 backdrop-blur-sm border border-border/50 hover:bg-background/90" />
+        </div>
+        
+        {/* Voice Assistant Content - Full Screen */}
+        <div className="relative w-full h-screen">
+          {/* Animated background */}
+          <div className="absolute inset-0 z-0">
+            <AnoAI />
+          </div>
+          
+          {/* Siri Orb overlay */}
+          <div className="absolute inset-0 z-10 flex items-center justify-center">
+            <SiriOrb
+              size="256px"
+              animationDuration={15}
+              className="drop-shadow-2xl"
+            />
           </div>
         </div>
       </SidebarInset>
