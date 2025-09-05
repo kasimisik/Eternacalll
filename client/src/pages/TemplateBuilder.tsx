@@ -160,14 +160,10 @@ export default function TemplateBuilder() {
         </SidebarFooter>
       </NewSidebar>
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 px-4 justify-between">
+        <header className="flex h-16 shrink-0 items-center gap-2 px-4">
           <SidebarTrigger className="-ml-1" />
-          <PremiumButton 
-            subscription={subscription}
-            loadingSubscription={loadingSubscription}
-          />
         </header>
-        <div className="flex flex-1">
+        <div className="flex flex-1 p-0">
           {/* Template Builder Content */}
           <div className="relative w-full h-[calc(100vh-4rem)] overflow-hidden">
             {/* Shader Animation Background */}
@@ -234,34 +230,3 @@ export default function TemplateBuilder() {
   );
 }
 
-// Premium Button component for top-right corner
-const PremiumButton = ({ 
-  subscription, 
-  loadingSubscription 
-}: {
-  subscription: any;
-  loadingSubscription: boolean;
-}) => {
-  const [showPricingModal, setShowPricingModal] = useState(false);
-
-  // Don't show if loading or user has subscription
-  if (loadingSubscription || subscription?.hasSubscription) {
-    return null;
-  }
-
-  return (
-    <>
-      <RainbowButton 
-        onClick={() => setShowPricingModal(true)}
-        className="text-sm px-4 py-2 h-9"
-      >
-        🚀 Premium Özellikleri Aç
-      </RainbowButton>
-      
-      <ModalPricing
-        isOpen={showPricingModal}
-        onClose={() => setShowPricingModal(false)}
-      />
-    </>
-  );
-};
