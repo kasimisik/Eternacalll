@@ -1,6 +1,22 @@
 import React from "react";
 import { GlowCard } from "@/components/ui/spotlight-card";
 import CardFlip from "@/components/ui/flip-card";
+import {
+  SidebarProvider,
+  NewSidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarInset,
+  SidebarTrigger,
+} from "@/components/ui/new-sidebar";
+import { LayoutDashboard, UserCog, Settings, LogOut, Bot, Crown, FileText } from "lucide-react";
+import { Link } from "wouter";
+import { useUserHook, useAuthHook } from '@/lib/auth-hook';
 
 const templateData = [
   { 
@@ -276,36 +292,130 @@ const templateData = [
 ];
 
 export default function Templates() {
+  const { user } = useUserHook();
+  const { signOut } = useAuthHook();
+
+  const data = {
+    navMain: [
+      {
+        title: "Dashboard",
+        url: "/dashboard",
+        icon: LayoutDashboard,
+        isActive: false,
+      },
+      {
+        title: "Profile",
+        url: "/profile",
+        icon: UserCog,
+      },
+      {
+        title: "Settings",
+        url: "/settings",
+        icon: Settings,
+      },
+      {
+        title: "Planım",
+        url: "/subscription",
+        icon: Crown,
+      },
+      {
+        title: "Templates",
+        url: "/templates",
+        icon: FileText,
+        isActive: true,
+      },
+    ],
+  };
+
+  const getInitials = (firstName?: string, lastName?: string) => {
+    return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
+  };
+
   return (
-    <div className="flex-1 space-y-4 p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Templates</h2>
-        <div className="flex items-center space-x-2">
-          <p className="text-muted-foreground">
-            {templateData.length} şablon mevcut
-          </p>
+    <SidebarProvider>
+      <NewSidebar>
+        <SidebarHeader>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton size="lg" asChild>
+                <Link href="/dashboard">
+                  <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                    <Bot className="size-4" />
+                  </div>
+                  <div className="grid flex-1 text-left text-sm leading-tight">
+                    <span className="truncate font-semibold">Azure AI Platform</span>
+                    <span className="truncate text-xs">AI Assistant</span>
+                  </div>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarHeader>
+        <SidebarContent>
+          <SidebarGroup>
+            <SidebarMenu>
+              {data.navMain.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton tooltip={item.title} isActive={item.isActive} asChild>
+                    <Link href={item.url}>
+                      <item.icon />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Logout" onClick={() => signOut()}>
+                  <LogOut />
+                  <span>Logout</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroup>
+        </SidebarContent>
+        <SidebarFooter>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton size="lg">
+                <div className="h-8 w-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-semibold text-sm">
+                  {getInitials(user?.firstName || undefined, user?.lastName || undefined) || 'U'}
+                </div>
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-semibold">{user?.firstName || "Kullanıcı"}</span>
+                  <span className="truncate text-xs">{user?.primaryEmailAddress?.emailAddress}</span>
+                </div>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
+      </NewSidebar>
+      <SidebarInset>
+        <header className="flex h-16 shrink-0 items-center gap-2 px-4">
+          <SidebarTrigger className="-ml-1" />
+        </header>
+        <div className="flex-1 space-y-4 p-8 pt-6">
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+            {templateData.map((template) => (
+              <GlowCard 
+                key={template.id} 
+                glowColor={template.glowColor}
+                customSize={true}
+                className="w-[300px] h-[360px] cursor-pointer transition-transform duration-300 p-0 relative"
+                data-testid={`template-card-${template.id}`}
+              >
+                <CardFlip
+                    title={template.title}
+                    subtitle={template.subtitle}
+                    description={template.description}
+                    features={template.features}
+                    color={template.color}
+                  />
+              </GlowCard>
+            ))}
+          </div>
         </div>
-      </div>
-      
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-        {templateData.map((template) => (
-          <GlowCard 
-            key={template.id} 
-            glowColor={template.glowColor}
-            customSize={true}
-            className="w-[300px] h-[360px] cursor-pointer transition-transform duration-300 p-0 relative"
-            data-testid={`template-card-${template.id}`}
-          >
-            <CardFlip
-                title={template.title}
-                subtitle={template.subtitle}
-                description={template.description}
-                features={template.features}
-                color={template.color}
-              />
-          </GlowCard>
-        ))}
-      </div>
-    </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
