@@ -176,10 +176,11 @@ export function VercelV0Chat() {
                     }
                 } else {
                     console.error('❌ AI yanıtı bulunamadı, tam obje:', aiResponse);
-                    // Hata durumunda mesajı güncelle
+                    // Debug için n8n'den gelen objeyi tam olarak göster
+                    const debugMessage = `n8n Webhook Yanıtı: ${JSON.stringify(aiResponse, null, 2)}`;
                     const errorMessage: Message = {
                         user: userMsg,
-                        ai: "Üzgünüm, yanıt formatı tanınmadı. Lütfen tekrar deneyin.",
+                        ai: debugMessage,
                         timestamp: new Date()
                     };
                     setMessages(prev => prev.slice(0, -1).concat(errorMessage));
