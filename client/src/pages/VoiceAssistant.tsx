@@ -54,25 +54,10 @@ export default function VoiceAssistant() {
         isActive: false,
       },
       {
-        title: "Profile",
-        url: "/profile",
-        icon: UserCog,
-      },
-      {
         title: "Sesli Asistan",
         url: "/voice-assistant",
         icon: Mic,
         isActive: true,
-      },
-      {
-        title: "Settings",
-        url: "/settings",
-        icon: Settings,
-      },
-      {
-        title: "Planım",
-        url: "/subscription",
-        icon: Crown,
       },
       {
         title: "Templates",
@@ -141,12 +126,6 @@ export default function VoiceAssistant() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Logout" onClick={() => signOut()}>
-                  <LogOut />
-                  <span>Logout</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroup>
         </SidebarContent>
@@ -194,9 +173,16 @@ export default function VoiceAssistant() {
                         Settings
                       </Link>
                     </Button>
+                    <Button variant="ghost" className="w-full justify-start" size="sm" asChild>
+                      <Link href="/subscription">
+                        <Crown className="mr-2 h-4 w-4" />
+                        Planım
+                      </Link>
+                    </Button>
                   </PopoverBody>
                   <PopoverFooter>
                     <Button variant="outline" className="w-full bg-transparent" size="sm" onClick={() => signOut()}>
+                      <LogOut className="mr-2 h-4 w-4" />
                       Sign Out
                     </Button>
                   </PopoverFooter>
