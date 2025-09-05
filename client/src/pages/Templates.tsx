@@ -398,7 +398,9 @@ export default function Templates() {
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 px-4 justify-between">
           <SidebarTrigger className="-ml-1" />
-          <SearchComponent />
+          <div className="pr-4">
+            <SearchComponent />
+          </div>
         </header>
         <div className="flex-1 space-y-4 p-8 pt-6">
           
