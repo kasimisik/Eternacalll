@@ -459,7 +459,7 @@ export default function Templates() {
             />
           </div>
         </header>
-        <div className="flex-1 space-y-4 p-4 pt-6">
+        <div className="flex-1 space-y-4 p-8 pt-6">
           {/* Search Results Info */}
           {searchTerm && (
             <div className="text-muted-foreground text-sm mb-4">
@@ -473,7 +473,7 @@ export default function Templates() {
             </div>
           )}
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {filteredTemplates.map((template) => (
               <GlowCard 
                 key={template.id} 
