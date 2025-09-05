@@ -11,10 +11,14 @@ interface Message {
   timestamp: Date;
 }
 
+// n8n webhook URL'ini buraya yapıştır
+const N8N_WEBHOOK_URL = 'https://n8n-sunucun.com/webhook/senin-ozel-urlin';
+
 export function VercelV0Chat() {
     const [value, setValue] = useState("");
     const [messages, setMessages] = useState<Message[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [currentStep, setCurrentStep] = useState('step_0_start'); // Konuşma adımı takibi
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const { user } = useUserHook();
 
@@ -29,6 +33,64 @@ export function VercelV0Chat() {
         }
     }, [messages]);
 
+    // Sayfa yüklendiğinde ilk konuşmayı başlat
+    useEffect(() => {
+        const initializeConversation = async () => {
+            if (messages.length === 0) {
+                const aiResponse = await callN8nWebhook('start_conversation');
+                if (aiResponse && aiResponse.reply) {
+                    const welcomeMessage: Message = {
+                        user: "",
+                        ai: aiResponse.reply,
+                        timestamp: new Date()
+                    };
+                    setMessages([welcomeMessage]);
+                    
+                    if (aiResponse.next_step) {
+                        setCurrentStep(aiResponse.next_step);
+                    }
+                }
+            }
+        };
+
+        initializeConversation();
+    }, []); // Sadece component mount olduğunda çalışır
+
+    // n8n webhook'unu çağıran fonksiyon
+    const callN8nWebhook = async (message: string) => {
+        try {
+            // Kullanıcı ID'si - user varsa gerçek ID, yoksa geçici ID
+            const userId = user?.id || sessionStorage.getItem('temp-user-id') || 
+                          `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            
+            if (!user?.id && !sessionStorage.getItem('temp-user-id')) {
+                sessionStorage.setItem('temp-user-id', userId);
+            }
+
+            const response = await fetch(N8N_WEBHOOK_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: message,
+                    current_step: currentStep,
+                    user_id: userId
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('n8n Webhook hatası:', error);
+            return null;
+        }
+    };
+
     const sendMessage = async (userMessage: string) => {
         if (!userMessage.trim()) return;
 
@@ -36,48 +98,47 @@ export function VercelV0Chat() {
         const userMsg = userMessage.trim();
 
         try {
-            // Unique session ID oluştur (bir kez oluştur ve session boyunca kullan)
-            const sessionId = sessionStorage.getItem('chat-session-id') || 
-                             `chat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-            sessionStorage.setItem('chat-session-id', sessionId);
+            // Kullanıcı mesajını hemen göster
+            const tempMessage: Message = {
+                user: userMsg,
+                ai: "",
+                timestamp: new Date()
+            };
+            setMessages(prev => [...prev, tempMessage]);
 
-            const response = await fetch('/api/chat/message', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    userMessage: userMsg,
-                    sessionId: sessionId
-                })
-            });
+            // n8n webhook'unu çağır
+            const aiResponse = await callN8nWebhook(userMsg);
 
-            const data = await response.json();
-
-            if (data.success && data.response) {
+            if (aiResponse && aiResponse.reply) {
+                // AI yanıtını güncelle
                 const newMessage: Message = {
                     user: userMsg,
-                    ai: data.response,
+                    ai: aiResponse.reply,
                     timestamp: new Date()
                 };
-                setMessages(prev => [...prev, newMessage]);
+                setMessages(prev => prev.slice(0, -1).concat(newMessage));
+                
+                // Bir sonraki adım için hafızayı güncelle
+                if (aiResponse.next_step) {
+                    setCurrentStep(aiResponse.next_step);
+                }
             } else {
-                console.error('API Error:', data);
+                // Hata durumunda mesajı güncelle
                 const errorMessage: Message = {
                     user: userMsg,
-                    ai: "Üzgünüm, şu anda yanıt veremiyorum. Lütfen tekrar deneyin.",
+                    ai: "Üzgünüm, bir bağlantı hatası oluştu. Lütfen tekrar deneyin.",
                     timestamp: new Date()
                 };
-                setMessages(prev => [...prev, errorMessage]);
+                setMessages(prev => prev.slice(0, -1).concat(errorMessage));
             }
         } catch (error) {
-            console.error('Fetch Error:', error);
+            console.error('Mesaj gönderme hatası:', error);
             const errorMessage: Message = {
                 user: userMsg,
                 ai: "Bağlantı hatası. Lütfen tekrar deneyin.",
                 timestamp: new Date()
             };
-            setMessages(prev => [...prev, errorMessage]);
+            setMessages(prev => prev.slice(0, -1).concat(errorMessage));
         } finally {
             setIsLoading(false);
         }
@@ -137,19 +198,23 @@ export function VercelV0Chat() {
                     <div className="space-y-3">
                         {messages.map((message, index) => (
                             <div key={index} className="space-y-2">
-                                {/* User Message */}
-                                <div className="flex justify-end">
-                                    <div className="bg-blue-600 text-white px-3 py-2 rounded-2xl max-w-[70%] break-words">
-                                        <p className="text-sm leading-snug">{message.user}</p>
+                                {/* User Message - sadece mesaj varsa göster */}
+                                {message.user && (
+                                    <div className="flex justify-end">
+                                        <div className="bg-blue-600 text-white px-3 py-2 rounded-2xl max-w-[70%] break-words">
+                                            <p className="text-sm leading-snug">{message.user}</p>
+                                        </div>
                                     </div>
-                                </div>
+                                )}
                                 
-                                {/* AI Response */}
-                                <div className="flex justify-start">
-                                    <div className="bg-gray-200 dark:bg-gray-700 text-black dark:text-white px-3 py-2 rounded-2xl max-w-[75%] break-words">
-                                        <p className="text-sm leading-snug" style={{whiteSpace: 'pre-wrap'}}>{message.ai}</p>
+                                {/* AI Response - sadece mesaj varsa göster */}
+                                {message.ai && (
+                                    <div className="flex justify-start">
+                                        <div className="bg-gray-200 dark:bg-gray-700 text-black dark:text-white px-3 py-2 rounded-2xl max-w-[75%] break-words">
+                                            <p className="text-sm leading-snug" style={{whiteSpace: 'pre-wrap'}}>{message.ai}</p>
+                                        </div>
                                     </div>
-                                </div>
+                                )}
                             </div>
                         ))}
                         

@@ -1,0 +1,65 @@
+// BURAYA n8n'DEN ALACAĞIN WEBHOOK URL'İNİ YAPIŞTIRACAKSIN
+const N8N_WEBHOOK_URL = 'https://n8n-sunucun.com/webhook/senin-ozel-urlin';
+
+const form = document.getElementById('message-form');
+const input = document.getElementById('message-input');
+const chatWindow = document.getElementById('chat-window');
+
+// Sohbetin hangi adımda olduğunu hafızada tutan değişken
+let currentStep = 'step_0_start'; // Başlangıç adımı
+
+// Kullanıcı formu gönderdiğinde bu fonksiyon çalışır
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const userMessage = input.value.trim();
+  if (!userMessage) return;
+
+  displayMessage(userMessage, 'user');
+  input.value = '';
+
+  // Webhook'u çağır ve AI cevabını al
+  const aiResponse = await callWebhook(userMessage);
+
+  if (aiResponse) {
+    displayMessage(aiResponse.reply, 'ai');
+    // Bir sonraki adım için hafızayı güncelle
+    currentStep = aiResponse.next_step;
+  }
+});
+
+// n8n'deki beynimize mesajı gönderen fonksiyon
+async function callWebhook(message) {
+  try {
+    const response = await fetch(N8N_WEBHOOK_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        message: message,
+        current_step: currentStep,
+        user_id: 'user_123' // Şimdilik sabit bir kullanıcı ID'si
+      }),
+    });
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Webhook hatası:', error);
+    displayMessage('Üzgünüm, bir bağlantı hatası oluştu.', 'ai');
+    return null;
+  }
+}
+
+// Mesajları ekranda gösteren yardımcı fonksiyon
+function displayMessage(message, sender) {
+  const messageDiv = document.createElement('div');
+  messageDiv.classList.add('message', `${sender}-message`);
+  messageDiv.innerText = message;
+  chatWindow.appendChild(messageDiv);
+  chatWindow.scrollTop = chatWindow.scrollHeight; // Otomatik aşağı kaydır
+}
+
+// Sayfa yüklendiğinde ilk mesajı gönder
+window.addEventListener('load', () => {
+  callWebhook('start_conversation');
+});
