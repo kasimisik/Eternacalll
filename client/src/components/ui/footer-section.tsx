@@ -24,7 +24,7 @@ function Footerdemo({
 }: FooterdemoProps) {
 
   return (
-    <footer className="relative border-t bg-background text-foreground transition-colors duration-300">
+    <footer className="relative border-t border-gray-800 bg-black text-white transition-colors duration-300">
       <div className="container mx-auto px-4 py-12 md:px-6 lg:px-8">
         <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-4">
           <div className="relative">
@@ -148,7 +148,7 @@ function Footerdemo({
             </div>
           </div>
         </div>
-        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t pt-8 text-center md:flex-row">
+        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-gray-800 pt-8 text-center md:flex-row">
           <p className="text-sm text-muted-foreground">
             © 2025 EternaCall. Tüm hakları saklıdır.
           </p>
