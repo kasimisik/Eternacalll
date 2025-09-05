@@ -293,7 +293,7 @@ export default function Templates() {
             key={template.id} 
             glowColor={template.glowColor}
             customSize={true}
-            className="w-full h-[400px] cursor-pointer transition-transform duration-300 p-2"
+            className="w-full h-[324px] cursor-pointer transition-transform duration-300 p-2 scale-90"
             data-testid={`template-card-${template.id}`}
           >
             <div className="flex items-center justify-center h-full">
