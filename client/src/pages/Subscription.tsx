@@ -12,13 +12,25 @@ import {
   SidebarInset,
   SidebarTrigger,
 } from "@/components/ui/new-sidebar";
-import { LayoutDashboard, UserCog, Settings, LogOut, Bot, Crown, CreditCard, FileText, Mic } from "lucide-react";
+import { LayoutDashboard, UserCog, Settings, LogOut, Bot, Crown, CreditCard, FileText, Mic, User } from "lucide-react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useUserHook, useAuthHook } from '@/lib/auth-hook';
 import { Card, CardContent } from '@/components/ui/card';
 import PaymentButton from '@/components/PaymentButton';
+import {
+  Popover,
+  PopoverBody,
+  PopoverContent,
+  PopoverDescription,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverTrigger,
+  PopoverFooter,
+} from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export default function Subscription() {
   const { user } = useUserHook();
@@ -39,25 +51,9 @@ export default function Subscription() {
         icon: LayoutDashboard,
       },
       {
-        title: "Profile",
-        url: "/profile",
-        icon: UserCog,
-      },
-      {
         title: "Sesli Asistan",
         url: "/voice-assistant",
         icon: Mic,
-      },
-      {
-        title: "Settings",
-        url: "/settings",
-        icon: Settings,
-      },
-      {
-        title: "Planım",
-        url: "/subscription",
-        icon: Crown,
-        isActive: true,
       },
       {
         title: "Templates",
@@ -127,27 +123,68 @@ export default function Subscription() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Logout" onClick={() => signOut()}>
-                  <LogOut />
-                  <span>Logout</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton size="lg">
-                <div className="h-8 w-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-semibold text-sm">
-                  {getInitials(user?.firstName || undefined, user?.lastName || undefined) || 'U'}
-                </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">{user?.firstName || "Kullanıcı"}</span>
-                  <span className="truncate text-xs">{user?.emailAddresses?.[0]?.emailAddress}</span>
-                </div>
-              </SidebarMenuButton>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <SidebarMenuButton size="lg" className="cursor-pointer">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback>
+                        {getInitials(user?.firstName || undefined, user?.lastName || undefined) || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="grid flex-1 text-left text-sm leading-tight">
+                      <span className="truncate font-semibold">{user?.firstName || "Kullanıcı"}</span>
+                      <span className="truncate text-xs">{user?.primaryEmailAddress?.emailAddress}</span>
+                    </div>
+                  </SidebarMenuButton>
+                </PopoverTrigger>
+                <PopoverContent className='w-64' align="start">
+                  <PopoverHeader>
+                    <div className="flex items-center space-x-3">
+                      <Avatar className="h-10 w-10">
+                        <AvatarFallback>
+                          {getInitials(user?.firstName || undefined, user?.lastName || undefined) || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <PopoverTitle>{user?.firstName || "Kullanıcı"} {user?.lastName || ""}</PopoverTitle>
+                        <PopoverDescription className='text-xs'>{user?.primaryEmailAddress?.emailAddress}</PopoverDescription>
+                      </div>
+                    </div>
+                  </PopoverHeader>
+                  <PopoverBody className="space-y-1 px-2 py-1">
+                    <Button variant="ghost" className="w-full justify-start" size="sm" asChild>
+                      <Link href="/profile">
+                        <User className="mr-2 h-4 w-4" />
+                        View Profile
+                      </Link>
+                    </Button>
+                    <Button variant="ghost" className="w-full justify-start" size="sm" asChild>
+                      <Link href="/settings">
+                        <Settings className="mr-2 h-4 w-4" />
+                        Settings
+                      </Link>
+                    </Button>
+                    <Button variant="ghost" className="w-full justify-start" size="sm" asChild>
+                      <Link href="/subscription">
+                        <Crown className="mr-2 h-4 w-4" />
+                        Planım
+                      </Link>
+                    </Button>
+                  </PopoverBody>
+                  <PopoverFooter>
+                    <Button variant="outline" className="w-full bg-transparent" size="sm" onClick={() => signOut()}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Sign Out
+                    </Button>
+                  </PopoverFooter>
+                </PopoverContent>
+              </Popover>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarFooter>
