@@ -17,6 +17,7 @@ import {
 import { LayoutDashboard, UserCog, Settings, LogOut, Bot, Crown, FileText, Mic } from "lucide-react";
 import { Link } from "wouter";
 import { useUserHook, useAuthHook } from '@/lib/auth-hook';
+import SearchComponent from "@/components/ui/animated-glowing-search-bar";
 
 const templateData = [
   { 
@@ -395,8 +396,9 @@ export default function Templates() {
         </SidebarFooter>
       </NewSidebar>
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 px-4">
+        <header className="flex h-16 shrink-0 items-center gap-2 px-4 justify-between">
           <SidebarTrigger className="-ml-1" />
+          <SearchComponent />
         </header>
         <div className="flex-1 space-y-4 p-8 pt-6">
           
