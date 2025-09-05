@@ -499,6 +499,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
+  // === TEST ENDPOINTS ===
+  
+  // Azure Speech Service Test
+  app.get('/api/test/azure', async (req, res) => {
+    try {
+      console.log('🧪 Testing Azure Speech Service...');
+      if (!process.env.AZURE_SPEECH_KEY || !process.env.AZURE_SPEECH_REGION) {
+        return res.json({ 
+          success: false, 
+          error: 'Azure credentials missing',
+          keys: {
+            AZURE_SPEECH_KEY: !!process.env.AZURE_SPEECH_KEY,
+            AZURE_SPEECH_REGION: !!process.env.AZURE_SPEECH_REGION
+          }
+        });
+      }
+      res.json({ success: true, message: 'Azure Speech credentials found' });
+    } catch (error) {
+      console.error('Azure test error:', error);
+      res.json({ success: false, error: String(error) });
+    }
+  });
+
+  // Gemini AI Test
+  app.get('/api/test/gemini', async (req, res) => {
+    try {
+      console.log('🧪 Testing Gemini AI...');
+      const response = await getAIResponse('Merhaba, test mesajı', 'test-session');
+      res.json({ 
+        success: true, 
+        message: 'Gemini AI working',
+        response: response.substring(0, 100) + '...'
+      });
+    } catch (error) {
+      console.error('Gemini test error:', error);
+      res.json({ success: false, error: String(error) });
+    }
+  });
+
+  // ElevenLabs Test
+  app.get('/api/test/elevenlabs', async (req, res) => {
+    try {
+      console.log('🧪 Testing ElevenLabs TTS...');
+      if (!process.env.ELEVENLABS_API_KEY) {
+        return res.json({ 
+          success: false, 
+          error: 'ElevenLabs API key missing',
+          key_present: false
+        });
+      }
+      res.json({ 
+        success: true, 
+        message: 'ElevenLabs API key found',
+        key_present: true
+      });
+    } catch (error) {
+      console.error('ElevenLabs test error:', error);
+      res.json({ success: false, error: String(error) });
+    }
+  });
+
   // HTTP Server oluşturma
   const httpServer = createServer(app);
 
