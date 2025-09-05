@@ -14,6 +14,7 @@ interface ElevenLabsTTSSettings {
 export class ElevenLabsTTSService {
   private apiKey: string;
   private baseUrl = 'https://api.elevenlabs.io/v1';
+  private isEnabled: boolean;
   
   // Türkçe kadın sesi için voice ID'ler (Bu ID'ler ElevenLabs'den alınmalı)
   private turkishFemaleVoiceId = 'pNInz6obpgDQGcFmaJgB'; // Adam (varsayılan, gerçek Türkçe kadın sesi ID'si ile değiştirilecek)
@@ -21,12 +22,19 @@ export class ElevenLabsTTSService {
   constructor() {
     this.apiKey = process.env.ELEVENLABS_API_KEY || '';
     if (!this.apiKey) {
-      throw new Error('ElevenLabs API key not found in environment variables');
+      console.warn('ElevenLabs API key not found in environment variables. Service will be disabled.');
+      this.isEnabled = false;
+      return;
     }
+    this.isEnabled = true;
   }
 
   // Mevcut sesleri listele
   async getAvailableVoices(): Promise<ElevenLabsVoice[]> {
+    if (!this.isEnabled) {
+      throw new Error('ElevenLabs service is not available. API credentials not configured.');
+    }
+
     try {
       const response = await fetch(`${this.baseUrl}/voices`, {
         method: 'GET',
@@ -53,6 +61,10 @@ export class ElevenLabsTTSService {
     voiceId?: string,
     settings?: Partial<ElevenLabsTTSSettings>
   ): Promise<Buffer> {
+    if (!this.isEnabled) {
+      throw new Error('ElevenLabs service is not available. API credentials not configured.');
+    }
+
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 45000); // 45s timeout for TTS
 

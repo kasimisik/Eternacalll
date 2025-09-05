@@ -2,20 +2,27 @@ import * as speechSdk from 'microsoft-cognitiveservices-speech-sdk';
 
 // Azure Speech Service konfigürasyonu
 export class AzureSpeechService {
-  private speechConfig: speechSdk.SpeechConfig;
+  private speechConfig: speechSdk.SpeechConfig | null;
   private speechKey: string;
   private speechRegion: string;
+  private isEnabled: boolean;
 
   constructor() {
     const speechKey = process.env.AZURE_SPEECH_KEY;
     const speechRegion = process.env.AZURE_SPEECH_REGION;
 
     if (!speechKey || !speechRegion) {
-      throw new Error('Azure Speech credentials not found in environment variables');
+      console.warn('Azure Speech credentials not found in environment variables. Service will be disabled.');
+      this.isEnabled = false;
+      this.speechConfig = null;
+      this.speechKey = '';
+      this.speechRegion = '';
+      return;
     }
 
     this.speechKey = speechKey;
     this.speechRegion = speechRegion;
+    this.isEnabled = true;
 
     this.speechConfig = speechSdk.SpeechConfig.fromSubscription(speechKey, speechRegion);
     this.speechConfig.speechRecognitionLanguage = 'tr-TR'; // Türkçe dil ayarı
@@ -24,6 +31,10 @@ export class AzureSpeechService {
 
   // REST API ile ses dosyasını metne dönüştürme (WebM/Opus desteği)
   async speechToTextREST(audioBuffer: Buffer, contentType: string = 'audio/webm; codecs=opus'): Promise<string> {
+    if (!this.isEnabled) {
+      throw new Error('Azure Speech service is not available. API credentials not configured.');
+    }
+
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
@@ -95,6 +106,10 @@ export class AzureSpeechService {
 
   // Ses dosyasını metne dönüştürme (SDK fallback)
   async speechToText(audioBuffer: Buffer): Promise<string> {
+    if (!this.isEnabled) {
+      throw new Error('Azure Speech service is not available. API credentials not configured.');
+    }
+
     // Önce REST API'yi dene (WebM/Opus desteği için)
     try {
       return await this.speechToTextREST(audioBuffer, 'audio/webm; codecs=opus');
@@ -114,7 +129,7 @@ export class AzureSpeechService {
           pushStream.close();
 
           const audioConfig = speechSdk.AudioConfig.fromStreamInput(pushStream);
-          const recognizer = new speechSdk.SpeechRecognizer(this.speechConfig, audioConfig);
+          const recognizer = new speechSdk.SpeechRecognizer(this.speechConfig!, audioConfig);
 
           recognizer.recognizeOnceAsync(
             (result: speechSdk.SpeechRecognitionResult) => {
@@ -150,8 +165,12 @@ export class AzureSpeechService {
 
   // Gerçek zamanlı konuşma tanıma için WebSocket desteği
   createContinuousRecognizer(onResult: (text: string) => void, onError: (error: string) => void) {
+    if (!this.isEnabled) {
+      throw new Error('Azure Speech service is not available. API credentials not configured.');
+    }
+
     const audioConfig = speechSdk.AudioConfig.fromDefaultMicrophoneInput();
-    const recognizer = new speechSdk.SpeechRecognizer(this.speechConfig, audioConfig);
+    const recognizer = new speechSdk.SpeechRecognizer(this.speechConfig!, audioConfig);
 
     recognizer.recognized = (s, e) => {
       if (e.result.reason === speechSdk.ResultReason.RecognizedSpeech) {
