@@ -14,7 +14,7 @@ import {
   SidebarInset,
   SidebarTrigger,
 } from "@/components/ui/new-sidebar";
-import { LayoutDashboard, UserCog, Settings, LogOut, Bot, Crown, FileText } from "lucide-react";
+import { LayoutDashboard, UserCog, Settings, LogOut, Bot, Crown, FileText, Mic } from "lucide-react";
 import { Link } from "wouter";
 import { useUserHook, useAuthHook } from '@/lib/auth-hook';
 
@@ -307,6 +307,11 @@ export default function Templates() {
         title: "Profile",
         url: "/profile",
         icon: UserCog,
+      },
+      {
+        title: "Sesli Asistan",
+        url: "/voice-assistant",
+        icon: Mic,
       },
       {
         title: "Settings",

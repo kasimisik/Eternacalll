@@ -12,7 +12,7 @@ import {
   SidebarInset,
   SidebarTrigger,
 } from "@/components/ui/new-sidebar";
-import { LayoutDashboard, UserCog, Settings, LogOut, Bot, Crown, CreditCard } from "lucide-react";
+import { LayoutDashboard, UserCog, Settings, LogOut, Bot, Crown, CreditCard, FileText, Mic } from "lucide-react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -44,6 +44,11 @@ export default function Subscription() {
         icon: UserCog,
       },
       {
+        title: "Sesli Asistan",
+        url: "/voice-assistant",
+        icon: Mic,
+      },
+      {
         title: "Settings",
         url: "/settings",
         icon: Settings,
@@ -53,6 +58,11 @@ export default function Subscription() {
         url: "/subscription",
         icon: Crown,
         isActive: true,
+      },
+      {
+        title: "Templates",
+        url: "/templates",
+        icon: FileText,
       },
     ],
   };
