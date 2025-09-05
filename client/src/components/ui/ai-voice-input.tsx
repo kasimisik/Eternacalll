@@ -216,11 +216,16 @@ export function AIVoiceInput({
       formData.append('sessionId', user?.id ? `user_${user.id}` : 'user_anonymous');
 
       console.log('📤 Sending audio to backend...');
+      console.log('📤 SessionId being sent:', user?.id ? `user_${user.id}` : 'user_anonymous');
+      console.log('📤 FormData keys:', Array.from(formData.keys()));
 
       const response = await fetch('/api/voice/conversation', {
         method: 'POST',
         body: formData,
       });
+      
+      console.log('📥 Response status:', response.status);
+      console.log('📥 Response headers:', Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
         throw new Error(`Backend error: ${response.status}`);
