@@ -637,7 +637,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Tam sesli konuşma işlemi (STT + Gemini + TTS)
-  app.post('/api/voice/conversation', requireAuth, upload.single('audio'), async (req, res) => {
+  app.post('/api/voice/conversation', (req, res, next) => {
+    console.log('🔄 Voice conversation endpoint hit');
+    console.log('🔄 Request content-type:', req.headers['content-type']);
+    console.log('🔄 Request body keys:', Object.keys(req.body));
+    next();
+  }, requireAuth, upload.single('audio'), async (req, res) => {
     console.log('=== FULL VOICE CONVERSATION REQUEST ===');
     
     try {
