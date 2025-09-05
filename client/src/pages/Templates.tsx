@@ -293,7 +293,7 @@ export default function Templates() {
             key={template.id} 
             glowColor={template.glowColor}
             customSize={true}
-            className="w-[300px] h-[360px] cursor-pointer transition-transform duration-300"
+            className="w-[300px] h-[360px] cursor-pointer transition-transform duration-300 flex items-center justify-center"
             data-testid={`template-card-${template.id}`}
           >
             <CardFlip
