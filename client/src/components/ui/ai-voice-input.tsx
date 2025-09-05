@@ -213,7 +213,7 @@ export function AIVoiceInput({
       // FormData ile backend'e gönder
       const formData = new FormData();
       formData.append('audio', audioBlob, 'recording.webm');
-      formData.append('sessionId', user?.id || 'anonymous');
+      formData.append('sessionId', user?.id ? `user_${user.id}` : 'user_anonymous');
 
       console.log('📤 Sending audio to backend...');
 
