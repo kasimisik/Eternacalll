@@ -57,23 +57,9 @@ function ModalPricing({
 
     const modalOpen = isOpen !== undefined ? isOpen : internalOpen;
     const handleClose = onClose || (() => setInternalOpen(false));
-    const handleOpen = () => {
-        if (isOpen === undefined) setInternalOpen(true);
-    };
 
     return (
         <>
-            {isOpen === undefined && (
-                <div className="flex justify-center">
-                    <Button
-                        onClick={handleOpen}
-                        className="bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100"
-                    >
-                        <Sparkles className="w-4 h-4 mr-2" />
-                        Premium Özellikleri Aç
-                    </Button>
-                </div>
-            )}
 
             <Dialog open={modalOpen} onOpenChange={handleClose}>
                 <DialogContent className="sm:max-w-[425px] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">

@@ -195,14 +195,10 @@ export default function Dashboard() {
         </SidebarFooter>
       </NewSidebar>
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 px-4 justify-between">
+        <header className="flex h-16 shrink-0 items-center gap-2 px-4">
           <SidebarTrigger className="-ml-1" />
-          <PremiumButton 
-            subscription={subscription}
-            loadingSubscription={loadingSubscription}
-          />
         </header>
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+        <div className="flex flex-1 flex-col gap-4 p-0 pt-0">
           <DashboardContent 
             subscription={subscription}
             loadingSubscription={loadingSubscription}
@@ -214,37 +210,6 @@ export default function Dashboard() {
   );
 }
 
-// Premium Button component for top-right corner
-const PremiumButton = ({ 
-  subscription, 
-  loadingSubscription 
-}: {
-  subscription: any;
-  loadingSubscription: boolean;
-}) => {
-  const [showPricingModal, setShowPricingModal] = useState(false);
-
-  // Don't show if loading or user has subscription
-  if (loadingSubscription || subscription?.hasSubscription) {
-    return null;
-  }
-
-  return (
-    <>
-      <RainbowButton 
-        onClick={() => setShowPricingModal(true)}
-        className="text-sm px-4 py-2 h-9"
-      >
-        🚀 Premium Özellikleri Aç
-      </RainbowButton>
-      
-      <ModalPricing
-        isOpen={showPricingModal}
-        onClose={() => setShowPricingModal(false)}
-      />
-    </>
-  );
-};
 
 // Dashboard content component
 const DashboardContent = ({ 
@@ -257,7 +222,7 @@ const DashboardContent = ({
   user: any;
 }) => {
   return (
-    <div className="flex flex-1 h-full max-h-[calc(100vh-4rem)] overflow-hidden">
+    <div className="flex flex-1 h-full max-h-[calc(100vh-4rem)] overflow-hidden w-full">
       <VercelV0Chat />
     </div>
   );
