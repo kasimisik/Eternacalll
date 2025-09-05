@@ -40,14 +40,6 @@ function DisplayCardsDemo() {
   return (
     <div className="flex min-h-[400px] w-full items-center justify-center py-20 bg-black">
       <div className="w-full max-w-3xl">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            Neden EternaCall?
-          </h2>
-          <p className="text-gray-300 text-lg">
-            Müşteri deneyimini artıran akıllı çözümlerle işinizi güçlendirin
-          </p>
-        </div>
         <DisplayCards cards={defaultCards} />
       </div>
     </div>

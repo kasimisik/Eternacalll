@@ -208,22 +208,18 @@ export default function Landing() {
         </section>
       )}
 
-      {/* Display Cards Section */}
-      <DisplayCardsDemo />
-
-      {/* Globe Section */}
+      {/* Display Cards and Globe Section - Side by Side */}
       <section className="py-16 sm:py-20 md:py-28 px-2 sm:px-4 md:px-8 bg-black">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12 sm:mb-16 md:mb-20">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 sm:mb-4">
-              Küresel Erişim
-            </h2>
-            <p className="text-gray-300 text-base sm:text-lg">
-              Dünya çapında müşterilerinize ulaşın
-            </p>
-          </div>
-          <div className="flex justify-center">
-            <GlobeDemo />
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+            {/* Display Cards */}
+            <div>
+              <DisplayCardsDemo />
+            </div>
+            {/* Globe */}
+            <div className="flex justify-center">
+              <GlobeDemo />
+            </div>
           </div>
         </div>
       </section>
