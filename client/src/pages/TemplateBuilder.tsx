@@ -197,16 +197,19 @@ export default function TemplateBuilder() {
         </SidebarFooter>
       </NewSidebar>
       <SidebarInset>
+        <header className="flex h-16 shrink-0 items-center gap-2 px-4">
+          <SidebarTrigger className="-ml-1" />
+        </header>
         <div className="flex flex-1 flex-col gap-4 p-0 pt-0">
           {/* Template Builder Content - Full Width */}
-          <div className="relative w-full min-h-screen overflow-hidden">
+          <div className="relative w-full h-[calc(100vh-4rem)] overflow-hidden">
             {/* Shader Animation Background */}
             <div className="absolute inset-0 z-0">
               <ShaderAnimation />
             </div>
 
             {/* Content Overlay */}
-            <div className="relative z-10 min-h-screen flex flex-col">
+            <div className="relative z-10 h-full flex flex-col">
               {/* Main Content */}
               <div className="flex-1 flex flex-col items-center justify-center text-center px-6">
                 {/* Animated Title */}
