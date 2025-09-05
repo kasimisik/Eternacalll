@@ -259,8 +259,6 @@ export default function TemplateBuilder() {
             </div>
           </div>
         </div>
-        {/* Floating Sidebar Trigger */}
-        <SidebarTrigger className="fixed top-4 left-4 z-50 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg p-2 text-white hover:bg-white/20" />
       </SidebarInset>
     </SidebarProvider>
   );
