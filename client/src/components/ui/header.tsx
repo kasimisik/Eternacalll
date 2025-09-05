@@ -99,7 +99,7 @@ function Header1() {
                                         </p>
                                     </div>
                                     <Button size="sm" className="mt-10" variant="outline">
-                                        Demo Rezervasyonu
+                                        Daha Fazla Bilgi
                                     </Button>
                                   </div>
                                   <div className="flex flex-col text-sm h-full justify-end">
@@ -128,14 +128,10 @@ function Header1() {
          </div>
          <div className="flex lg:justify-center">
             <Link href="/">
-              <p className="font-semibold text-foreground text-lg">AI Voice Agent</p>
+              <p className="font-semibold text-foreground text-lg">EternaCall</p>
             </Link>
          </div>
          <div className="flex justify-end w-full gap-4">
-            <Button variant="ghost" className="hidden md:inline text-foreground">
-               Demo İste
-            </Button>
-            <div className="border-r hidden md:inline border-border"></div>
             <Link href="/sign-in">
               <Button variant="outline">Giriş Yap</Button>
             </Link>

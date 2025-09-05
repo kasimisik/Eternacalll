@@ -76,8 +76,8 @@ export default function Landing() {
   const pricingPlans = [
     {
       name: "BAŞLANGIÇ",
-      price: "199",
-      yearlyPrice: "159",
+      price: "1999",
+      yearlyPrice: "1599",
       period: "aylık",
       features: [
         "100 dakikaya kadar arama",
@@ -93,8 +93,8 @@ export default function Landing() {
     },
     {
       name: "PROFESYONEL",
-      price: "599",
-      yearlyPrice: "479",
+      price: "8999",
+      yearlyPrice: "7199",
       period: "aylık",
       features: [
         "Sınırsız arama süresi",
@@ -111,9 +111,9 @@ export default function Landing() {
       isPopular: true,
     },
     {
-      name: "KURUMSAl",
-      price: "1999",
-      yearlyPrice: "1599",
+      name: "KURUMSAL",
+      price: "Özel Fiyat",
+      yearlyPrice: "Özel Fiyat",
       period: "aylık",
       features: [
         "Professional'daki tüm özellikler",
@@ -139,7 +139,7 @@ export default function Landing() {
       <HeaderDemo />
       
       {/* Hero Section with Spline 3D */}
-      <Card className="w-full h-[500px] sm:h-[600px] md:h-[700px] bg-black/[0.96] relative overflow-hidden border-0 rounded-none mt-16 sm:mt-20">
+      <Card className="w-full h-[500px] sm:h-[600px] md:h-[700px] bg-black relative overflow-hidden border-0 rounded-none mt-16 sm:mt-20">
         <Spotlight
           className="-top-40 left-0 md:left-60 md:-top-20"
           fill="white"
@@ -149,12 +149,10 @@ export default function Landing() {
           {/* Left content */}
           <div className="flex-1 p-2 sm:p-4 md:p-8 relative z-10 flex flex-col justify-center">
             <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-neutral-50 to-neutral-400 mb-4 md:mb-6">
-              Azure AI
-              <br />
-              Voice Agent
+              EternaCall
             </h1>
             <p className="mt-2 md:mt-4 text-neutral-300 max-w-lg text-base md:text-lg mb-6 md:mb-8">
-              AI-powered voice communication with SIP integration, Azure Speech Services, and real-time conversation processing powered by Anthropic Claude.
+              Gelişmiş AI teknolojisi ile güçlendirilmiş sesli asistan platformu. SIP entegrasyonu, Azure Konuşma Hizmetleri ve Anthropic Claude ile gerçek zamanlı konuşma işleme.
             </p>
           </div>
 
