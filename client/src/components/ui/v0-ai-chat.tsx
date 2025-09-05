@@ -84,7 +84,9 @@ export function VercelV0Chat() {
             }
 
             const data = await response.json();
-            console.log('n8n webhook yanıtı:', data); // Debug için
+            console.log('🔍 n8n webhook RAW yanıt:', data); // Debug için
+            console.log('🔍 Data type:', typeof data);
+            console.log('🔍 Data keys:', Object.keys(data));
             return data;
         } catch (error) {
             console.error('n8n Webhook hatası:', error);
@@ -110,24 +112,79 @@ export function VercelV0Chat() {
             // n8n webhook'unu çağır
             const aiResponse = await callN8nWebhook(userMsg);
 
-            if (aiResponse && aiResponse.reply) {
-                // AI yanıtını güncelle
-                const newMessage: Message = {
-                    user: userMsg,
-                    ai: aiResponse.reply,
-                    timestamp: new Date()
-                };
-                setMessages(prev => prev.slice(0, -1).concat(newMessage));
+            if (aiResponse) {
+                console.log('✅ Webhook yanıtı alındı:', aiResponse);
                 
-                // Bir sonraki adım için hafızayı güncelle
-                if (aiResponse.next_step) {
-                    setCurrentStep(aiResponse.next_step);
+                // Farklı formatlarda gelebilecek yanıtları kontrol et
+                let aiText = '';
+                let nextStep = '';
+                
+                // Format 1: {reply: "...", next_step: "..."}
+                if (aiResponse.reply) {
+                    aiText = aiResponse.reply;
+                    nextStep = aiResponse.next_step || '';
+                }
+                // Format 2: {message: "...", step: "..."}
+                else if (aiResponse.message) {
+                    aiText = aiResponse.message;
+                    nextStep = aiResponse.step || aiResponse.next_step || '';
+                }
+                // Format 3: {response: "...", ...}
+                else if (aiResponse.response) {
+                    aiText = aiResponse.response;
+                    nextStep = aiResponse.next_step || aiResponse.step || '';
+                }
+                // Format 4: {text: "...", ...}
+                else if (aiResponse.text) {
+                    aiText = aiResponse.text;
+                    nextStep = aiResponse.next_step || aiResponse.step || '';
+                }
+                // Format 5: Direct string
+                else if (typeof aiResponse === 'string') {
+                    aiText = aiResponse;
+                }
+                // Format 6: İlk string property'yi al
+                else {
+                    const firstStringKey = Object.keys(aiResponse).find(key => 
+                        typeof aiResponse[key] === 'string' && aiResponse[key].length > 0
+                    );
+                    if (firstStringKey) {
+                        aiText = aiResponse[firstStringKey];
+                    }
+                }
+                
+                console.log('📝 Çıkarılan AI metni:', aiText);
+                console.log('🔄 Çıkarılan next_step:', nextStep);
+                
+                if (aiText && aiText.trim()) {
+                    // AI yanıtını güncelle
+                    const newMessage: Message = {
+                        user: userMsg,
+                        ai: aiText,
+                        timestamp: new Date()
+                    };
+                    setMessages(prev => prev.slice(0, -1).concat(newMessage));
+                    
+                    // Bir sonraki adım için hafızayı güncelle
+                    if (nextStep) {
+                        setCurrentStep(nextStep);
+                    }
+                } else {
+                    console.error('❌ AI yanıtı bulunamadı, tam obje:', aiResponse);
+                    // Hata durumunda mesajı güncelle
+                    const errorMessage: Message = {
+                        user: userMsg,
+                        ai: `Debug: Webhook yanıt aldı ama metin bulunamadı. Format: ${JSON.stringify(aiResponse)}`,
+                        timestamp: new Date()
+                    };
+                    setMessages(prev => prev.slice(0, -1).concat(errorMessage));
                 }
             } else {
+                console.error('❌ Webhook yanıtı null/undefined');
                 // Hata durumunda mesajı güncelle
                 const errorMessage: Message = {
                     user: userMsg,
-                    ai: "Üzgünüm, bir bağlantı hatası oluştu. Lütfen tekrar deneyin.",
+                    ai: "Üzgünüm, webhook'tan yanıt alınamadı. Lütfen tekrar deneyin.",
                     timestamp: new Date()
                 };
                 setMessages(prev => prev.slice(0, -1).concat(errorMessage));
