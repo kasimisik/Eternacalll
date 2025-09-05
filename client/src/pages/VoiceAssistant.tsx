@@ -146,7 +146,7 @@ export default function VoiceAssistant() {
                     </div>
                   </SidebarMenuButton>
                 </PopoverTrigger>
-                <PopoverContent className='w-62'>
+                <PopoverContent className='w-64' align="start">
                   <PopoverHeader>
                     <div className="flex items-center space-x-3">
                       <Avatar className="h-10 w-10">
