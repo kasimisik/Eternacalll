@@ -287,13 +287,13 @@ export default function Templates() {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {templateData.map((template) => (
           <GlowCard 
             key={template.id} 
             glowColor={template.glowColor}
             customSize={true}
-            className="w-[300px] h-[360px] cursor-pointer transition-transform duration-300 p-0"
+            className="w-[270px] h-[324px] cursor-pointer transition-transform duration-300 p-0"
             data-testid={`template-card-${template.id}`}
           >
             <div className="flex items-center justify-center h-full">
