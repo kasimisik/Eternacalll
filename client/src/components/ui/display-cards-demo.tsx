@@ -6,8 +6,8 @@ import { Sparkles, Mic, Brain, Phone } from "lucide-react";
 const defaultCards = [
   {
     icon: <Mic className="size-4 text-blue-300" />,
-    title: "Azure Speech",
-    description: "Yüksek kaliteli ses tanıma",
+    title: "Akıllı Sesli Yanıtlama",
+    description: "Her çağrıyı profesyonelce karşılar",
     date: "Aktif",
     iconClassName: "text-blue-500",
     titleClassName: "text-blue-500",
@@ -16,8 +16,8 @@ const defaultCards = [
   },
   {
     icon: <Brain className="size-4 text-purple-300" />,
-    title: "AI Asistan",
-    description: "Akıllı konuşma teknolojisi",
+    title: "Doğal Konuşma",
+    description: "İnsan gibi akıcı ve samimi diyalog",
     date: "7/24 Aktif",
     iconClassName: "text-purple-500",
     titleClassName: "text-purple-500",
@@ -26,8 +26,8 @@ const defaultCards = [
   },
   {
     icon: <Phone className="size-4 text-green-300" />,
-    title: "SIP Entegrasyon",
-    description: "Mevcut sistemlerle uyumlu",
+    title: "Anında Kurulum",
+    description: "5 dakikada sisteminizle entegre",
     date: "Hazır",
     iconClassName: "text-green-500",
     titleClassName: "text-green-500",
@@ -42,10 +42,10 @@ function DisplayCardsDemo() {
       <div className="w-full max-w-3xl">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            Gelişmiş Teknolojiler
+            Neden EternaCall?
           </h2>
           <p className="text-gray-300 text-lg">
-            En son AI ve telekomünikasyon teknolojileriyle güçlendirilmiş
+            Müşteri deneyimini artıran akıllı çözümlerle işinizi güçlendirin
           </p>
         </div>
         <DisplayCards cards={defaultCards} />

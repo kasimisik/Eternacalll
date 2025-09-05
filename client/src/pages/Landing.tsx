@@ -152,7 +152,7 @@ export default function Landing() {
               EternaCall
             </h1>
             <p className="mt-2 md:mt-4 text-neutral-300 max-w-lg text-base md:text-lg mb-6 md:mb-8">
-              Gelişmiş AI teknolojisi ile güçlendirilmiş sesli asistan platformu. SIP entegrasyonu, Azure Konuşma Hizmetleri ve Anthropic Claude ile gerçek zamanlı konuşma işleme.
+              Gelişmiş yapay zeka teknolojisi ile müşteri deneyimini bir üst seviyeye taşıyan, akıllı sesli asistan platformu. İşletmenizi 7/24 aktif tutan, insan gibi konuşan AI asistanı.
             </p>
           </div>
 
