@@ -1,6 +1,12 @@
 import React from 'react';
 
-const SearchComponent = () => {
+interface SearchComponentProps {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}
+
+const SearchComponent = ({ value, onChange, placeholder = "Template Ara..." }: SearchComponentProps) => {
   return (
     <div className="relative flex items-center justify-center">
       <div className="absolute z-[-1] w-full h-min-screen"></div>
@@ -39,7 +45,14 @@ const SearchComponent = () => {
         </div>
 
         <div id="main" className="relative group">
-          <input placeholder="Template Ara..." type="text" name="text" className="bg-[#010201] border-none w-[241px] h-[42px] rounded-lg text-white px-[45px] text-sm focus:outline-none placeholder-gray-400" />
+          <input 
+            placeholder={placeholder} 
+            type="text" 
+            name="text" 
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className="bg-[#010201] border-none w-[241px] h-[42px] rounded-lg text-white px-[45px] text-sm focus:outline-none placeholder-gray-400" 
+          />
           <div id="input-mask" className="pointer-events-none w-[80px] h-[16px] absolute bg-gradient-to-r from-transparent to-black top-[13px] left-[55px] group-focus-within:hidden"></div>
           <div id="pink-mask" className="pointer-events-none w-[24px] h-[16px] absolute bg-[#cf30aa] top-[8px] left-[4px] blur-2xl opacity-80 transition-all duration-2000 group-hover:opacity-0"></div>
           <div className="absolute h-[34px] w-[32px] overflow-hidden top-[4px] right-[4px] rounded-lg

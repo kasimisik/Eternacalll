@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useMemo } from "react";
 import { GlowCard } from "@/components/ui/spotlight-card";
 import CardFlip from "@/components/ui/flip-card";
 import {
@@ -295,6 +295,7 @@ const templateData = [
 export default function Templates() {
   const { user } = useUserHook();
   const { signOut } = useAuthHook();
+  const [searchTerm, setSearchTerm] = useState("");
 
   const data = {
     navMain: [
@@ -336,6 +337,21 @@ export default function Templates() {
   const getInitials = (firstName?: string, lastName?: string) => {
     return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
   };
+
+  // Filter templates based on search term
+  const filteredTemplates = useMemo(() => {
+    if (!searchTerm.trim()) {
+      return templateData;
+    }
+    
+    const searchLower = searchTerm.toLowerCase().trim();
+    return templateData.filter(template => 
+      template.title.toLowerCase().includes(searchLower) ||
+      template.subtitle.toLowerCase().includes(searchLower) ||
+      template.description.toLowerCase().includes(searchLower) ||
+      template.features.some(feature => feature.toLowerCase().includes(searchLower))
+    );
+  }, [searchTerm]);
 
   return (
     <SidebarProvider>
@@ -399,13 +415,29 @@ export default function Templates() {
         <header className="flex h-16 shrink-0 items-center gap-2 px-4 justify-between">
           <SidebarTrigger className="-ml-1" />
           <div className="pr-4">
-            <SearchComponent />
+            <SearchComponent 
+              value={searchTerm}
+              onChange={setSearchTerm}
+              placeholder="Template Ara..."
+            />
           </div>
         </header>
         <div className="flex-1 space-y-4 p-8 pt-6">
+          {/* Search Results Info */}
+          {searchTerm && (
+            <div className="text-muted-foreground text-sm mb-4">
+              <span className="font-medium">{filteredTemplates.length}</span> sonuç bulundu 
+              <span className="font-medium">"{searchTerm}"</span> için
+              {filteredTemplates.length === 0 && (
+                <span className="block mt-2 text-amber-500">
+                  Arama kriterlerinizi değiştirip tekrar deneyin.
+                </span>
+              )}
+            </div>
+          )}
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-            {templateData.map((template) => (
+            {filteredTemplates.map((template) => (
               <GlowCard 
                 key={template.id} 
                 glowColor={template.glowColor}
