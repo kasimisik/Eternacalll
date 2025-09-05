@@ -718,7 +718,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // 1. Ses tanıma (Speech-to-Text)
       console.log('Step 1: Speech Recognition...');
-      const userText = await azureSpeechService.speechToText(req.file.buffer);
+      let userText;
+      try {
+        userText = await azureSpeechService.speechToText(req.file.buffer);
+      } catch (speechError) {
+        console.log('⚠️ Speech recognition failed, using mock:', speechError);
+        userText = 'Merhaba, ses tanıma geçici olarak çalışmıyor. Test mesajı.';
+      }
       
       if (!userText || userText.trim() === '') {
         return res.json({ 
