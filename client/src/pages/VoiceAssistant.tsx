@@ -160,7 +160,7 @@ export default function VoiceAssistant() {
         </div>
         
         {/* Voice Assistant Content - Full Screen */}
-        <div className="relative w-full h-screen">
+        <div className="relative w-full h-screen overflow-hidden">
           {/* Animated background */}
           <div className="absolute inset-0 z-0">
             <AnoAI />
