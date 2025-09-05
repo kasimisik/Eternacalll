@@ -86,10 +86,31 @@ DEVAM EDERKENː Önceki konuşmaları göz önünde bulundur ve bir sonraki adı
             ? `${systemPrompt}\n\nKONUŞMA GEÇMİŞİ:\n${conversationContext}\n\nYukarıdaki konuşmanın devamında, kullanıcının son mesajına uygun şekilde yanıt ver.`
             : `${systemPrompt}\n\nBu ilk karşılaşma. Kullanıcının mesajı: ${userInput}`;
 
-        const result = await genAI.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: fullPrompt
-        });
+        // Model listesi - yoğunluk durumunda alternatifler dene
+        const models = ["gemini-1.5-flash", "gemini-2.5-flash"];
+        let result: any = null;
+        
+        for (const model of models) {
+            try {
+                result = await genAI.models.generateContent({
+                    model: model,
+                    contents: fullPrompt
+                });
+                console.log(`✅ ${model} ile başarılı yanıt alındı`);
+                break;
+            } catch (modelError: any) {
+                console.log(`⚠️ ${model} hatası:`, modelError.message);
+                if (modelError.status === 503 && models.indexOf(model) < models.length - 1) {
+                    console.log(`🔄 ${model} yoğun, diğer modeli deniyorum...`);
+                    continue;
+                }
+                throw modelError;
+            }
+        }
+
+        if (!result) {
+            throw new Error('Hiçbir model yanıt veremedi');
+        }
 
         const responseText = result.text || "Üzgünüm, yanıt oluşturamadım.";
         
