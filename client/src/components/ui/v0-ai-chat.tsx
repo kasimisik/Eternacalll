@@ -11,8 +11,8 @@ interface Message {
   timestamp: Date;
 }
 
-// n8n webhook URL'ini buraya yapıştır
-const N8N_WEBHOOK_URL = 'https://n8n-sunucun.com/webhook/senin-ozel-urlin';
+// n8n webhook URL'i environment variable'dan al
+const N8N_WEBHOOK_URL = import.meta.env.VITE_N8N_WEBHOOK_URL || '';
 
 export function VercelV0Chat() {
     const [value, setValue] = useState("");
