@@ -532,23 +532,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Auth middleware for voice endpoints
   const requireAuth = (req: any, res: any, next: any) => {
+    console.log('🔐 Auth check - Headers:', req.headers);
+    console.log('🔐 Auth check - Body:', req.body);
+    console.log('🔐 Auth check - Query:', req.query);
+    
     const authHeader = req.headers.authorization;
     const sessionId = req.body?.sessionId || req.query?.sessionId;
     
+    console.log('🔐 Auth check - sessionId found:', sessionId);
+    console.log('🔐 Auth check - authHeader found:', !!authHeader);
+    
     // Allow sessionId based auth for now (user ID from frontend)
     if (sessionId && sessionId.startsWith('user_')) {
+      console.log('✅ Auth success - sessionId valid:', sessionId);
       req.userId = sessionId;
       return next();
     }
     
     // TODO: Add proper Clerk JWT verification here
     if (!authHeader) {
+      console.log('❌ Auth failed - No sessionId or authHeader');
       return res.status(401).json({ 
         error: 'Authentication required', 
         message: 'Please provide sessionId or authorization header' 
       });
     }
     
+    console.log('✅ Auth success - using authHeader');
     next();
   };
 
