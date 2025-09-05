@@ -7,6 +7,24 @@ import { users } from '../shared/schema';
 import { eq } from 'drizzle-orm';
 import crypto from 'crypto';
 import { getAIResponse } from './gemini';
+import { azureSpeechService } from './azure-speech';
+import { elevenLabsTTSService } from './elevenlabs-tts';
+import multer from 'multer';
+
+// Multer konfigürasyonu ses dosyaları için
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('audio/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only audio files are allowed'));
+    }
+  },
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // put application routes here
@@ -506,6 +524,220 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: false, 
         error: 'Chat hatası', 
         message: 'Üzgünüm, şu anda yanıt veremiyorum.' 
+      });
+    }
+  });
+
+  // ===== SESLİ ASİSTAN API ENDPOINTS =====
+
+  // Auth middleware for voice endpoints
+  const requireAuth = (req: any, res: any, next: any) => {
+    const authHeader = req.headers.authorization;
+    const sessionId = req.body?.sessionId || req.query?.sessionId;
+    
+    // Allow sessionId based auth for now (user ID from frontend)
+    if (sessionId && sessionId.startsWith('user_')) {
+      req.userId = sessionId;
+      return next();
+    }
+    
+    // TODO: Add proper Clerk JWT verification here
+    if (!authHeader) {
+      return res.status(401).json({ 
+        error: 'Authentication required', 
+        message: 'Please provide sessionId or authorization header' 
+      });
+    }
+    
+    next();
+  };
+
+  // Ses dosyasını metne dönüştürme (Speech-to-Text)
+  app.post('/api/voice/speech-to-text', requireAuth, upload.single('audio'), async (req, res) => {
+    console.log('=== SPEECH TO TEXT REQUEST ===');
+    
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: 'Ses dosyası bulunamadı' });
+      }
+
+      console.log(`🎤 Processing audio file: ${req.file.originalname}, size: ${req.file.size} bytes`);
+      
+      const transcription = await azureSpeechService.speechToText(req.file.buffer);
+      
+      if (!transcription || transcription.trim() === '') {
+        return res.json({ 
+          success: true, 
+          transcription: '', 
+          message: 'Ses tanınamadı veya sessizlik algılandı' 
+        });
+      }
+
+      console.log(`✅ Transcription successful: "${transcription}"`);
+      
+      res.json({
+        success: true,
+        transcription: transcription
+      });
+
+    } catch (error) {
+      console.error('Speech-to-Text Error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Ses tanıma hatası', 
+        message: 'Ses dosyası işlenemedi' 
+      });
+    }
+  });
+
+  // Metni sese dönüştürme (Text-to-Speech)
+  app.post('/api/voice/text-to-speech', requireAuth, async (req, res) => {
+    console.log('=== TEXT TO SPEECH REQUEST ===');
+    
+    try {
+      const { text, voiceId } = req.body;
+      
+      if (!text || text.trim() === '') {
+        return res.status(400).json({ error: 'Metin bulunamadı' });
+      }
+
+      console.log(`🔊 Converting text to speech: "${text.substring(0, 100)}..."`);
+      
+      const audioBuffer = await elevenLabsTTSService.generateTurkishFemaleVoice(text);
+      
+      // Audio dosyasını base64 olarak döndür (WebSocket ile gönderim için)
+      const base64Audio = audioBuffer.toString('base64');
+      
+      console.log(`✅ TTS successful: Generated ${audioBuffer.length} bytes of audio`);
+      
+      res.json({
+        success: true,
+        audioData: base64Audio,
+        audioType: 'audio/mpeg'
+      });
+
+    } catch (error) {
+      console.error('Text-to-Speech Error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Ses üretme hatası', 
+        message: 'Metin seslendirilemedi' 
+      });
+    }
+  });
+
+  // Tam sesli konuşma işlemi (STT + Gemini + TTS)
+  app.post('/api/voice/conversation', requireAuth, upload.single('audio'), async (req, res) => {
+    console.log('=== FULL VOICE CONVERSATION REQUEST ===');
+    
+    try {
+      const { sessionId } = req.body;
+      
+      if (!req.file) {
+        return res.status(400).json({ error: 'Ses dosyası bulunamadı' });
+      }
+
+      console.log(`🎤 Starting voice conversation, session: ${sessionId || 'default'}`);
+      
+      // 1. Ses tanıma (Speech-to-Text)
+      console.log('Step 1: Speech Recognition...');
+      const userText = await azureSpeechService.speechToText(req.file.buffer);
+      
+      if (!userText || userText.trim() === '') {
+        return res.json({ 
+          success: true, 
+          userText: '', 
+          aiResponse: 'Ses tanınamadı, lütfen tekrar deneyin.',
+          audioData: null 
+        });
+      }
+
+      console.log(`✅ User said: "${userText}"`);
+
+      // 2. AI yanıt üretimi (Gemini)
+      console.log('Step 2: AI Response Generation...');
+      const aiResponse = await getAIResponse(userText, sessionId || 'default');
+      
+      console.log(`✅ AI Response: "${aiResponse.substring(0, 100)}..."`);
+
+      // 3. Ses üretimi (Text-to-Speech)
+      console.log('Step 3: Text-to-Speech...');
+      const audioBuffer = await elevenLabsTTSService.generateTurkishFemaleVoice(aiResponse);
+      const base64Audio = audioBuffer.toString('base64');
+      
+      console.log(`✅ Full conversation completed successfully`);
+
+      res.json({
+        success: true,
+        userText: userText,
+        aiResponse: aiResponse,
+        audioData: base64Audio,
+        audioType: 'audio/mpeg'
+      });
+
+    } catch (error) {
+      console.error('Voice Conversation Error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Sesli konuşma hatası', 
+        message: 'Konuşma işlemi tamamlanamadı' 
+      });
+    }
+  });
+
+  // Sesli asistan servislerini test etme
+  app.get('/api/voice/test', async (req, res) => {
+    console.log('=== VOICE SERVICES TEST ===');
+    
+    try {
+      const testResults = {
+        azureSpeech: false,
+        elevenLabs: false,
+        geminiAI: false
+      };
+
+      // Azure Speech test (sadece konfigürasyon kontrolü)
+      try {
+        testResults.azureSpeech = !!(process.env.AZURE_SPEECH_KEY && process.env.AZURE_SPEECH_REGION);
+        console.log(`Azure Speech: ${testResults.azureSpeech ? '✅' : '❌'}`);
+      } catch (error) {
+        console.log('Azure Speech Test Error:', error);
+      }
+
+      // ElevenLabs test
+      try {
+        testResults.elevenLabs = await elevenLabsTTSService.testVoiceGeneration();
+        console.log(`ElevenLabs: ${testResults.elevenLabs ? '✅' : '❌'}`);
+      } catch (error) {
+        console.log('ElevenLabs Test Error:', error);
+      }
+
+      // Gemini AI test
+      try {
+        const testResponse = await getAIResponse('Test mesajı', 'test-session');
+        testResults.geminiAI = testResponse.length > 0;
+        console.log(`Gemini AI: ${testResults.geminiAI ? '✅' : '❌'}`);
+      } catch (error) {
+        console.log('Gemini AI Test Error:', error);
+      }
+
+      const allWorking = Object.values(testResults).every(result => result);
+      
+      res.json({
+        success: allWorking,
+        services: testResults,
+        message: allWorking ? 
+          'Tüm sesli asistan servisleri çalışıyor!' : 
+          'Bazı servislerle ilgili sorunlar var',
+        timestamp: new Date().toISOString()
+      });
+
+    } catch (error) {
+      console.error('Voice Services Test Error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Test hatası', 
+        message: 'Servis testleri tamamlanamadı' 
       });
     }
   });

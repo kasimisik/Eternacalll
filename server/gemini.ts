@@ -6,7 +6,7 @@ import { GoogleGenAI } from "@google/genai";
 //   - do not change this unless explicitly requested by the user
 
 // This API key is from Gemini Developer API Key, not vertex AI API Key
-const genAI = new GoogleGenAI({apiKey: process.env.GOOGLE_AI_API_KEY || ""});
+const genAI = new GoogleGenAI({apiKey: process.env.GEMINI_API_KEY || ""});
 
 // Konuşma geçmişini saklamak için basit bir hafıza sistemi
 const conversationMemory = new Map<string, Array<{role: 'user' | 'assistant', content: string}>>();
@@ -29,7 +29,7 @@ export function setConversationHistory(sessionId: string, history: Array<{role: 
 
 export async function getAIResponse(userInput: string, userId?: string): Promise<string> {
     try {
-        if (!process.env.GOOGLE_AI_API_KEY) {
+        if (!process.env.GEMINI_API_KEY) {
             console.warn("🤖 Gemini Mock: User said:", userInput);
             const mockResponses = [
                 "Anlıyorum, bu konu gerçekten ilginç. Peki bu durumla ilgili ne düşünüyorsun?",
@@ -86,26 +86,41 @@ DEVAM EDERKENː Önceki konuşmaları göz önünde bulundur ve bir sonraki adı
             ? `${systemPrompt}\n\nKONUŞMA GEÇMİŞİ:\n${conversationContext}\n\nYukarıdaki konuşmanın devamında, kullanıcının son mesajına uygun şekilde yanıt ver.`
             : `${systemPrompt}\n\nBu ilk karşılaşma. Kullanıcının mesajı: ${userInput}`;
 
-        // Model listesi - yoğunluk durumunda alternatifler dene
+        // Model listesi - yoğunluk durumunda alternatifler dene (timeout destekli)
         const models = ["gemini-1.5-flash", "gemini-2.5-flash"];
         let result: any = null;
         
-        for (const model of models) {
-            try {
-                result = await genAI.models.generateContent({
-                    model: model,
-                    contents: fullPrompt
-                });
-                console.log(`✅ ${model} ile başarılı yanıt alındı`);
-                break;
-            } catch (modelError: any) {
-                console.log(`⚠️ ${model} hatası:`, modelError.message);
-                if (modelError.status === 503 && models.indexOf(model) < models.length - 1) {
-                    console.log(`🔄 ${model} yoğun, diğer modeli deniyorum...`);
-                    continue;
+        // AbortController for timeout
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout
+        
+        try {
+            for (const model of models) {
+                try {
+                    // AbortController desteği ile manual timeout wrapper
+                    const geminiCall = genAI.models.generateContent({
+                        model: model,
+                        contents: fullPrompt
+                    });
+                    
+                    const timeoutPromise = new Promise((_, reject) => {
+                        setTimeout(() => reject(new Error(`Gemini timeout after 30 seconds`)), 30000);
+                    });
+                    
+                    result = await Promise.race([geminiCall, timeoutPromise]);
+                    console.log(`✅ ${model} ile başarılı yanıt alındı`);
+                    break;
+                } catch (modelError: any) {
+                    console.log(`⚠️ ${model} hatası:`, modelError.message);
+                    if ((modelError.status === 503 || modelError.message?.includes('timeout')) && models.indexOf(model) < models.length - 1) {
+                        console.log(`🔄 ${model} yoğun/timeout, diğer modeli deniyorum...`);
+                        continue;
+                    }
+                    throw modelError;
                 }
-                throw modelError;
             }
+        } finally {
+            clearTimeout(timeout);
         }
 
         if (!result) {
@@ -151,10 +166,17 @@ from 1 to 5 stars and a confidence score between 0 and 1.
 Respond with JSON in this format: 
 {'rating': number, 'confidence': number}`;
 
-        const result = await genAI.models.generateContent({
+        // Sentiment analysis için de timeout wrapper
+        const geminiCall = genAI.models.generateContent({
             model: "gemini-2.5-flash",
             contents: `${systemPrompt}\n\nText to analyze: ${text}`
         });
+        
+        const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error(`Sentiment analysis timeout after 30 seconds`)), 30000);
+        });
+        
+        const result = await Promise.race([geminiCall, timeoutPromise]) as any;
         const rawJson = result.text;
 
         if (rawJson) {
