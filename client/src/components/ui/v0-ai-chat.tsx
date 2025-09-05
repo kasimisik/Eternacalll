@@ -115,46 +115,53 @@ export function VercelV0Chat() {
             if (aiResponse) {
                 console.log('✅ Webhook yanıtı alındı:', aiResponse);
                 
+                // n8n array formatını kontrol et: [{"output": "..."}]
+                let responseObj = aiResponse;
+                if (Array.isArray(aiResponse) && aiResponse.length > 0) {
+                    responseObj = aiResponse[0];
+                    console.log('📦 Array formatı tespit edildi, ilk elementi alındı:', responseObj);
+                }
+                
                 // Farklı formatlarda gelebilecek yanıtları kontrol et
                 let aiText = '';
                 let nextStep = '';
                 
                 // Format 1: {output: "..."} - n8n webhook format
-                if (aiResponse.output) {
-                    aiText = aiResponse.output;
-                    nextStep = aiResponse.next_step || aiResponse.step || '';
+                if (responseObj.output) {
+                    aiText = responseObj.output;
+                    nextStep = responseObj.next_step || responseObj.step || '';
                 }
                 // Format 2: {reply: "...", next_step: "..."}
-                else if (aiResponse.reply) {
-                    aiText = aiResponse.reply;
-                    nextStep = aiResponse.next_step || '';
+                else if (responseObj.reply) {
+                    aiText = responseObj.reply;
+                    nextStep = responseObj.next_step || '';
                 }
                 // Format 3: {message: "...", step: "..."}
-                else if (aiResponse.message) {
-                    aiText = aiResponse.message;
-                    nextStep = aiResponse.step || aiResponse.next_step || '';
+                else if (responseObj.message) {
+                    aiText = responseObj.message;
+                    nextStep = responseObj.step || responseObj.next_step || '';
                 }
                 // Format 4: {response: "...", ...}
-                else if (aiResponse.response) {
-                    aiText = aiResponse.response;
-                    nextStep = aiResponse.next_step || aiResponse.step || '';
+                else if (responseObj.response) {
+                    aiText = responseObj.response;
+                    nextStep = responseObj.next_step || responseObj.step || '';
                 }
                 // Format 5: {text: "...", ...}
-                else if (aiResponse.text) {
-                    aiText = aiResponse.text;
-                    nextStep = aiResponse.next_step || aiResponse.step || '';
+                else if (responseObj.text) {
+                    aiText = responseObj.text;
+                    nextStep = responseObj.next_step || responseObj.step || '';
                 }
-                // Format 5: Direct string
-                else if (typeof aiResponse === 'string') {
-                    aiText = aiResponse;
+                // Format 6: Direct string
+                else if (typeof responseObj === 'string') {
+                    aiText = responseObj;
                 }
-                // Format 6: İlk string property'yi al
+                // Format 7: İlk string property'yi al
                 else {
-                    const firstStringKey = Object.keys(aiResponse).find(key => 
-                        typeof aiResponse[key] === 'string' && aiResponse[key].length > 0
+                    const firstStringKey = Object.keys(responseObj).find(key => 
+                        typeof responseObj[key] === 'string' && responseObj[key].length > 0
                     );
                     if (firstStringKey) {
-                        aiText = aiResponse[firstStringKey];
+                        aiText = responseObj[firstStringKey];
                     }
                 }
                 
@@ -175,12 +182,11 @@ export function VercelV0Chat() {
                         setCurrentStep(nextStep);
                     }
                 } else {
-                    console.error('❌ AI yanıtı bulunamadı, tam obje:', aiResponse);
-                    // Debug için n8n'den gelen objeyi tam olarak göster
-                    const debugMessage = `n8n Webhook Yanıtı: ${JSON.stringify(aiResponse, null, 2)}`;
+                    console.error('❌ AI yanıtı bulunamadı, responseObj:', responseObj);
+                    // Hata durumunda mesajı güncelle
                     const errorMessage: Message = {
                         user: userMsg,
-                        ai: debugMessage,
+                        ai: "Üzgünüm, yanıt formatı tanınmadı. Lütfen tekrar deneyin.",
                         timestamp: new Date()
                     };
                     setMessages(prev => prev.slice(0, -1).concat(errorMessage));
