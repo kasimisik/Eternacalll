@@ -102,7 +102,7 @@ export default function TemplateBuilder() {
   };
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={true}>
       <NewSidebar>
         <SidebarHeader>
           <SidebarMenu>
@@ -163,16 +163,16 @@ export default function TemplateBuilder() {
         <header className="flex h-16 shrink-0 items-center gap-2 px-4">
           <SidebarTrigger className="-ml-1" />
         </header>
-        <div className="flex flex-1 p-0">
-          {/* Template Builder Content */}
-          <div className="relative w-full h-[calc(100vh-4rem)] overflow-hidden">
+        <div className="flex flex-1">
+          {/* Template Builder Content - Full Width */}
+          <div className="relative w-full min-h-[calc(100vh-4rem)] overflow-hidden">
             {/* Shader Animation Background */}
             <div className="absolute inset-0 z-0">
               <ShaderAnimation />
             </div>
 
             {/* Content Overlay */}
-            <div className="relative z-10 h-full flex flex-col">
+            <div className="relative z-10 min-h-[calc(100vh-4rem)] flex flex-col">
               {/* Main Content */}
               <div className="flex-1 flex flex-col items-center justify-center text-center px-6">
                 {/* Animated Title */}
