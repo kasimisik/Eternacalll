@@ -20,6 +20,7 @@ import SiriOrb from "@/components/ui/siri-orb";
 import AnoAI from "@/components/ui/animated-shader-background";
 import { RainbowButton } from '@/components/ui/rainbow-button';
 import { ModalPricing } from '@/components/ui/modal-pricing';
+import { AIVoiceInput } from "@/components/ui/ai-voice-input";
 
 export default function VoiceAssistant() {
   const { user } = useUserHook();
@@ -166,13 +167,23 @@ export default function VoiceAssistant() {
             <AnoAI />
           </div>
           
-          {/* Siri Orb overlay */}
-          <div className="absolute inset-0 z-10 flex items-center justify-center">
+          {/* Siri Orb and Voice Input overlay */}
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center">
             <SiriOrb
               size="256px"
               animationDuration={15}
               className="drop-shadow-2xl"
             />
+            
+            {/* AI Voice Input below Siri Orb */}
+            <div className="mt-8">
+              <AIVoiceInput 
+                onStart={() => console.log('Voice recording started')}
+                onStop={(duration) => console.log('Voice recording stopped, duration:', duration)}
+                visualizerBars={48}
+                className="text-white"
+              />
+            </div>
           </div>
         </div>
       </SidebarInset>
