@@ -13,7 +13,7 @@ import {
   SidebarInset,
   SidebarTrigger,
 } from "@/components/ui/new-sidebar";
-import { LayoutDashboard, UserCog, Settings, LogOut, Bot, Crown, CreditCard, Menu } from "lucide-react";
+import { LayoutDashboard, UserCog, Settings, LogOut, Bot, Crown, CreditCard, Menu, FileText } from "lucide-react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -57,6 +57,11 @@ export default function Dashboard() {
         title: "Planım",
         url: "/subscription",
         icon: Crown,
+      },
+      {
+        title: "Templates",
+        url: "/templates",
+        icon: FileText,
       },
     ],
   };
