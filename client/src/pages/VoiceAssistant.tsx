@@ -1,109 +1,217 @@
-import React, { useState } from "react";
+"use client";
+import React, { useState, useEffect } from "react";
+import {
+  SidebarProvider,
+  NewSidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarInset,
+  SidebarTrigger,
+} from "@/components/ui/new-sidebar";
+import { LayoutDashboard, UserCog, Settings, LogOut, Bot, Crown, CreditCard, Menu, FileText, Mic } from "lucide-react";
+import { Link } from "wouter";
+import { useUserHook, useAuthHook } from '@/lib/auth-hook';
 import SiriOrb from "@/components/ui/siri-orb";
 import AnoAI from "@/components/ui/animated-shader-background";
-import { Mic, Settings, History, Phone, User, VolumeX, Volume2, Menu, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { RainbowButton } from '@/components/ui/rainbow-button';
+import { ModalPricing } from '@/components/ui/modal-pricing';
 
 export default function VoiceAssistant() {
-  const [isOpen, setIsOpen] = useState(false);
+  const { user } = useUserHook();
+  const { signOut } = useAuthHook();
+  const [subscription, setSubscription] = useState<{
+    hasSubscription: boolean;
+    plan: string;
+    email?: string;
+    createdAt?: string;
+  } | null>(null);
+  const [loadingSubscription, setLoadingSubscription] = useState(true);
+
+  const data = {
+    navMain: [
+      {
+        title: "Dashboard",
+        url: "/dashboard",
+        icon: LayoutDashboard,
+        isActive: false,
+      },
+      {
+        title: "Profile",
+        url: "/profile",
+        icon: UserCog,
+      },
+      {
+        title: "Sesli Asistan",
+        url: "/voice-assistant",
+        icon: Mic,
+        isActive: true,
+      },
+      {
+        title: "Settings",
+        url: "/settings",
+        icon: Settings,
+      },
+      {
+        title: "Planım",
+        url: "/subscription",
+        icon: Crown,
+      },
+      {
+        title: "Templates",
+        url: "/templates",
+        icon: FileText,
+      },
+    ],
+  };
+
+  // Kullanıcının abonelik durumunu kontrol et
+  useEffect(() => {
+    const checkSubscription = async () => {
+      if (!user?.id) return;
+      
+      try {
+        setLoadingSubscription(true);
+        const response = await fetch(`/api/user/subscription/${user.id}`);
+        const data = await response.json();
+        
+        console.log('Subscription data:', data);
+        setSubscription(data);
+      } catch (error) {
+        console.error('Subscription check failed:', error);
+      } finally {
+        setLoadingSubscription(false);
+      }
+    };
+
+    checkSubscription();
+  }, [user?.id]);
+
+  const getInitials = (firstName?: string, lastName?: string) => {
+    return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
+  };
 
   return (
-    <div className="relative w-full h-screen">
-      {/* Ana animated background */}
-      <div className="absolute inset-0 z-0">
-        <AnoAI />
-      </div>
-      
-      {/* Sidebar Trigger Button - Sol üst köşede sabit */}
-      <div className="absolute top-4 left-4 z-20">
-        <Sheet open={isOpen} onOpenChange={setIsOpen}>
-          <SheetTrigger asChild>
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="bg-background/80 backdrop-blur-sm border-border/50"
-            >
-              <Menu className="h-4 w-4" />
-            </Button>
-          </SheetTrigger>
-          
-          <SheetContent side="left" className="w-80 p-0">
-            <div className="flex h-full flex-col">
-              <SheetHeader className="p-6 border-b">
-                <SheetTitle>Sesli Asistan Kontrolleri</SheetTitle>
-              </SheetHeader>
-              
-              <div className="flex-1 p-6 space-y-6">
-                {/* Kontroller Bölümü */}
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-3">Kontroller</h3>
-                  <div className="space-y-2">
-                    <Button variant="outline" className="w-full justify-start">
-                      <Mic className="h-4 w-4 mr-2" />
-                      Mikrofonü Aç
-                    </Button>
-                    <Button variant="outline" className="w-full justify-start">
-                      <VolumeX className="h-4 w-4 mr-2" />
-                      Sessiz Mod
-                    </Button>
-                    <Button variant="outline" className="w-full justify-start">
-                      <Phone className="h-4 w-4 mr-2" />
-                      Aramayı Başlat
-                    </Button>
+    <SidebarProvider>
+      <NewSidebar>
+        <SidebarHeader>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton size="lg" asChild>
+                <Link href="/dashboard">
+                  <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                    <Bot className="size-4" />
                   </div>
-                </div>
-
-                {/* Ayarlar Bölümü */}
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-3">Ayarlar</h3>
-                  <div className="space-y-2">
-                    <Button variant="outline" className="w-full justify-start">
-                      <Settings className="h-4 w-4 mr-2" />
-                      Ses Ayarları
-                    </Button>
-                    <Button variant="outline" className="w-full justify-start">
-                      <Volume2 className="h-4 w-4 mr-2" />
-                      Ses Seviyesi
-                    </Button>
-                    <Button variant="outline" className="w-full justify-start">
-                      <User className="h-4 w-4 mr-2" />
-                      Profil Ayarları
-                    </Button>
+                  <div className="grid flex-1 text-left text-sm leading-tight">
+                    <span className="truncate font-semibold">Azure AI Platform</span>
+                    <span className="truncate text-xs">AI Assistant</span>
                   </div>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarHeader>
+        <SidebarContent>
+          <SidebarGroup>
+            <SidebarMenu>
+              {data.navMain.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton tooltip={item.title} isActive={item.isActive} asChild>
+                    <Link href={item.url}>
+                      <item.icon />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Logout" onClick={() => signOut()}>
+                  <LogOut />
+                  <span>Logout</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroup>
+        </SidebarContent>
+        <SidebarFooter>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton size="lg">
+                <div className="h-8 w-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-semibold text-sm">
+                  {getInitials(user?.firstName || undefined, user?.lastName || undefined) || 'U'}
                 </div>
-
-                {/* Geçmiş Bölümü */}
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-3">Geçmiş</h3>
-                  <div className="space-y-2">
-                    <Button variant="outline" className="w-full justify-start">
-                      <History className="h-4 w-4 mr-2" />
-                      Arama Geçmişi
-                    </Button>
-                  </div>
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-semibold">{user?.firstName || "Kullanıcı"}</span>
+                  <span className="truncate text-xs">{user?.primaryEmailAddress?.emailAddress}</span>
                 </div>
-              </div>
-
-              {/* Footer */}
-              <div className="border-t p-6">
-                <p className="text-sm text-muted-foreground text-center">
-                  Azure AI Voice Agent v1.0
-                </p>
-              </div>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
+      </NewSidebar>
+      <SidebarInset>
+        <header className="flex h-16 shrink-0 items-center gap-2 px-4 justify-between">
+          <SidebarTrigger className="-ml-1" />
+          <PremiumButton 
+            subscription={subscription}
+            loadingSubscription={loadingSubscription}
+          />
+        </header>
+        <div className="flex flex-1">
+          {/* Voice Assistant Content */}
+          <div className="relative w-full h-[calc(100vh-4rem)]">
+            {/* Animated background */}
+            <div className="absolute inset-0 z-0">
+              <AnoAI />
             </div>
-          </SheetContent>
-        </Sheet>
-      </div>
-      
-      {/* Siri Orb overlay - merkez */}
-      <div className="absolute inset-0 z-10 flex items-center justify-center">
-        <SiriOrb
-          size="256px"
-          animationDuration={15}
-          className="drop-shadow-2xl"
-        />
-      </div>
-    </div>
+            
+            {/* Siri Orb overlay */}
+            <div className="absolute inset-0 z-10 flex items-center justify-center">
+              <SiriOrb
+                size="256px"
+                animationDuration={15}
+                className="drop-shadow-2xl"
+              />
+            </div>
+          </div>
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
+
+// Premium Button component for top-right corner
+const PremiumButton = ({ 
+  subscription, 
+  loadingSubscription 
+}: {
+  subscription: any;
+  loadingSubscription: boolean;
+}) => {
+  const [showPricingModal, setShowPricingModal] = useState(false);
+
+  // Don't show if loading or user has subscription
+  if (loadingSubscription || subscription?.hasSubscription) {
+    return null;
+  }
+
+  return (
+    <>
+      <RainbowButton 
+        onClick={() => setShowPricingModal(true)}
+        className="text-sm px-4 py-2 h-9"
+      >
+        🚀 Premium Özellikleri Aç
+      </RainbowButton>
+      
+      <ModalPricing
+        isOpen={showPricingModal}
+        onClose={() => setShowPricingModal(false)}
+      />
+    </>
+  );
+};
