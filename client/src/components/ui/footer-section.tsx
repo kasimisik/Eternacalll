@@ -47,7 +47,6 @@ function Footerdemo({
                 <span className="sr-only">Abone ol</span>
               </Button>
             </form>
-            <div className="absolute -right-4 top-0 h-24 w-24 rounded-full bg-primary/10 blur-2xl" />
           </div>
           <div>
             <h3 className="mb-4 text-lg font-semibold">Hızlı Bağlantılar</h3>
