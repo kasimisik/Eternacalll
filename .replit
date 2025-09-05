@@ -8,7 +8,7 @@ packages = ["ffmpeg"]
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["npm", "run"]
+run = ["npm", "run", "start"]
 build = ["npm", "run", "build"]
 
 [[ports]]
@@ -28,10 +28,10 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Start application"
+args = "Start Game"
 
 [[workflows.workflow]]
-name = "Start application"
+name = "Start Game"
 author = "agent"
 
 [[workflows.workflow.tasks]]
