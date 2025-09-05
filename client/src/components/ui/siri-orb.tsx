@@ -55,17 +55,4 @@ const SiriOrb: React.FC<SiriOrbProps> = ({
   )
 }
 
-// --- Demo Wrapper ---
-const SiriOrbDemo: React.FC = () => {
-  return (
-    <div className="min-h-screen min-w-screen bg-gradient-to-br from-white to-gray-100 dark:from-slate-900 dark:to-slate-700 flex items-center justify-center relative text-black dark:text-white">
-      <SiriOrb
-        size="256px"
-        animationDuration={15}
-        className="drop-shadow-2xl"
-      />
-    </div>
-  )
-}
-
-export default SiriOrbDemo
+export default SiriOrb
