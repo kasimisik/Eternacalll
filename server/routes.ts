@@ -6,7 +6,6 @@ import { db } from './db';
 import { users } from '../shared/schema';
 import { eq } from 'drizzle-orm';
 import crypto from 'crypto';
-import { getAIResponse } from './gemini';
 import { azureSpeechService } from './azure-speech';
 import { elevenLabsTTSService } from './elevenlabs-tts';
 import multer from 'multer';
@@ -522,20 +521,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Gemini AI Test
+  // Gemini AI Test - Disabled (using n8n webhook instead)
   app.get('/api/test/gemini', async (req, res) => {
-    try {
-      console.log('🧪 Testing Gemini AI...');
-      const response = await getAIResponse('Merhaba, test mesajı', 'test-session');
-      res.json({ 
-        success: true, 
-        message: 'Gemini AI working',
-        response: response.substring(0, 100) + '...'
-      });
-    } catch (error) {
-      console.error('Gemini test error:', error);
-      res.json({ success: false, error: String(error) });
-    }
+    res.json({ 
+      success: false, 
+      message: 'Gemini AI disabled - using n8n webhook integration instead',
+      response: 'Chat system now uses n8n webhook'
+    });
   });
 
   // ElevenLabs Test
@@ -564,30 +556,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
 
 
-  // Dashboard Chat API Route - uses Gemini AI
-  app.post('/api/chat/message', async (req, res) => {
-    try {
-      const { userMessage, sessionId } = req.body;
-      
-      if (!userMessage) {
-        return res.status(400).json({ error: 'Kullanıcı mesajı bulunamadı', message: 'Lütfen bir mesaj gönderin' });
-      }
-
-      const response = await getAIResponse(userMessage, sessionId || 'default');
-      
-      res.json({
-        success: true,
-        response: response
-      });
-    } catch (error) {
-      console.error('Chat API Error:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: 'Chat hatası', 
-        message: 'Üzgünüm, şu anda yanıt veremiyorum.' 
-      });
-    }
-  });
 
   // ===== SESLİ ASİSTAN API ENDPOINTS =====
 
@@ -737,9 +705,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`✅ User said: "${userText}"`);
 
-      // 2. AI yanıt üretimi (Gemini)
-      console.log('Step 2: AI Response Generation...');
-      const aiResponse = await getAIResponse(userText, sessionId || 'default');
+      // 2. AI yanıt üretimi - Disabled (using n8n webhook instead)
+      console.log('Step 2: AI Response Generation (Mock)...');
+      const aiResponse = 'Merhaba! Sesli asistan şu anda n8n webhook entegrasyonu kullanıyor. Dashboard chat kısmını kullanabilirsiniz.';
       
       console.log(`✅ AI Response: "${aiResponse.substring(0, 100)}..."`);
 
@@ -795,11 +763,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('ElevenLabs Test Error:', error);
       }
 
-      // Gemini AI test
+      // Gemini AI test - Disabled (using n8n webhook instead)
       try {
-        const testResponse = await getAIResponse('Test mesajı', 'test-session');
-        testResults.geminiAI = testResponse.length > 0;
-        console.log(`Gemini AI: ${testResults.geminiAI ? '✅' : '❌'}`);
+        testResults.geminiAI = false; // Disabled
+        console.log(`Gemini AI: ❌ (Disabled - using n8n webhook)`);
       } catch (error) {
         console.log('Gemini AI Test Error:', error);
       }

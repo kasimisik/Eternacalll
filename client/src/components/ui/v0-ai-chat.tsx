@@ -84,6 +84,7 @@ export function VercelV0Chat() {
             }
 
             const data = await response.json();
+            console.log('n8n webhook yanıtı:', data); // Debug için
             return data;
         } catch (error) {
             console.error('n8n Webhook hatası:', error);
