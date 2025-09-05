@@ -204,6 +204,9 @@ export default function CardFlip({
                 'hover:scale-[1.02] hover:cursor-pointer',
                 'hover:border-primary/20 border border-transparent',
               )}
+              onClick={() => {
+                window.location.href = `/template-builder?title=${encodeURIComponent(title)}&color=${encodeURIComponent(color)}`;
+              }}
             >
               <span className="group-hover/start:text-primary text-sm font-semibold text-zinc-900 transition-colors duration-300 dark:text-white">
                 Start Building

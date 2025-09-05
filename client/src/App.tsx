@@ -16,6 +16,7 @@ import SignUp from "@/pages/SignUp";
 import Dashboard from "@/pages/Dashboard";
 import Subscription from "@/pages/Subscription";
 import Templates from "@/pages/Templates";
+import TemplateBuilder from "@/pages/TemplateBuilder";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -37,6 +38,11 @@ function Router() {
       <Route path="/templates">
         <ProtectedRoute>
           <Templates />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/template-builder">
+        <ProtectedRoute>
+          <TemplateBuilder />
         </ProtectedRoute>
       </Route>
       {/* Fallback to 404 */}
