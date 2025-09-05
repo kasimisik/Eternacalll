@@ -1,37 +1,278 @@
 import React from "react";
 import { GlowCard } from "@/components/ui/spotlight-card";
+import CardFlip from "@/components/ui/flip-card";
 
 const templateData = [
-  { id: 1, title: "Business Chat", description: "Professional business communication", glowColor: "blue" as const },
-  { id: 2, title: "Customer Support", description: "24/7 customer assistance", glowColor: "green" as const },
-  { id: 3, title: "Sales Agent", description: "AI-powered sales conversations", glowColor: "purple" as const },
-  { id: 4, title: "Technical Support", description: "Expert technical help", glowColor: "red" as const },
-  { id: 5, title: "Marketing Assistant", description: "Creative marketing solutions", glowColor: "orange" as const },
-  { id: 6, title: "Personal Trainer", description: "Fitness and health guidance", glowColor: "blue" as const },
-  { id: 7, title: "Language Teacher", description: "Interactive language learning", glowColor: "green" as const },
-  { id: 8, title: "Financial Advisor", description: "Smart financial planning", glowColor: "purple" as const },
-  { id: 9, title: "Travel Guide", description: "Personalized travel planning", glowColor: "red" as const },
-  { id: 10, title: "Recipe Assistant", description: "Cooking and recipe help", glowColor: "orange" as const },
-  { id: 11, title: "Study Buddy", description: "Educational support", glowColor: "blue" as const },
-  { id: 12, title: "Therapist", description: "Mental health support", glowColor: "green" as const },
-  { id: 13, title: "Code Review", description: "Programming assistance", glowColor: "purple" as const },
-  { id: 14, title: "Writer Assistant", description: "Creative writing help", glowColor: "red" as const },
-  { id: 15, title: "Music Teacher", description: "Music theory and practice", glowColor: "orange" as const },
-  { id: 16, title: "Real Estate", description: "Property buying guidance", glowColor: "blue" as const },
-  { id: 17, title: "Legal Advisor", description: "Legal consultation", glowColor: "green" as const },
-  { id: 18, title: "Career Coach", description: "Professional development", glowColor: "purple" as const },
-  { id: 19, title: "Meditation Guide", description: "Mindfulness and relaxation", glowColor: "red" as const },
-  { id: 20, title: "Pet Care", description: "Animal care and training", glowColor: "orange" as const },
-  { id: 21, title: "Home Designer", description: "Interior design ideas", glowColor: "blue" as const },
-  { id: 22, title: "Game Master", description: "RPG and gaming assistance", glowColor: "green" as const },
-  { id: 23, title: "Fashion Stylist", description: "Style and clothing advice", glowColor: "purple" as const },
-  { id: 24, title: "Gardening Expert", description: "Plant and garden care", glowColor: "red" as const },
-  { id: 25, title: "Photography Coach", description: "Photo techniques and tips", glowColor: "orange" as const },
-  { id: 26, title: "Event Planner", description: "Special occasion planning", glowColor: "blue" as const },
-  { id: 27, title: "Nutrition Expert", description: "Diet and nutrition guidance", glowColor: "green" as const },
-  { id: 28, title: "Art Teacher", description: "Creative art instruction", glowColor: "purple" as const },
-  { id: 29, title: "Science Tutor", description: "STEM education support", glowColor: "red" as const },
-  { id: 30, title: "Life Coach", description: "Personal development", glowColor: "orange" as const },
+  { 
+    id: 1, 
+    title: "İş Sohbet Asistanı", 
+    subtitle: "Profesyonel iş iletişimi", 
+    description: "İş ortamlarında etkili iletişim kurun ve profesyonel görüşmeler gerçekleştirin",
+    features: ["Mesleki Dil", "İş Protokolü", "Toplantı Yönetimi", "E-posta Yazımı"],
+    glowColor: "blue" as const,
+    color: "#3b82f6"
+  },
+  { 
+    id: 2, 
+    title: "Müşteri Destek Uzmanı", 
+    subtitle: "7/24 müşteri yardımı", 
+    description: "Müşteri memnuniyetini artıran profesyonel destek hizmeti sunun",
+    features: ["Anında Yanıt", "Problem Çözme", "Empati Kurma", "Çözüm Odaklı"],
+    glowColor: "green" as const,
+    color: "#10b981"
+  },
+  { 
+    id: 3, 
+    title: "Satış Danışmanı", 
+    subtitle: "AI destekli satış görüşmeleri", 
+    description: "Etkili satış stratejileri ile müşteri dönüşüm oranlarınızı artırın",
+    features: ["İkna Teknikleri", "Müşteri Analizi", "Kapatma Stratejisi", "Değer Sunumu"],
+    glowColor: "purple" as const,
+    color: "#8b5cf6"
+  },
+  { 
+    id: 4, 
+    title: "Teknik Destek Uzmanı", 
+    subtitle: "Uzman teknik yardım", 
+    description: "Karmaşık teknik sorunları basit şekilde açıklayın ve çözüm sunun",
+    features: ["Teknik Bilgi", "Adım Adım Rehber", "Hata Teşhisi", "Uzaktan Yardım"],
+    glowColor: "red" as const,
+    color: "#ef4444"
+  },
+  { 
+    id: 5, 
+    title: "Pazarlama Asistanı", 
+    subtitle: "Yaratıcı pazarlama çözümleri", 
+    description: "Etkili pazarlama stratejileri ve yaratıcı kampanya fikirleri geliştirin",
+    features: ["Kampanya Fikirleri", "Sosyal Medya", "İçerik Üretimi", "Hedef Kitle"],
+    glowColor: "orange" as const,
+    color: "#f97316"
+  },
+  { 
+    id: 6, 
+    title: "Kişisel Antrenör", 
+    subtitle: "Fitness ve sağlık rehberi", 
+    description: "Kişiselleştirilmiş antrenman programları ve beslenme önerileri",
+    features: ["Antrenman Planı", "Beslenme Rehberi", "Motivasyon", "İlerleme Takibi"],
+    glowColor: "blue" as const,
+    color: "#0ea5e9"
+  },
+  { 
+    id: 7, 
+    title: "Dil Öğretmeni", 
+    subtitle: "İnteraktif dil öğrenimi", 
+    description: "Etkili dil öğrenme teknikleri ve konuşma pratiği",
+    features: ["Konuşma Pratiği", "Gramer Kuralları", "Kelime Hazinesi", "Telaffuz"],
+    glowColor: "green" as const,
+    color: "#059669"
+  },
+  { 
+    id: 8, 
+    title: "Mali Müşavir", 
+    subtitle: "Akıllı finansal planlama", 
+    description: "Kişisel bütçe yönetimi ve yatırım önerileri",
+    features: ["Bütçe Planlama", "Yatırım Tavsiyeleri", "Vergi Optimizasyonu", "Risk Analizi"],
+    glowColor: "purple" as const,
+    color: "#7c3aed"
+  },
+  { 
+    id: 9, 
+    title: "Seyahat Rehberi", 
+    subtitle: "Kişiselleştirilmiş seyahat planlama", 
+    description: "En iyi rotalar, konaklama ve aktivite önerileri",
+    features: ["Rota Planlama", "Otel Önerileri", "Yerel Aktiviteler", "Bütçe Hesabı"],
+    glowColor: "red" as const,
+    color: "#dc2626"
+  },
+  { 
+    id: 10, 
+    title: "Yemek Asistanı", 
+    subtitle: "Yemek pişirme ve tarif yardımı", 
+    description: "Lezzetli tarifler ve pişirme teknikleri öğrenin",
+    features: ["Tarif Önerileri", "Pişirme Teknikleri", "Malzeme Listesi", "Beslenme Değeri"],
+    glowColor: "orange" as const,
+    color: "#ea580c"
+  },
+  { 
+    id: 11, 
+    title: "Çalışma Arkadaşı", 
+    subtitle: "Eğitim desteği", 
+    description: "Öğrenme sürecinizi hızlandıran kişisel eğitim asistanı",
+    features: ["Konu Anlatımı", "Sınav Hazırlığı", "Ödev Yardımı", "Çalışma Planı"],
+    glowColor: "blue" as const,
+    color: "#2563eb"
+  },
+  { 
+    id: 12, 
+    title: "Ruh Sağlığı Uzmanı", 
+    subtitle: "Zihinsel sağlık desteği", 
+    description: "Stres yönetimi ve kişisel gelişim rehberliği",
+    features: ["Stres Yönetimi", "Mindfulness", "Duygusal Destek", "Kişisel Gelişim"],
+    glowColor: "green" as const,
+    color: "#16a34a"
+  },
+  { 
+    id: 13, 
+    title: "Kod İncelemecisi", 
+    subtitle: "Programlama yardımcısı", 
+    description: "Kod kalitesini artıran profesyonel geliştirici asistanı",
+    features: ["Kod İnceleme", "Bug Tespiti", "Optimizasyon", "Best Practices"],
+    glowColor: "purple" as const,
+    color: "#9333ea"
+  },
+  { 
+    id: 14, 
+    title: "Yazı Asistanı", 
+    subtitle: "Yaratıcı yazım yardımı", 
+    description: "Etkili ve akıcı metinler oluşturun",
+    features: ["İçerik Üretimi", "Düzenleme", "Stil Geliştirme", "SEO Optimizasyonu"],
+    glowColor: "red" as const,
+    color: "#dc2626"
+  },
+  { 
+    id: 15, 
+    title: "Müzik Öğretmeni", 
+    subtitle: "Müzik teorisi ve pratik", 
+    description: "Müzik becerilerinizi geliştiren kişisel eğitmen",
+    features: ["Enstrüman Eğitimi", "Müzik Teorisi", "Şarkı Analizi", "Kompozisyon"],
+    glowColor: "orange" as const,
+    color: "#f59e0b"
+  },
+  { 
+    id: 16, 
+    title: "Emlak Uzmanı", 
+    subtitle: "Gayrimenkul alım rehberi", 
+    description: "En uygun gayrimenkul seçimi ve yatırım önerileri",
+    features: ["Piyasa Analizi", "Konum Değerlendirmesi", "Fiyat Karşılaştırması", "Yatırım Tavsiyesi"],
+    glowColor: "blue" as const,
+    color: "#0284c7"
+  },
+  { 
+    id: 17, 
+    title: "Hukuk Danışmanı", 
+    subtitle: "Hukuki danışmanlık", 
+    description: "Temel hukuki konularda bilgilendirme ve yönlendirme",
+    features: ["Hukuki Bilgilendirme", "Doküman Hazırlığı", "Süreç Yönetimi", "Risk Değerlendirmesi"],
+    glowColor: "green" as const,
+    color: "#15803d"
+  },
+  { 
+    id: 18, 
+    title: "Kariyer Koçu", 
+    subtitle: "Profesyonel gelişim", 
+    description: "Kariyerinizi ilerletecek stratejiler ve fırsatlar",
+    features: ["Kariyer Planlama", "CV Geliştirme", "Mülakat Hazırlığı", "Network Kurma"],
+    glowColor: "purple" as const,
+    color: "#7c3aed"
+  },
+  { 
+    id: 19, 
+    title: "Meditasyon Rehberi", 
+    subtitle: "Farkındalık ve rahatlama", 
+    description: "İç huzuru bulmanıza yardımcı olan rehberli meditasyon",
+    features: ["Nefes Egzersizleri", "Rehberli Meditasyon", "Stres Azaltma", "Farkındalık"],
+    glowColor: "red" as const,
+    color: "#dc2626"
+  },
+  { 
+    id: 20, 
+    title: "Evcil Hayvan Uzmanı", 
+    subtitle: "Hayvan bakımı ve eğitimi", 
+    description: "Evcil hayvanınızın sağlığı ve mutluluğu için kapsamlı rehber",
+    features: ["Bakım Tavsiyeleri", "Eğitim Teknikleri", "Sağlık Takibi", "Beslenme Planı"],
+    glowColor: "orange" as const,
+    color: "#ea580c"
+  },
+  { 
+    id: 21, 
+    title: "İç Mimar", 
+    subtitle: "İç tasarım fikirleri", 
+    description: "Yaşam alanlarınızı güzelleştiren dekorasyon önerileri",
+    features: ["Renk Paleti", "Mobilya Seçimi", "Dekorasyon Fikirleri", "Alan Optimizasyonu"],
+    glowColor: "blue" as const,
+    color: "#1d4ed8"
+  },
+  { 
+    id: 22, 
+    title: "Oyun Ustası", 
+    subtitle: "RPG ve oyun yardımcısı", 
+    description: "Oyun deneyiminizi zenginleştiren yaratıcı fikirler",
+    features: ["Senaryo Yazımı", "Karakter Yaratma", "Dünya Kurgusu", "Kural Optimizasyonu"],
+    glowColor: "green" as const,
+    color: "#16a34a"
+  },
+  { 
+    id: 23, 
+    title: "Stil Danışmanı", 
+    subtitle: "Stil ve giyim tavsiyeleri", 
+    description: "Kişisel tarzınızı yansıtan giyim önerileri",
+    features: ["Renk Analizi", "Vücut Tipi Uyumu", "Trend Takibi", "Gardrob Planlaması"],
+    glowColor: "purple" as const,
+    color: "#a855f7"
+  },
+  { 
+    id: 24, 
+    title: "Bahçıvanlık Uzmanı", 
+    subtitle: "Bitki ve bahçe bakımı", 
+    description: "Sağlıklı bitki yetiştirme ve bahçe düzenleme rehberi",
+    features: ["Bitki Seçimi", "Sulama Planı", "Hastalık Tespiti", "Mevsimsel Bakım"],
+    glowColor: "red" as const,
+    color: "#dc2626"
+  },
+  { 
+    id: 25, 
+    title: "Fotoğraf Koçu", 
+    subtitle: "Fotoğraf teknikleri ve ipuçları", 
+    description: "Daha iyi fotoğraflar çekmek için profesyonel rehberlik",
+    features: ["Kompozisyon", "Işık Kullanımı", "Ekipman Seçimi", "Düzenleme Teknikleri"],
+    glowColor: "orange" as const,
+    color: "#f97316"
+  },
+  { 
+    id: 26, 
+    title: "Etkinlik Planlayıcısı", 
+    subtitle: "Özel etkinlik organizasyonu", 
+    description: "Unutulmaz etkinlikler düzenlemek için kapsamlı planlama",
+    features: ["Etkinlik Konsepti", "Mekan Seçimi", "Zaman Planlaması", "Bütçe Yönetimi"],
+    glowColor: "blue" as const,
+    color: "#0ea5e9"
+  },
+  { 
+    id: 27, 
+    title: "Beslenme Uzmanı", 
+    subtitle: "Diyet ve beslenme rehberi", 
+    description: "Sağlıklı yaşam için kişiselleştirilmiş beslenme önerileri",
+    features: ["Diyet Planı", "Kalori Hesabı", "Besin Analizi", "Sağlık Takibi"],
+    glowColor: "green" as const,
+    color: "#059669"
+  },
+  { 
+    id: 28, 
+    title: "Sanat Öğretmeni", 
+    subtitle: "Yaratıcı sanat eğitimi", 
+    description: "Artistik becerilerinizi geliştiren adım adım rehber",
+    features: ["Teknik Öğretimi", "Yaratıcılık Geliştirme", "Stil Bulma", "Proje Rehberliği"],
+    glowColor: "purple" as const,
+    color: "#8b5cf6"
+  },
+  { 
+    id: 29, 
+    title: "Fen Bilimleri Öğretmeni", 
+    subtitle: "STEM eğitim desteği", 
+    description: "Matematik ve fen bilimlerinde kapsamlı eğitim yardımı",
+    features: ["Formül Açıklama", "Problem Çözme", "Deney Rehberi", "Kavram Pekiştirme"],
+    glowColor: "red" as const,
+    color: "#ef4444"
+  },
+  { 
+    id: 30, 
+    title: "Yaşam Koçu", 
+    subtitle: "Kişisel gelişim", 
+    description: "Hedeflerinize ulaşmanızı destekleyen kişisel rehberlik",
+    features: ["Hedef Belirleme", "Motivasyon", "Alışkanlık Geliştirme", "Başarı Stratejileri"],
+    glowColor: "orange" as const,
+    color: "#f59e0b"
+  },
 ];
 
 export default function Templates() {
@@ -52,26 +293,17 @@ export default function Templates() {
             key={template.id} 
             glowColor={template.glowColor}
             customSize={true}
-            className="w-full h-64 cursor-pointer hover:scale-105 transition-transform duration-300"
+            className="w-full h-[400px] cursor-pointer transition-transform duration-300 p-2"
             data-testid={`template-card-${template.id}`}
           >
-            <div className="flex flex-col justify-between h-full">
-              <div>
-                <h3 className="text-lg font-semibold text-white mb-2">
-                  {template.title}
-                </h3>
-                <p className="text-sm text-gray-300">
-                  {template.description}
-                </p>
-              </div>
-              <div className="mt-4">
-                <button 
-                  className="w-full bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 rounded-lg py-2 px-4 text-sm font-medium text-white transition-colors"
-                  data-testid={`template-button-${template.id}`}
-                >
-                  Kullan
-                </button>
-              </div>
+            <div className="flex items-center justify-center h-full">
+              <CardFlip
+                title={template.title}
+                subtitle={template.subtitle}
+                description={template.description}
+                features={template.features}
+                color={template.color}
+              />
             </div>
           </GlowCard>
         ))}

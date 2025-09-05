@@ -223,7 +223,8 @@ export default function CardFlip({
         </div>
       </div>
 
-      <style jsx>{`
+      <style dangerouslySetInnerHTML={{
+        __html: `
         @keyframes slideIn {
           0% {
             transform: translateX(-100px);
@@ -238,7 +239,8 @@ export default function CardFlip({
             opacity: 0;
           }
         }
-      `}</style>
+        `
+      }} />
     </div>
   );
 }
