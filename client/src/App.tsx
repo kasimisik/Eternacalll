@@ -17,6 +17,7 @@ import Dashboard from "@/pages/Dashboard";
 import Subscription from "@/pages/Subscription";
 import Templates from "@/pages/Templates";
 import TemplateBuilder from "@/pages/TemplateBuilder";
+import VoiceAssistant from "@/pages/VoiceAssistant";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -43,6 +44,11 @@ function Router() {
       <Route path="/template-builder">
         <ProtectedRoute>
           <TemplateBuilder />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/voice-assistant">
+        <ProtectedRoute>
+          <VoiceAssistant />
         </ProtectedRoute>
       </Route>
       {/* Fallback to 404 */}

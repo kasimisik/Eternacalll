@@ -13,7 +13,7 @@ import {
   SidebarInset,
   SidebarTrigger,
 } from "@/components/ui/new-sidebar";
-import { LayoutDashboard, UserCog, Settings, LogOut, Bot, Crown, CreditCard, Menu, FileText } from "lucide-react";
+import { LayoutDashboard, UserCog, Settings, LogOut, Bot, Crown, CreditCard, Menu, FileText, Mic } from "lucide-react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -47,6 +47,11 @@ export default function Dashboard() {
         title: "Profile",
         url: "/profile",
         icon: UserCog,
+      },
+      {
+        title: "Sesli Asistan",
+        url: "/voice-assistant",
+        icon: Mic,
       },
       {
         title: "Settings",
