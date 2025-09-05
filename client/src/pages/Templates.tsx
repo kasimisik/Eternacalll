@@ -296,15 +296,13 @@ export default function Templates() {
             className="w-[300px] h-[360px] cursor-pointer transition-transform duration-300"
             data-testid={`template-card-${template.id}`}
           >
-            <div className="flex items-center justify-center h-full">
-              <CardFlip
+            <CardFlip
                 title={template.title}
                 subtitle={template.subtitle}
                 description={template.description}
                 features={template.features}
                 color={template.color}
               />
-            </div>
           </GlowCard>
         ))}
       </div>

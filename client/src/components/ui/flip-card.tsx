@@ -31,7 +31,7 @@ export default function CardFlip({
       style={{
         ['--primary' as any]: color ?? '#2563eb',
       }}
-      className="group relative h-[360px] w-full max-w-[300px] [perspective:2000px]"
+      className="group relative h-[360px] w-[300px] [perspective:2000px]"
       onMouseEnter={() => setIsFlipped(true)}
       onMouseLeave={() => setIsFlipped(false)}
     >
