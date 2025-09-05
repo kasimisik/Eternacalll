@@ -119,22 +119,27 @@ export function VercelV0Chat() {
                 let aiText = '';
                 let nextStep = '';
                 
-                // Format 1: {reply: "...", next_step: "..."}
-                if (aiResponse.reply) {
+                // Format 1: {output: "..."} - n8n webhook format
+                if (aiResponse.output) {
+                    aiText = aiResponse.output;
+                    nextStep = aiResponse.next_step || aiResponse.step || '';
+                }
+                // Format 2: {reply: "...", next_step: "..."}
+                else if (aiResponse.reply) {
                     aiText = aiResponse.reply;
                     nextStep = aiResponse.next_step || '';
                 }
-                // Format 2: {message: "...", step: "..."}
+                // Format 3: {message: "...", step: "..."}
                 else if (aiResponse.message) {
                     aiText = aiResponse.message;
                     nextStep = aiResponse.step || aiResponse.next_step || '';
                 }
-                // Format 3: {response: "...", ...}
+                // Format 4: {response: "...", ...}
                 else if (aiResponse.response) {
                     aiText = aiResponse.response;
                     nextStep = aiResponse.next_step || aiResponse.step || '';
                 }
-                // Format 4: {text: "...", ...}
+                // Format 5: {text: "...", ...}
                 else if (aiResponse.text) {
                     aiText = aiResponse.text;
                     nextStep = aiResponse.next_step || aiResponse.step || '';
@@ -174,7 +179,7 @@ export function VercelV0Chat() {
                     // Hata durumunda mesajı güncelle
                     const errorMessage: Message = {
                         user: userMsg,
-                        ai: `Debug: Webhook yanıt aldı ama metin bulunamadı. Format: ${JSON.stringify(aiResponse)}`,
+                        ai: "Üzgünüm, yanıt formatı tanınmadı. Lütfen tekrar deneyin.",
                         timestamp: new Date()
                     };
                     setMessages(prev => prev.slice(0, -1).concat(errorMessage));
