@@ -111,22 +111,33 @@ export default function VoiceAssistant() {
       
       ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
+        console.log('📩 WebSocket message received:', data.type, 'audioData length:', data.audioData ? data.audioData.length : 'none');
         
         if (data.type === 'response') {
           setIsProcessing(false);
           
-          // Her durumda yeniden başlatmak için fallback timer
-          const restartFallback = setTimeout(() => {
+          // Agresif otomatik yeniden başlatma - response aldıktan hemen sonra
+          setTimeout(() => {
             if (isListening && !isProcessing) {
-              console.log('🔄 Fallback restart - no audio event detected');
+              console.log('🔄 Aggressive auto-restart - immediately after response');
               startListening();
             }
-          }, 3000);
+          }, 800);
+          
+          // Backup fallback timer
+          const restartFallback = setTimeout(() => {
+            if (isListening && !isProcessing) {
+              console.log('🔄 Backup fallback restart triggered');
+              startListening();
+            }
+          }, 1500);
           
           // Sesli cevabı oynat
           if (data.audioData) {
             try {
-              console.log('🔊 Received audio response, size:', data.audioData.length);
+              console.log('🔊 Processing audio response, size:', data.audioData.length);
+              
+              // Audio decode
               const audioData = Uint8Array.from(atob(data.audioData), c => c.charCodeAt(0));
               console.log('🔊 Decoded audio data size:', audioData.length, 'bytes');
               
@@ -190,6 +201,7 @@ export default function VoiceAssistant() {
                   .catch(error => {
                     console.error('🔊 Audio playback failed:', error);
                     URL.revokeObjectURL(audioUrl);
+                    clearTimeout(restartFallback);
                     // Playback başlatma hatası olursa da tekrar dinlemeye başla
                     console.log('🔊 Playback failed - restarting listening...');
                     setTimeout(() => {
@@ -197,7 +209,7 @@ export default function VoiceAssistant() {
                         console.log('🎤 Restarting listening after playback error...');
                         startListening();
                       }
-                    }, 1000);
+                    }, 500);
                   });
               }
               
