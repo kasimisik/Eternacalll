@@ -139,18 +139,27 @@ export function AIVoiceInput({
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
-          sampleRate: 44100,
+          sampleRate: 16000, // Azure Speech optimal rate
+          channelCount: 1,   // Mono recording
         }
       });
 
       audioStreamRef.current = stream;
       audioChunksRef.current = [];
 
-      // MediaRecorder oluştur
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') 
-        ? 'audio/webm;codecs=opus' 
-        : 'audio/webm';
+      // MediaRecorder oluştur - Azure Speech için optimize
+      let mimeType = 'audio/wav';
+      if (MediaRecorder.isTypeSupported('audio/wav')) {
+        mimeType = 'audio/wav';
+      } else if (MediaRecorder.isTypeSupported('audio/webm;codecs=pcm')) {
+        mimeType = 'audio/webm;codecs=pcm';
+      } else if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+        mimeType = 'audio/webm;codecs=opus';
+      } else {
+        mimeType = 'audio/webm';
+      }
       
+      console.log('🎤 Selected MIME type:', mimeType);
       const mediaRecorder = new MediaRecorder(stream, { mimeType });
       mediaRecorderRef.current = mediaRecorder;
 
@@ -208,11 +217,19 @@ export function AIVoiceInput({
       console.log('🔄 Processing audio with', audioChunksRef.current.length, 'chunks');
       
       // Audio blob oluştur
-      const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+      const mimeType = mediaRecorderRef.current?.mimeType || 'audio/wav';
+      const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+      
+      console.log('🎵 Audio blob details:', {
+        size: audioBlob.size,
+        type: audioBlob.type,
+        chunks: audioChunksRef.current.length
+      });
       
       // FormData ile backend'e gönder
       const formData = new FormData();
-      formData.append('audio', audioBlob, 'recording.webm');
+      const fileName = mimeType.includes('wav') ? 'recording.wav' : 'recording.webm';
+      formData.append('audio', audioBlob, fileName);
       formData.append('sessionId', user?.id ? `user_${user.id}` : 'user_anonymous');
 
       console.log('📤 Sending audio to backend...');

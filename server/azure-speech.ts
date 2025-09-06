@@ -49,13 +49,28 @@ export class AzureSpeechService {
       console.log(`🎤 Azure Speech REST: Processing ${audioBuffer.length} bytes of ${contentType}`);
       
       // Debug: Ses dosyasının temel özelliklerini kontrol et
-      if (audioBuffer.length < 1000) {
+      if (audioBuffer.length < 500) {
         console.warn('⚠️ Audio buffer çok küçük, muhtemelen boş ses');
         return '';
       }
       
       if (audioBuffer.length > 1000000) {
         console.warn('⚠️ Audio buffer çok büyük, kısaltılması gerekebilir');
+      }
+
+      // Header debug for format detection
+      const headerHex = audioBuffer.slice(0, 12).toString('hex');
+      console.log(`🔍 Audio file header: ${headerHex}`);
+      
+      // Common audio format detection
+      if (headerHex.startsWith('52494646')) {
+        console.log('📄 Detected: WAV/RIFF format');
+      } else if (headerHex.startsWith('1a45dfa3')) {
+        console.log('📄 Detected: WebM format');
+      } else if (headerHex.startsWith('4f676753')) {
+        console.log('📄 Detected: OGG format');
+      } else {
+        console.log('📄 Unknown audio format, proceeding with specified content-type');
       }
 
       const response = await fetch(url.toString(), {
@@ -142,11 +157,14 @@ export class AzureSpeechService {
       throw new Error('Azure Speech service is not available. API credentials not configured.');
     }
 
-    // Farklı formatları dene
+    // Farklı formatları dene - Azure Speech için optimized sıra
     const formats = [
-      'audio/ogg; codecs=opus',
-      'audio/webm; codecs=opus', 
-      'audio/wav'
+      'audio/wav',                    // En uyumlu format
+      'audio/wav; codec=pcm',         // PCM WAV
+      'audio/x-wav',                  // Alternative WAV
+      'audio/webm; codecs=pcm',       // PCM WebM  
+      'audio/ogg; codecs=opus',       // Opus fallback
+      'audio/webm; codecs=opus'       // Son çare
     ];
 
     for (const format of formats) {
