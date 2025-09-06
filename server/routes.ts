@@ -595,120 +595,250 @@ Sen meraklı, rehber, empatik ve mimar bir kişiliksin. Kullanıcıyla doğal ve
     
     ws.on('message', async (data: WebSocket.Data) => {
       try {
-        const message = JSON.parse(data.toString());
+        console.log('📱 WebSocket data received:', typeof data, 'length:', data.length);
         
-        if (message.type === 'audio') {
-          console.log('🎤 Received audio data via WebSocket');
-          
-          // Base64 audio'yu buffer'a çevir
-          let audioBuffer = Buffer.from(message.audioData, 'base64');
-          
-          // WebM to WAV conversion for WebSocket too
-          console.log('🔍 WebSocket Audio conversion check...');
-          const headerHex = audioBuffer.slice(0, 12).toString('hex');
-          if (headerHex.startsWith('1a45dfa3')) { // WebM header
-            console.log('🔄 Converting WebSocket WebM to WAV for better Azure Speech compatibility...');
-            try {
-              const tempDir = '/tmp';
-              const inputPath = path.join(tempDir, `ws_input_${Date.now()}.webm`);
-              const outputPath = path.join(tempDir, `ws_output_${Date.now()}.wav`);
-              
-              // Write WebM file to disk
-              await writeFile(inputPath, audioBuffer);
-              
-              // Convert WebM to WAV using ffmpeg
-              await new Promise<void>((resolve, reject) => {
-                ffmpeg()
-                  .input(inputPath)
-                  .toFormat('wav')
-                  .audioCodec('pcm_s16le')  // 16-bit PCM
-                  .audioChannels(1)         // Mono
-                  .audioFrequency(16000)    // 16kHz for Azure Speech
-                  .save(outputPath)
-                  .on('end', () => resolve())
-                  .on('error', reject);
-              });
-              
-              // Read converted WAV file
-              audioBuffer = await fs.promises.readFile(outputPath);
-              console.log(`✅ WebSocket: Converted WebM to WAV (${audioBuffer.length} bytes)`);
-              
-              // Clean up temp files
-              await Promise.all([unlink(inputPath), unlink(outputPath)]);
-              
-            } catch (conversionError) {
-              console.warn('⚠️ WebSocket WebM to WAV conversion failed, using original:', conversionError);
-            }
+        // Check if data is JSON (string) or binary
+        let isJSON = false;
+        try {
+          if (typeof data === 'string' || data.toString().trim().startsWith('{')) {
+            JSON.parse(data.toString());
+            isJSON = true;
           }
+        } catch {}
+        
+        // Handle JSON control messages
+        if (isJSON) {
+          const message = JSON.parse(data.toString());
+          console.log('📨 Control message:', message.type);
           
-          // 1. Speech-to-Text
-          let userText = '';
-          try {
-            console.log('🎤 Starting speech recognition for', audioBuffer.length, 'bytes');
-            userText = await azureSpeechService.speechToText(audioBuffer);
-            console.log('🎤 Speech recognition result:', userText ? `"${userText}"` : 'EMPTY');
-          } catch (speechError) {
-            console.error('❌ Speech recognition error:', speechError);
-            userText = 'Ses tanıma şu anda kullanılamıyor, lütfen tekrar deneyin.';
+          if (message.type === 'start_listening') {
+            console.log('🎤 Starting PCM16 audio stream session');
+            // Initialize audio buffer for this connection
+            (ws as any).audioBuffer = Buffer.alloc(0);
+            (ws as any).isStreamingMode = true;
+            ws.send(JSON.stringify({ type: 'stream_ready' }));
+            return;
+          } else if (message.type === 'stop_listening') {
+            console.log('🛑 Stopping audio stream session');
+            (ws as any).isStreamingMode = false;
+            ws.send(JSON.stringify({ type: 'stream_stopped' }));
+            return;
+          } else if (message.type === 'audio') {
+            // Legacy Base64 audio handling (keep for backward compatibility)
+            console.log('🎤 Received legacy audio data via WebSocket');
+            let audioBuffer = Buffer.from(message.audioData, 'base64');
+            // Continue with legacy processing...
+            await processAudioBuffer(audioBuffer, ws, conversationHistory);
+            return;
           }
+        }
+        
+        // Handle binary PCM16 audio stream
+        else if ((ws as any).isStreamingMode) {
+          const audioChunk = Buffer.from(data);
+          console.log(`🎵 PCM16 chunk: ${audioChunk.length} bytes`);
           
-          if (!userText || userText.trim() === '') {
-            ws.send(JSON.stringify({
-              type: 'error',
-              message: 'Ses tanınamadı, lütfen tekrar konuşun.'
-            }));
+          // Minimum chunk size check (avoid noise)
+          if (audioChunk.length < 64) {
+            console.log('⚠️ Chunk too small, ignoring');
             return;
           }
           
-          console.log(`👤 User said: "${userText}"`);
-          
-          // Conversation history'ye ekle
-          conversationHistory.push({
-            role: 'user',
-            content: userText
-          });
-          
-          // 2. Gemini AI - System prompt + conversation history
-          let aiResponse = 'Merhaba! Size nasıl yardımcı olabilirim?';
-          
-          try {
-            const messages = [
-              {
-                parts: [{
-                  text: ETERNA_SYSTEM_PROMPT
-                }]
-              },
-              ...conversationHistory.map(msg => ({
-                parts: [{
-                  text: msg.role === 'user' ? `Kullanıcı: ${msg.content}` : `Sen: ${msg.content}`
-                }]
-              }))
-            ];
-            
-            const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${process.env.GEMINI_API_KEY}`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                contents: messages,
-                generationConfig: {
-                  temperature: 0.8,
-                  maxOutputTokens: 300,
-                }
-              }),
-            });
-
-            if (geminiResponse.ok) {
-              const geminiData = await geminiResponse.json();
-              if (geminiData.candidates && geminiData.candidates[0] && geminiData.candidates[0].content) {
-                aiResponse = geminiData.candidates[0].content.parts[0].text;
-              }
-            }
-          } catch (geminiError) {
-            console.log('Gemini API error:', geminiError);
-            aiResponse = `Anladım, "${userText}" dediniz. Size nasıl yardımcı olabilirim?`;
+          // Accumulate PCM16 chunks
+          if (!(ws as any).audioBuffer) {
+            (ws as any).audioBuffer = Buffer.alloc(0);
           }
+          (ws as any).audioBuffer = Buffer.concat([(ws as any).audioBuffer, audioChunk]);
+          
+          // Process when we have enough data (32KB = ~1 second of 16kHz PCM16)
+          if ((ws as any).audioBuffer.length >= 32000) {
+            console.log(`🎤 Processing accumulated PCM16: ${(ws as any).audioBuffer.length} bytes`);
+            const audioToProcess = (ws as any).audioBuffer;
+            (ws as any).audioBuffer = Buffer.alloc(0); // Reset buffer
+            
+            // Create WAV header for Azure Speech (16kHz, 16-bit, mono)
+            const wavBuffer = createWAVBuffer(audioToProcess);
+            await processAudioBuffer(wavBuffer, ws, conversationHistory);
+          }
+          return;
+        }
+        
+        // If we reach here, it's an unknown message type
+        console.log('❓ Unknown WebSocket message type');
+        
+      } catch (error) {
+        console.error('❌ WebSocket message processing error:', error);
+        ws.send(JSON.stringify({ type: 'error', error: 'Message processing failed' }));
+      }
+    });
+  });
+
+  // Helper function to create WAV buffer from PCM16 data
+  function createWAVBuffer(pcmData: Buffer): Buffer {
+    const sampleRate = 16000;
+    const channels = 1;
+    const bitsPerSample = 16;
+    const bytesPerSample = bitsPerSample / 8;
+    
+    const wavHeader = Buffer.alloc(44);
+    let offset = 0;
+    
+    // RIFF header
+    wavHeader.write('RIFF', offset); offset += 4;
+    wavHeader.writeUInt32LE(36 + pcmData.length, offset); offset += 4;
+    wavHeader.write('WAVE', offset); offset += 4;
+    
+    // fmt chunk
+    wavHeader.write('fmt ', offset); offset += 4;
+    wavHeader.writeUInt32LE(16, offset); offset += 4; // chunk size
+    wavHeader.writeUInt16LE(1, offset); offset += 2; // audio format (PCM)
+    wavHeader.writeUInt16LE(channels, offset); offset += 2;
+    wavHeader.writeUInt32LE(sampleRate, offset); offset += 4;
+    wavHeader.writeUInt32LE(sampleRate * channels * bytesPerSample, offset); offset += 4;
+    wavHeader.writeUInt16LE(channels * bytesPerSample, offset); offset += 2;
+    wavHeader.writeUInt16LE(bitsPerSample, offset); offset += 2;
+    
+    // data chunk
+    wavHeader.write('data', offset); offset += 4;
+    wavHeader.writeUInt32LE(pcmData.length, offset);
+    
+    return Buffer.concat([wavHeader, pcmData]);
+  }
+
+  // Helper function to process audio buffer
+  async function processAudioBuffer(audioBuffer: Buffer, ws: WebSocket, conversationHistory: ConversationMessage[]) {
+    // Legacy WebM conversion check
+    const headerHex = audioBuffer.slice(0, 12).toString('hex');
+    if (headerHex.startsWith('1a45dfa3')) { // WebM header
+      console.log('🔄 Converting WebM to WAV...');
+      try {
+        const tempDir = '/tmp';
+        const inputPath = path.join(tempDir, `ws_input_${Date.now()}.webm`);
+        const outputPath = path.join(tempDir, `ws_output_${Date.now()}.wav`);
+        
+        await writeFile(inputPath, audioBuffer);
+        
+        await new Promise<void>((resolve, reject) => {
+          ffmpeg()
+            .input(inputPath)
+            .toFormat('wav')
+            .audioCodec('pcm_s16le')
+            .audioChannels(1)
+            .audioFrequency(16000)
+            .save(outputPath)
+            .on('end', () => resolve())
+            .on('error', reject);
+        });
+        
+        audioBuffer = await fs.promises.readFile(outputPath);
+        console.log(`✅ Converted WebM to WAV (${audioBuffer.length} bytes)`);
+        
+        await Promise.all([unlink(inputPath), unlink(outputPath)]);
+      } catch (conversionError) {
+        console.warn('⚠️ WebM conversion failed:', conversionError);
+      }
+    }
+    
+    // 1. Speech-to-Text
+    let userText = '';
+    try {
+      console.log('🎤 Starting speech recognition for', audioBuffer.length, 'bytes');
+      userText = await azureSpeechService.speechToText(audioBuffer);
+      console.log('🎤 Speech recognition result:', userText ? `"${userText}"` : 'EMPTY');
+    } catch (speechError) {
+      console.error('❌ Speech recognition error:', speechError);
+      userText = 'Ses tanıma şu anda kullanılamıyor, lütfen tekrar deneyin.';
+    }
+    
+    if (!userText || userText.trim() === '') {
+      ws.send(JSON.stringify({
+        type: 'error',
+        message: 'Ses tanınamadı, lütfen tekrar konuşun.'
+            }));
+      return;
+    }
+    
+    console.log(`👤 User said: "${userText}"`);
+    
+    // Conversation history'ye ekle
+    conversationHistory.push({
+      role: 'user',
+      content: userText
+    });
+    
+    // 2. Gemini AI - System prompt + conversation history
+    let aiResponse = 'Merhaba! Size nasıl yardımcı olabilirim?';
+    
+    try {
+      const messages = [
+        {
+          parts: [{
+            text: ETERNA_SYSTEM_PROMPT
+          }]
+        },
+        ...conversationHistory.map(msg => ({
+          parts: [{
+            text: msg.role === 'user' ? `Kullanıcı: ${msg.content}` : `Sen: ${msg.content}`
+          }]
+        }))
+      ];
+      
+      const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: messages,
+          generationConfig: {
+            temperature: 0.8,
+            maxOutputTokens: 300,
+          }
+        }),
+      });
+
+      if (geminiResponse.ok) {
+        const geminiData = await geminiResponse.json();
+        if (geminiData.candidates && geminiData.candidates[0] && geminiData.candidates[0].content) {
+          aiResponse = geminiData.candidates[0].content.parts[0].text;
+        }
+      }
+    } catch (geminiError) {
+      console.log('Gemini API error:', geminiError);
+      aiResponse = `Anladım, "${userText}" dediniz. Size nasıl yardımcı olabilirim?`;
+    }
+    
+    console.log(`🤖 AI Response: "${aiResponse}"`);
+    
+    // Conversation history'ye AI cevabını ekle
+    conversationHistory.push({
+      role: 'assistant',
+      content: aiResponse
+    });
+    
+    // 3. Text-to-Speech
+    try {
+      const ttsBuffer = await azureSpeechService.textToSpeech(aiResponse);
+      const audioBase64 = ttsBuffer.toString('base64');
+      
+      ws.send(JSON.stringify({
+        type: 'response',
+        transcript: userText,
+        aiResponse: aiResponse,
+        audioBase64: audioBase64
+      }));
+    } catch (ttsError) {
+      console.error('❌ TTS error:', ttsError);
+      
+      // Ses olmadan sadece metin gönder
+      ws.send(JSON.stringify({
+        type: 'response',
+        transcript: userText,
+        aiResponse: aiResponse,
+        error: 'TTS servisi şu anda kullanılamıyor'
+      }));
+    }
+  }
           
           console.log(`🤖 AI Response: "${aiResponse.substring(0, 100)}..."`);
           
