@@ -595,7 +595,8 @@ Sen meraklı, rehber, empatik ve mimar bir kişiliksin. Kullanıcıyla doğal ve
     
     ws.on('message', async (data: WebSocket.Data) => {
       try {
-        console.log('📱 WebSocket data received:', typeof data, 'length:', data.length);
+        const dataLength = data instanceof ArrayBuffer ? data.byteLength : (data as Buffer).length;
+        console.log('📱 WebSocket data received:', typeof data, 'length:', dataLength);
         
         // Check if data is JSON (string) or binary
         let isJSON = false;
@@ -635,7 +636,7 @@ Sen meraklı, rehber, empatik ve mimar bir kişiliksin. Kullanıcıyla doğal ve
         
         // Handle binary PCM16 audio stream
         else if ((ws as any).isStreamingMode) {
-          const audioChunk = Buffer.from(data);
+          const audioChunk = data instanceof ArrayBuffer ? Buffer.from(data) : data as Buffer;
           console.log(`🎵 PCM16 chunk: ${audioChunk.length} bytes`);
           
           // Minimum chunk size check (avoid noise)
@@ -670,6 +671,14 @@ Sen meraklı, rehber, empatik ve mimar bir kişiliksin. Kullanıcıyla doğal ve
         console.error('❌ WebSocket message processing error:', error);
         ws.send(JSON.stringify({ type: 'error', error: 'Message processing failed' }));
       }
+    });
+
+    ws.on('close', () => {
+      console.log('🔌 WebSocket voice chat connection closed');
+    });
+    
+    ws.on('error', (error: Error) => {
+      console.error('WebSocket error:', error);
     });
   });
 
@@ -839,79 +848,6 @@ Sen meraklı, rehber, empatik ve mimar bir kişiliksin. Kullanıcıyla doğal ve
       }));
     }
   }
-          
-          console.log(`🤖 AI Response: "${aiResponse.substring(0, 100)}..."`);
-          
-          // Conversation history'ye AI cevabını ekle
-          conversationHistory.push({
-            role: 'assistant',
-            content: aiResponse
-          });
-          
-          // History'yi sınırla (son 10 mesaj)
-          if (conversationHistory.length > 10) {
-            conversationHistory = conversationHistory.slice(-10);
-          }
-          
-          // 3. Text-to-Speech - Azure Speech kullan
-          try {
-            const audioBuffer = await azureSpeechService.textToSpeech(aiResponse);
-            const base64Audio = audioBuffer.toString('base64');
-            
-            // Sesli cevabı gönder
-            ws.send(JSON.stringify({
-              type: 'response',
-              text: aiResponse,
-              audioData: base64Audio,
-              audioType: 'audio/mpeg'
-            }));
-            
-            console.log('✅ Azure Speech voice response sent via WebSocket');
-          } catch (ttsError) {
-            console.log('Azure Speech TTS error:', ttsError);
-            
-            // Azure TTS başarısız olursa ElevenLabs dene
-            try {
-              const audioBuffer = await elevenLabsTTSService.generateTurkishFemaleVoice(aiResponse);
-              const base64Audio = audioBuffer.toString('base64');
-              
-              ws.send(JSON.stringify({
-                type: 'response',
-                text: aiResponse,
-                audioData: base64Audio,
-                audioType: 'audio/mpeg'
-              }));
-              
-              console.log('✅ ElevenLabs fallback voice response sent via WebSocket');
-            } catch (fallbackError) {
-              console.log('Both TTS services failed:', fallbackError);
-              
-              // Sadece metin cevabı gönder
-              ws.send(JSON.stringify({
-                type: 'response',
-                text: aiResponse,
-                audioData: null
-              }));
-            }
-          }
-        }
-      } catch (error) {
-        console.error('WebSocket message processing error:', error);
-        ws.send(JSON.stringify({
-          type: 'error',
-          message: 'Bir hata oluştu, lütfen tekrar deneyin.'
-        }));
-      }
-    });
-    
-    ws.on('close', () => {
-      console.log('🔌 WebSocket voice chat connection closed');
-    });
-    
-    ws.on('error', (error: Error) => {
-      console.error('WebSocket error:', error);
-    });
-  });
 
 
 
