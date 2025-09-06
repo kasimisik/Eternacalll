@@ -265,6 +265,77 @@ export class AzureSpeechService {
 
     return recognizer;
   }
+
+  // Text-to-Speech fonksiyonu (Türkçe kadın sesi)
+  async textToSpeech(text: string): Promise<Buffer> {
+    if (!this.isEnabled) {
+      throw new Error('Azure Speech service is not available. API credentials not configured.');
+    }
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
+    try {
+      if (text.length > 2000) {
+        throw new Error('Text too long (max 2000 characters)');
+      }
+
+      const endpoint = `https://${this.speechRegion}.tts.speech.microsoft.com/cognitiveservices/v1`;
+      
+      // SSML formatı ile Türkçe kadın sesi
+      const ssml = `
+        <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="tr-TR">
+          <voice name="tr-TR-EmelNeural">
+            ${text}
+          </voice>
+        </speak>
+      `;
+
+      console.log(`🔊 Azure Speech TTS: Converting "${text.substring(0, 50)}..." to speech`);
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Ocp-Apim-Subscription-Key': this.speechKey,
+          'Content-Type': 'application/ssml+xml',
+          'X-Microsoft-OutputFormat': 'audio-16khz-128kbitrate-mono-mp3',
+        },
+        body: ssml,
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeout);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Azure Speech TTS error: ${response.status} ${response.statusText} - ${errorText}`);
+      }
+
+      const audioBuffer = await response.arrayBuffer();
+      console.log(`✅ Azure Speech TTS: Generated ${audioBuffer.byteLength} bytes of audio`);
+      
+      return Buffer.from(audioBuffer);
+    } catch (error) {
+      clearTimeout(timeout);
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('Text-to-speech timeout (30 seconds)');
+      }
+      console.error('Azure Speech TTS Error:', error);
+      throw error;
+    }
+  }
+
+  // Test fonksiyonu
+  async testTextToSpeech(): Promise<boolean> {
+    try {
+      const testText = "Merhaba, ben sesli asistanınızım. Size nasıl yardımcı olabilirim?";
+      const audioBuffer = await this.textToSpeech(testText);
+      return audioBuffer.length > 0;
+    } catch (error) {
+      console.error('Azure Speech TTS Test Error:', error);
+      return false;
+    }
+  }
 }
 
 // Singleton instance

@@ -723,9 +723,9 @@ Sen meraklı, rehber, empatik ve mimar bir kişiliksin. Kullanıcıyla doğal ve
             conversationHistory = conversationHistory.slice(-10);
           }
           
-          // 3. Text-to-Speech
+          // 3. Text-to-Speech - Azure Speech kullan
           try {
-            const audioBuffer = await elevenLabsTTSService.generateTurkishFemaleVoice(aiResponse);
+            const audioBuffer = await azureSpeechService.textToSpeech(aiResponse);
             const base64Audio = audioBuffer.toString('base64');
             
             // Sesli cevabı gönder
@@ -736,16 +736,33 @@ Sen meraklı, rehber, empatik ve mimar bir kişiliksin. Kullanıcıyla doğal ve
               audioType: 'audio/mpeg'
             }));
             
-            console.log('✅ Voice response sent via WebSocket');
+            console.log('✅ Azure Speech voice response sent via WebSocket');
           } catch (ttsError) {
-            console.log('TTS error:', ttsError);
+            console.log('Azure Speech TTS error:', ttsError);
             
-            // Sadece metin cevabı gönder
-            ws.send(JSON.stringify({
-              type: 'response',
-              text: aiResponse,
-              audioData: null
-            }));
+            // Azure TTS başarısız olursa ElevenLabs dene
+            try {
+              const audioBuffer = await elevenLabsTTSService.generateTurkishFemaleVoice(aiResponse);
+              const base64Audio = audioBuffer.toString('base64');
+              
+              ws.send(JSON.stringify({
+                type: 'response',
+                text: aiResponse,
+                audioData: base64Audio,
+                audioType: 'audio/mpeg'
+              }));
+              
+              console.log('✅ ElevenLabs fallback voice response sent via WebSocket');
+            } catch (fallbackError) {
+              console.log('Both TTS services failed:', fallbackError);
+              
+              // Sadece metin cevabı gönder
+              ws.send(JSON.stringify({
+                type: 'response',
+                text: aiResponse,
+                audioData: null
+              }));
+            }
           }
         }
       } catch (error) {
@@ -1032,10 +1049,18 @@ Sen meraklı, rehber, empatik ve mimar bir kişiliksin. Kullanıcıyla doğal ve
         geminiAI: false
       };
 
-      // Azure Speech test (sadece konfigürasyon kontrolü)
+      // Azure Speech test (hem STT hem TTS)
       try {
-        testResults.azureSpeech = !!(process.env.AZURE_SPEECH_KEY && process.env.AZURE_SPEECH_REGION);
-        console.log(`Azure Speech: ${testResults.azureSpeech ? '✅' : '❌'}`);
+        const hasConfig = !!(process.env.AZURE_SPEECH_KEY && process.env.AZURE_SPEECH_REGION);
+        let ttsWorks = false;
+        
+        if (hasConfig) {
+          // TTS testi yap
+          ttsWorks = await azureSpeechService.testTextToSpeech();
+        }
+        
+        testResults.azureSpeech = hasConfig && ttsWorks;
+        console.log(`Azure Speech (STT+TTS): ${testResults.azureSpeech ? '✅' : '❌'} (Config: ${hasConfig}, TTS: ${ttsWorks})`);
       } catch (error) {
         console.log('Azure Speech Test Error:', error);
       }
