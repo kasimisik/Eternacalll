@@ -599,9 +599,11 @@ Sen meraklı, rehber, empatik ve mimar bir kişiliksin. Kullanıcıyla doğal ve
           // 1. Speech-to-Text
           let userText = '';
           try {
+            console.log('🎤 Starting speech recognition for', audioBuffer.length, 'bytes');
             userText = await azureSpeechService.speechToText(audioBuffer);
+            console.log('🎤 Speech recognition result:', userText ? `"${userText}"` : 'EMPTY');
           } catch (speechError) {
-            console.log('Speech recognition error:', speechError);
+            console.error('❌ Speech recognition error:', speechError);
             userText = 'Ses tanıma şu anda kullanılamıyor, lütfen tekrar deneyin.';
           }
           

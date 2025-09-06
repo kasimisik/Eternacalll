@@ -44,8 +44,19 @@ export class AzureSpeechService {
       const url = new URL(endpoint);
       url.searchParams.set('language', 'tr-TR');
       url.searchParams.set('format', 'detailed');
+      url.searchParams.set('profanity', 'raw');
 
       console.log(`🎤 Azure Speech REST: Processing ${audioBuffer.length} bytes of ${contentType}`);
+      
+      // Debug: Ses dosyasının temel özelliklerini kontrol et
+      if (audioBuffer.length < 1000) {
+        console.warn('⚠️ Audio buffer çok küçük, muhtemelen boş ses');
+        return '';
+      }
+      
+      if (audioBuffer.length > 1000000) {
+        console.warn('⚠️ Audio buffer çok büyük, kısaltılması gerekebilir');
+      }
 
       const response = await fetch(url.toString(), {
         method: 'POST',
@@ -68,22 +79,43 @@ export class AzureSpeechService {
       const result = await response.json();
       
       if (result.RecognitionStatus === 'Success') {
+        console.log('🔍 Azure Speech Full Result:', JSON.stringify(result, null, 2));
+        
         // Robust parsing - check both DisplayText and NBest[0].Display
         let recognizedText = '';
         
-        if (result.DisplayText) {
-          recognizedText = result.DisplayText;
-        } else if (result.NBest && result.NBest.length > 0 && result.NBest[0].Display) {
-          recognizedText = result.NBest[0].Display;
-        } else if (result.NBest && result.NBest.length > 0 && result.NBest[0].Lexical) {
-          recognizedText = result.NBest[0].Lexical;
+        if (result.DisplayText && result.DisplayText.trim()) {
+          recognizedText = result.DisplayText.trim();
+          console.log('✅ Found text in DisplayText:', recognizedText);
+        } else if (result.NBest && result.NBest.length > 0) {
+          const bestResult = result.NBest[0];
+          console.log('🔍 Checking NBest[0]:', JSON.stringify(bestResult, null, 2));
+          
+          if (bestResult.Display && bestResult.Display.trim()) {
+            recognizedText = bestResult.Display.trim();
+            console.log('✅ Found text in NBest Display:', recognizedText);
+          } else if (bestResult.Lexical && bestResult.Lexical.trim()) {
+            recognizedText = bestResult.Lexical.trim();
+            console.log('✅ Found text in NBest Lexical:', recognizedText);
+          } else if (bestResult.ITN && bestResult.ITN.trim()) {
+            recognizedText = bestResult.ITN.trim();
+            console.log('✅ Found text in NBest ITN:', recognizedText);
+          }
         }
         
         if (recognizedText) {
-          console.log(`✅ Azure Speech Recognition: "${recognizedText}"`);
+          console.log(`✅ Azure Speech Recognition SUCCESS: "${recognizedText}"`);
           return recognizedText;
         } else {
-          console.warn('Azure Speech: Success status but no text found in result:', result);
+          console.warn('⚠️ Azure Speech: Success status but NO TEXT found in result');
+          console.log('Duration:', result.Duration, 'Offset:', result.Offset);
+          
+          // Eğer Duration > 0 ama metin yoksa ses çok sessiz olabilir
+          if (result.Duration > 1000000) { // 1 saniyeden fazla
+            console.log('🔍 Audio seems to have duration but no speech detected');
+            console.log('💡 Possible issues: background noise, very quiet speech, wrong language');
+          }
+          
           return '';
         }
       } else if (result.RecognitionStatus === 'NoMatch') {

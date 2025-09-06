@@ -212,13 +212,14 @@ export default function VoiceAssistant() {
         analyser.getByteFrequencyData(dataArray);
         const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
         
-        if (average < 10) { // Sessizlik threshold
+        if (average < 5) { // Daha hassas sessizlik threshold
           if (!silenceTimer) {
             silenceTimer = setTimeout(() => {
               if (audioChunks.length > 0) {
+                console.log('🎤 Silence detected, stopping recording with', audioChunks.length, 'chunks');
                 recorder.stop();
               }
-            }, 1500); // 1.5 saniye sessizlik sonrası dur
+            }, 2000); // 2 saniye sessizlik sonrası dur (daha uzun)
           }
         } else {
           if (silenceTimer) {
@@ -234,6 +235,7 @@ export default function VoiceAssistant() {
       
       recorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
+          console.log('🎤 Audio chunk received:', event.data.size, 'bytes');
           audioChunks.push(event.data);
         }
       };
@@ -246,25 +248,40 @@ export default function VoiceAssistant() {
         audioContext.close();
         stream.getTracks().forEach(track => track.stop());
         
-        if (audioChunks.length > 0) {
-          const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-          
-          setIsProcessing(true);
-          
-          // Blob'u base64'e çevir
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            const base64Audio = (reader.result as string).split(',')[1];
-            
-            if (webSocket && webSocket.readyState === WebSocket.OPEN) {
-              webSocket.send(JSON.stringify({
-                type: 'audio',
-                audioData: base64Audio
-              }));
-            }
-          };
-          reader.readAsDataURL(audioBlob);
+        console.log('🎤 Recording stopped with', audioChunks.length, 'chunks');
+        setIsProcessing(true);
+        
+        if (audioChunks.length === 0) {
+          console.warn('No audio chunks recorded');
+          setIsProcessing(false);
+          return;
         }
+        
+        const audioBlob = new Blob(audioChunks, { type: mimeType });
+        console.log('🎤 Created audio blob:', audioBlob.size, 'bytes, type:', audioBlob.type);
+        
+        // Minimum ses dosyası boyutu kontrolü
+        if (audioBlob.size < 1000) {
+          console.warn('Audio blob çok küçük, muhtemelen boş ses');
+          setIsProcessing(false);
+          return;
+        }
+        
+        // Blob'u base64'e çevir
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64Audio = (reader.result as string).split(',')[1];
+          console.log('🎤 Sending audio data:', base64Audio.length, 'chars');
+          
+          if (webSocket && webSocket.readyState === WebSocket.OPEN) {
+            webSocket.send(JSON.stringify({
+              type: 'audio',
+              audioData: base64Audio,
+              audioFormat: mimeType
+            }));
+          }
+        };
+        reader.readAsDataURL(audioBlob);
         
         setMediaRecorder(null);
       };
