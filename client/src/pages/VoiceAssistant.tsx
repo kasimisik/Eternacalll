@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   SidebarProvider,
   NewSidebar,
@@ -33,6 +33,7 @@ import {
 } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { MicVAD } from "@ricky0123/vad-web";
 
 export default function VoiceAssistant() {
   const { user } = useUserHook();
@@ -50,6 +51,11 @@ export default function VoiceAssistant() {
   const [webSocket, setWebSocket] = useState<WebSocket | null>(null);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [isVADActive, setIsVADActive] = useState(false);
+  const [isHandsfreeMode, setIsHandsfreeMode] = useState(false);
+  
+  // VAD referansları
+  const vadRef = useRef<any>(null);
+  const currentStreamRef = useRef<MediaStream | null>(null);
 
   const data = {
     navMain: [
@@ -400,6 +406,100 @@ export default function VoiceAssistant() {
     }
   };
 
+  // VAD (Voice Activity Detection) fonksiyonları
+  const startHandsfreeMode = useCallback(async () => {
+    try {
+      if (vadRef.current) {
+        console.log('🎤 VAD zaten aktif');
+        return;
+      }
+
+      console.log('🎤 Handsfree modu başlatılıyor...');
+      setIsHandsfreeMode(true);
+      setIsVADActive(true);
+
+      // Mikrofon izni al
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          sampleRate: 16000,
+          channelCount: 1,
+          echoCancellation: true,
+          noiseSuppression: true
+        } 
+      });
+      
+      currentStreamRef.current = stream;
+
+      // VAD instance'ı oluştur
+      const vad = await MicVAD.new({
+        stream,
+        onSpeechStart: () => {
+          console.log('🗣️ Konuşma başladı - kayıt başlatılıyor');
+          if (!isProcessing && isConnected && webSocket) {
+            setIsListening(true);
+            startListening();
+          }
+        },
+        onSpeechEnd: () => {
+          console.log('🤐 Konuşma bitti - kayıt durduruluyor');
+          if (mediaRecorder && mediaRecorder.state === 'recording') {
+            mediaRecorder.stop();
+          }
+          setIsListening(false);
+        }
+      });
+
+      vadRef.current = vad;
+      vad.start();
+      console.log('🎤 Handsfree modu aktif!');
+
+    } catch (error) {
+      console.error('❌ Handsfree modu başlatma hatası:', error);
+      setIsHandsfreeMode(false);
+      setIsVADActive(false);
+    }
+  }, [isProcessing, isConnected, webSocket, mediaRecorder]);
+
+  const stopHandsfreeMode = useCallback(() => {
+    try {
+      console.log('🛑 Handsfree modu durduruluyor...');
+      
+      if (vadRef.current) {
+        vadRef.current.pause();
+        vadRef.current = null;
+      }
+
+      if (currentStreamRef.current) {
+        currentStreamRef.current.getTracks().forEach(track => track.stop());
+        currentStreamRef.current = null;
+      }
+
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+      }
+
+      setIsHandsfreeMode(false);
+      setIsVADActive(false);
+      setIsListening(false);
+      console.log('🛑 Handsfree modu durduruldu');
+      
+    } catch (error) {
+      console.error('❌ Handsfree modu durdurma hatası:', error);
+    }
+  }, [mediaRecorder]);
+
+  // Cleanup VAD on unmount
+  useEffect(() => {
+    return () => {
+      if (vadRef.current) {
+        vadRef.current.pause();
+      }
+      if (currentStreamRef.current) {
+        currentStreamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
+
   // Ana mikrofon butonu
   const toggleVoiceChat = () => {
     if (isListening) {
@@ -544,10 +644,10 @@ export default function VoiceAssistant() {
             <div className="absolute inset-0 flex items-center justify-center">
               <button
                 onClick={toggleVoiceChat}
-                disabled={!isConnected}
+                disabled={!isConnected || isHandsfreeMode}
                 className={`
                   transition-all duration-200
-                  ${!isConnected ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-110'}
+                  ${!isConnected || isHandsfreeMode ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-110'}
                   flex items-center justify-center
                 `}
               >
@@ -560,6 +660,53 @@ export default function VoiceAssistant() {
                   `} 
                 />
               </button>
+            </div>
+            
+            {/* Handsfree Control Panel */}
+            <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 z-20">
+              <div className="bg-black/20 backdrop-blur-md rounded-2xl p-4 border border-white/10">
+                <div className="flex items-center space-x-4">
+                  {/* Handsfree Toggle */}
+                  <button
+                    onClick={() => isHandsfreeMode ? stopHandsfreeMode() : startHandsfreeMode()}
+                    disabled={!isConnected}
+                    className={`
+                      px-4 py-2 rounded-xl transition-all duration-200 font-medium text-sm
+                      flex items-center space-x-2
+                      ${!isConnected ? 'opacity-50 cursor-not-allowed bg-gray-600' :
+                        isHandsfreeMode ? 'bg-green-500 hover:bg-green-600 text-white' : 
+                        'bg-blue-500 hover:bg-blue-600 text-white'}
+                    `}
+                  >
+                    <Mic className="w-4 h-4" />
+                    <span>{isHandsfreeMode ? 'Handsfree Aktif' : 'Handsfree Başlat'}</span>
+                  </button>
+                  
+                  {/* Status indicator */}
+                  <div className="flex items-center space-x-2 text-xs text-white/80">
+                    <div className={`w-2 h-2 rounded-full ${
+                      !isConnected ? 'bg-red-400' :
+                      isHandsfreeMode ? 'bg-green-400 animate-pulse' :
+                      isListening ? 'bg-blue-400 animate-pulse' :
+                      'bg-gray-400'
+                    }`} />
+                    <span>
+                      {!isConnected ? 'Bağlantısız' :
+                       isHandsfreeMode ? 'Handsfree Aktif' :
+                       isListening ? 'Dinliyor' :
+                       'Hazır'}
+                    </span>
+                  </div>
+                </div>
+                
+                {/* Instructions */}
+                <div className="mt-2 text-xs text-white/60 text-center">
+                  {isHandsfreeMode ? 
+                    'Konuşmaya başlayın, sistem otomatik algılayacak' :
+                    'Handsfree modu için butona tıklayın veya manuel mikrofon kullanın'
+                  }
+                </div>
+              </div>
             </div>
           </div>
         </div>
