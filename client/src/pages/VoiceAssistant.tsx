@@ -118,14 +118,30 @@ export default function VoiceAssistant() {
           // Sesli cevabı oynat
           if (data.audioData) {
             try {
+              console.log('🔊 Received audio response, size:', data.audioData.length);
               const audioData = Uint8Array.from(atob(data.audioData), c => c.charCodeAt(0));
+              console.log('🔊 Decoded audio data size:', audioData.length, 'bytes');
+              
               const audioBlob = new Blob([audioData], { type: 'audio/mpeg' });
               const audioUrl = URL.createObjectURL(audioBlob);
+              console.log('🔊 Created audio URL:', audioUrl);
               
               const audio = new Audio(audioUrl);
-              audio.play();
+              
+              audio.addEventListener('loadstart', () => {
+                console.log('🔊 Audio started loading');
+              });
+              
+              audio.addEventListener('canplay', () => {
+                console.log('🔊 Audio can play');
+              });
+              
+              audio.addEventListener('play', () => {
+                console.log('🔊 Audio started playing');
+              });
               
               audio.addEventListener('ended', () => {
+                console.log('🔊 Audio finished playing');
                 URL.revokeObjectURL(audioUrl);
                 // Cevap bittikten sonra tekrar dinlemeye başla
                 setTimeout(() => {
@@ -134,8 +150,27 @@ export default function VoiceAssistant() {
                   }
                 }, 500);
               });
+              
+              audio.addEventListener('error', (error) => {
+                console.error('🔊 Audio play error:', error);
+                console.error('🔊 Audio error details:', audio.error);
+              });
+              
+              console.log('🔊 Starting audio playback...');
+              const playPromise = audio.play();
+              
+              if (playPromise !== undefined) {
+                playPromise
+                  .then(() => {
+                    console.log('🔊 Audio playback started successfully');
+                  })
+                  .catch(error => {
+                    console.error('🔊 Audio playback failed:', error);
+                  });
+              }
+              
             } catch (error) {
-              console.error('Audio play error:', error);
+              console.error('🔊 Audio processing error:', error);
             }
           }
         } else if (data.type === 'error') {
