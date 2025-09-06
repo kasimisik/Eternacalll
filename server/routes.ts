@@ -601,7 +601,45 @@ Sen meraklı, rehber, empatik ve mimar bir kişiliksin. Kullanıcıyla doğal ve
           console.log('🎤 Received audio data via WebSocket');
           
           // Base64 audio'yu buffer'a çevir
-          const audioBuffer = Buffer.from(message.audioData, 'base64');
+          let audioBuffer = Buffer.from(message.audioData, 'base64');
+          
+          // WebM to WAV conversion for WebSocket too
+          console.log('🔍 WebSocket Audio conversion check...');
+          const headerHex = audioBuffer.slice(0, 12).toString('hex');
+          if (headerHex.startsWith('1a45dfa3')) { // WebM header
+            console.log('🔄 Converting WebSocket WebM to WAV for better Azure Speech compatibility...');
+            try {
+              const tempDir = '/tmp';
+              const inputPath = path.join(tempDir, `ws_input_${Date.now()}.webm`);
+              const outputPath = path.join(tempDir, `ws_output_${Date.now()}.wav`);
+              
+              // Write WebM file to disk
+              await writeFile(inputPath, audioBuffer);
+              
+              // Convert WebM to WAV using ffmpeg
+              await new Promise<void>((resolve, reject) => {
+                ffmpeg()
+                  .input(inputPath)
+                  .toFormat('wav')
+                  .audioCodec('pcm_s16le')  // 16-bit PCM
+                  .audioChannels(1)         // Mono
+                  .audioFrequency(16000)    // 16kHz for Azure Speech
+                  .save(outputPath)
+                  .on('end', () => resolve())
+                  .on('error', reject);
+              });
+              
+              // Read converted WAV file
+              audioBuffer = await fs.promises.readFile(outputPath);
+              console.log(`✅ WebSocket: Converted WebM to WAV (${audioBuffer.length} bytes)`);
+              
+              // Clean up temp files
+              await Promise.all([unlink(inputPath), unlink(outputPath)]);
+              
+            } catch (conversionError) {
+              console.warn('⚠️ WebSocket WebM to WAV conversion failed, using original:', conversionError);
+            }
+          }
           
           // 1. Speech-to-Text
           let userText = '';
