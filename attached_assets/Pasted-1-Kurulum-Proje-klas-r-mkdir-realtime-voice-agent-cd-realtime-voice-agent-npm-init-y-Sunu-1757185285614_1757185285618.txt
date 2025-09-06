@@ -1,0 +1,395 @@
+1) Kurulum
+# Proje klasörü
+mkdir realtime-voice-agent && cd realtime-voice-agent
+npm init -y
+
+# Sunucu bağımlılıkları
+npm i ws express microsoft-cognitiveservices-speech-sdk @google/generative-ai node-fetch@2 dotenv
+
+# İsteğe bağlı: Types (gerekmez)
+# npm i -D @types/ws @types/express @types/node
+
+
+.env dosyası oluştur:
+
+PORT=8080
+
+AZURE_SPEECH_KEY=YOUR_AZURE_SPEECH_KEY
+AZURE_SPEECH_REGION=westeurope   # kendi bölgen
+
+GEMINI_API_KEY=YOUR_GEMINI_API_KEY
+GEMINI_MODEL=gemini-1.5-pro      # dilersen 1.5-flash
+
+ELEVENLABS_API_KEY=YOUR_ELEVENLABS_API_KEY
+ELEVENLABS_VOICE_ID=21m00Tcm4TlvDq8ikWAM  # (Rachel) kendi ses ID’n ile değiştir
+
+2) Sunucu (server.js)
+// server.js
+require("dotenv").config();
+const express = require("express");
+const http = require("http");
+const WebSocket = require("ws");
+const sdk = require("microsoft-cognitiveservices-speech-sdk");
+const fetch = require("node-fetch");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+
+const PORT = process.env.PORT || 8080;
+
+// --- Gemini init ---
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-1.5-pro";
+const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
+
+// --- Express + WS ---
+const app = express();
+app.use(express.static("public")); // client dosyaları için
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
+
+// Basit oturum belleği
+function createSession(ws) {
+  const pushStream = sdk.AudioInputStream.createPushStream(
+    sdk.AudioStreamFormat.getWaveFormatPCM(16000, 16, 1)
+  );
+
+  const speechConfig = sdk.SpeechConfig.fromSubscription(
+    process.env.AZURE_SPEECH_KEY,
+    process.env.AZURE_SPEECH_REGION
+  );
+  // Türkçe ise "tr-TR", İngilizce "en-US" vb.
+  speechConfig.speechRecognitionLanguage = "tr-TR";
+
+  const audioConfig = sdk.AudioConfig.fromStreamInput(pushStream);
+  const recognizer = new sdk.SpeechRecognizer(speechConfig, audioConfig);
+
+  let finalText = "";
+  let recognizingText = "";
+
+  recognizer.recognizing = (_, e) => {
+    recognizingText = e.result.text || "";
+    ws.send(JSON.stringify({ type: "partial_transcript", text: recognizingText }));
+  };
+
+  recognizer.recognized = (_, e) => {
+    if (e.result.reason === sdk.ResultReason.RecognizedSpeech) {
+      finalText = e.result.text || "";
+      ws.send(JSON.stringify({ type: "final_transcript", text: finalText }));
+      // Burada konuşmayı durdurup pipeline'ı çalıştıracağız (tek atış PoC)
+      // Daha gelişmiş senaryoda VAD/sesssion control ekle.
+      recognizer.stopContinuousRecognitionAsync(async () => {
+        try {
+          const reply = await generateWithGemini(finalText);
+          ws.send(JSON.stringify({ type: "llm_reply", text: reply }));
+          const audioBase64 = await ttsWithElevenLabs(reply);
+          ws.send(JSON.stringify({ type: "tts_audio", format: "mp3", base64: audioBase64 }));
+          ws.close();
+        } catch (err) {
+          console.error("Pipeline error:", err);
+          ws.send(JSON.stringify({ type: "error", error: String(err) }));
+          ws.close();
+        }
+      });
+    } else if (e.result.reason === sdk.ResultReason.NoMatch) {
+      ws.send(JSON.stringify({ type: "info", message: "No speech recognized." }));
+    }
+  };
+
+  recognizer.canceled = (_, e) => {
+    console.warn("Canceled:", e.errorDetails);
+    ws.send(JSON.stringify({ type: "error", error: e.errorDetails || "Recognition canceled" }));
+    recognizer.close();
+    ws.close();
+  };
+
+  recognizer.sessionStopped = () => {
+    recognizer.close();
+  };
+
+  recognizer.startContinuousRecognitionAsync();
+
+  return { pushStream, recognizer };
+}
+
+async function generateWithGemini(userText) {
+  const prompt = `
+Sen gerçek zamanlı bir telefon/ses asistanısın. Kısa, net ve doğal Türkçe cevap ver.
+Kullanıcı: ${userText}
+Asistan:`;
+  const resp = await model.generateContent({ contents: [{ role: "user", parts: [{ text: prompt }]}] });
+  // API farklı dönebilir; güvenli okuma:
+  const out = resp.response?.text?.() ?? resp.response?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+  return (out || "").trim();
+}
+
+async function ttsWithElevenLabs(text) {
+  const voiceId = process.env.ELEVENLABS_VOICE_ID;
+  const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`;
+  const body = {
+    text,
+    model_id: "eleven_multilingual_v2",
+    voice_settings: {
+      stability: 0.5,
+      similarity_boost: 0.75,
+      style: 0.3,
+      use_speaker_boost: true
+    }
+  };
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "xi-api-key": process.env.ELEVENLABS_API_KEY,
+      "Content-Type": "application/json",
+      "Accept": "audio/mpeg"
+    },
+    body: JSON.stringify(body)
+  });
+
+  if (!res.ok) {
+    const errTxt = await res.text();
+    throw new Error(`ElevenLabs TTS failed: ${res.status} - ${errTxt}`);
+  }
+  const buf = await res.buffer();
+  return buf.toString("base64");
+}
+
+// WebSocket: binary PCM16LE 16kHz mono chunk’lar bekliyoruz
+wss.on("connection", (ws) => {
+  const session = createSession(ws);
+  ws.on("message", (msg) => {
+    // İlk gelen mesajlar JSON kontrol komutları olabilir
+    if (typeof msg === "string") {
+      try {
+        const data = JSON.parse(msg);
+        if (data.type === "control" && data.action === "end") {
+          // istemci konuşmayı bitirdi
+          session.pushStream.close();
+        }
+      } catch (e) {
+        // yoksay
+      }
+      return;
+    }
+
+    // Binary audio
+    if (Buffer.isBuffer(msg)) {
+      // Doğrudan pushStream’e yaz
+      session.pushStream.write(msg);
+    }
+  });
+
+  ws.on("close", () => {
+    try { session.pushStream.close(); } catch {}
+    try { session.recognizer.stopContinuousRecognitionAsync(()=>{}, ()=>{}); } catch {}
+  });
+});
+
+server.listen(PORT, () => {
+  console.log(`Server listening on http://localhost:${PORT}`);
+  console.log(`Open http://localhost:${PORT} in your browser`);
+});
+
+3) İstemci (public/index.html)
+
+Tarayıcı mikrofondan 16 kHz, 16-bit PCM mono chunk üretip WebSocket ile sunucuya yollar. Cevabı metin ve MP3 (base64) olarak alır ve çalar.
+
+public/index.html oluştur:
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Gerçek Zamanlı Voice Agent (Azure + Gemini + ElevenLabs)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; margin: 2rem; }
+    button { padding: .7rem 1rem; margin-right: 1rem; }
+    #log { white-space: pre-wrap; border: 1px solid #ddd; padding: 1rem; margin-top: 1rem; max-width: 800px; }
+  </style>
+</head>
+<body>
+  <h1>Real-time Voice Agent</h1>
+  <p>Mikrofon -> Azure STT -> Gemini -> ElevenLabs</p>
+  <button id="startBtn">Başlat</button>
+  <button id="stopBtn" disabled>Durdur</button>
+  <div id="status">Hazır</div>
+  <h3>Transcript</h3>
+  <div id="transcript"></div>
+  <h3>Cevap</h3>
+  <div id="reply"></div>
+  <audio id="player" controls></audio>
+
+  <pre id="log"></pre>
+
+  <script>
+    const startBtn = document.getElementById("startBtn");
+    const stopBtn = document.getElementById("stopBtn");
+    const statusEl = document.getElementById("status");
+    const transcriptEl = document.getElementById("transcript");
+    const replyEl = document.getElementById("reply");
+    const player = document.getElementById("player");
+    const logEl = document.getElementById("log");
+
+    let ws, audioCtx, sourceNode, processor, mediaStream;
+
+    function log(...args) {
+      console.log(...args);
+      logEl.textContent += args.map(a => (typeof a === "string" ? a : JSON.stringify(a))).join(" ") + "\n";
+    }
+
+    // Float32 -> PCM16
+    function floatTo16BitPCM(float32Array) {
+      const buffer = new ArrayBuffer(float32Array.length * 2);
+      const view = new DataView(buffer);
+      let offset = 0;
+      for (let i = 0; i < float32Array.length; i++, offset += 2) {
+        let s = Math.max(-1, Math.min(1, float32Array[i]));
+        view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+      }
+      return new Uint8Array(buffer);
+    }
+
+    // Basit downsample (tarayıcı genelde 48k verir -> 16k)
+    function downsampleBuffer(buffer, inSampleRate, outSampleRate = 16000) {
+      if (outSampleRate === inSampleRate) return buffer;
+      const sampleRateRatio = inSampleRate / outSampleRate;
+      const newLength = Math.round(buffer.length / sampleRateRatio);
+      const result = new Float32Array(newLength);
+      let offsetResult = 0;
+      let offsetBuffer = 0;
+      while (offsetResult < result.length) {
+        const nextOffsetBuffer = Math.round((offsetResult + 1) * sampleRateRatio);
+        // basit ortalama
+        let accum = 0, count = 0;
+        for (let i = offsetBuffer; i < nextOffsetBuffer && i < buffer.length; i++) {
+          accum += buffer[i];
+          count++;
+        }
+        result[offsetResult] = accum / count;
+        offsetResult++;
+        offsetBuffer = nextOffsetBuffer;
+      }
+      return result;
+    }
+
+    async function start() {
+      startBtn.disabled = true;
+      stopBtn.disabled = false;
+      transcriptEl.textContent = "";
+      replyEl.textContent = "";
+      player.src = "";
+      statusEl.textContent = "Bağlanıyor...";
+
+      ws = new WebSocket(`ws://${location.host}`);
+      ws.binaryType = "arraybuffer";
+
+      ws.onopen = async () => {
+        statusEl.textContent = "WebSocket bağlı. Mikrofon açılıyor...";
+        try {
+          mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
+          sourceNode = audioCtx.createMediaStreamSource(mediaStream);
+
+          // ScriptProcessor eski ama yeterli PoC için.
+          processor = audioCtx.createScriptProcessor(4096, 1, 1);
+          processor.onaudioprocess = (e) => {
+            const input = e.inputBuffer.getChannelData(0); // mono
+            const down = downsampleBuffer(input, audioCtx.sampleRate, 16000);
+            const pcm16 = floatTo16BitPCM(down);
+            if (ws && ws.readyState === WebSocket.OPEN) {
+              ws.send(pcm16);
+            }
+          };
+
+          sourceNode.connect(processor);
+          processor.connect(audioCtx.destination);
+
+          statusEl.textContent = "Dinleniyor... Konuşabilirsiniz.";
+        } catch (err) {
+          log("Mic error", err);
+          statusEl.textContent = "Mikrofon hatası: " + err.message;
+        }
+      };
+
+      ws.onmessage = (ev) => {
+        try {
+          const data = JSON.parse(ev.data);
+          if (data.type === "partial_transcript") {
+            transcriptEl.textContent = "⏳ " + data.text;
+          } else if (data.type === "final_transcript") {
+            transcriptEl.textContent = "🗣️ " + data.text;
+            statusEl.textContent = "Cevap üretiliyor (Gemini)...";
+          } else if (data.type === "llm_reply") {
+            replyEl.textContent = "💡 " + data.text;
+            statusEl.textContent = "Seslendiriliyor (ElevenLabs)...";
+          } else if (data.type === "tts_audio") {
+            const src = `data:audio/${data.format};base64,${data.base64}`;
+            player.src = src;
+            player.play();
+            statusEl.textContent = "Bitti ✅";
+          } else if (data.type === "info") {
+            log("Info:", data.message);
+          } else if (data.type === "error") {
+            statusEl.textContent = "Hata: " + data.error;
+            log("Server error:", data.error);
+          }
+        } catch {
+          // binary vs metin
+        }
+      };
+
+      ws.onclose = () => {
+        statusEl.textContent = "Bağlantı kapandı.";
+        cleanup();
+      };
+
+      ws.onerror = (e) => {
+        statusEl.textContent = "WS hata";
+        log("WS error", e);
+        cleanup();
+      };
+    }
+
+    function cleanup() {
+      try { processor && processor.disconnect(); } catch {}
+      try { sourceNode && sourceNode.disconnect(); } catch {}
+      try { audioCtx && audioCtx.close(); } catch {}
+      try { mediaStream && mediaStream.getTracks().forEach(t => t.stop()); } catch {}
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+    }
+
+    function stop() {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: "control", action: "end" }));
+      }
+      try { ws.close(); } catch {}
+      cleanup();
+    }
+
+    startBtn.onclick = start;
+    stopBtn.onclick = stop;
+  </script>
+</body>
+</html>
+
+4) Çalıştırma
+node server.js
+# Tarayıcıda aç: http://localhost:8080
+
+
+Konuş → metin anında Azure’dan gelir, bitince Gemini cevabı üretir ve ElevenLabs ses çıktısını oynatır.
+
+Notlar & Geliştirme İpuçları
+
+Dil seçimi: speechConfig.speechRecognitionLanguage = "tr-TR" (Azure’da desteği olan başka dil kodu kullanabilirsin).
+
+Çok tur diyaloq: generateWithGemini fonksiyonuna geçmiş konuşmayı (context) bir dizi halinde besleyebilirsin.
+
+Gerçek streaming cevabı: Gemini’nin stream API’sini ve ElevenLabs’ın WebSocket TTS’ini entegre ederek cümle-cümle akıtabilirsin.
+
+VAD/otomatik bitiş: İstemcide ses seviyesi/VAD ile “control:end” yollayıp turu kapatabilirsin.
+
+Güvenlik: API anahtarlarını sadece sunucuda tut; tarayıcıya sızdırma.
+
+İstersen bunu Next.js/Express’le birleştirip prod’a hazır hale getirecek şekilde iyileştirebilirim (çoklu oturum, kuyruk, logging, retry, VAD, barge-in, vs.).

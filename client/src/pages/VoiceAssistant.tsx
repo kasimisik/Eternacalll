@@ -278,136 +278,133 @@ export default function VoiceAssistant() {
     };
   }, []);
 
-  // Sürekli ses dinleme
+  // PCM16 Audio Streaming (Azure Speech için optimize)
   const startListening = async () => {
     if (!isConnected || !webSocket || isProcessing) return;
     
     try {
+      console.log('🎤 Starting PCM16 audio streaming');
+      setIsProcessing(true);
+      
+      // WebSocket'e kontrol mesajı gönder
+      webSocket.send(JSON.stringify({ type: 'start_listening' }));
+      
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: {
-          sampleRate: 16000,
-          channelCount: 1,
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true
         } 
       });
       
-      // Azure Speech ile uyumlu format seçimi
-      let mimeType = 'audio/webm;codecs=opus';
-      if (MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')) {
-        mimeType = 'audio/ogg;codecs=opus';
-      } else if (MediaRecorder.isTypeSupported('audio/wav')) {
-        mimeType = 'audio/wav';
-      }
-      
-      console.log('🎤 Recording with format:', mimeType);
-      
-      const recorder = new MediaRecorder(stream, { 
-        mimeType: mimeType,
-        audioBitsPerSecond: 16000
+      // AudioContext oluştur
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ 
+        sampleRate: 48000 
       });
+      const sourceNode = audioContext.createMediaStreamSource(stream);
       
-      const audioChunks: Blob[] = [];
-      let silenceTimer: NodeJS.Timeout | null = null;
+      // ScriptProcessor kullan (eski ama güvenilir)
+      const processor = audioContext.createScriptProcessor(4096, 1, 1);
       
-      // Sessizlik algılama için AudioContext
-      const audioContext = new AudioContext();
-      const analyser = audioContext.createAnalyser();
-      const microphone = audioContext.createMediaStreamSource(stream);
-      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+      let sampleCounter = 0;
+      let totalSamples = 0;
       
-      microphone.connect(analyser);
-      analyser.fftSize = 256;
-      
-      const checkForSilence = () => {
-        analyser.getByteFrequencyData(dataArray);
-        const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
-        const max = Math.max(...dataArray);
+      processor.onaudioprocess = (e) => {
+        const input = e.inputBuffer.getChannelData(0); // mono
         
-        console.log(`🎤 Audio Level - Average: ${average.toFixed(1)}, Max: ${max}, Chunks: ${audioChunks.length}`);
+        // 48kHz -> 16kHz downsample
+        const downsampled = downsampleBuffer(input, audioContext.sampleRate, 16000);
+        // Float32 -> PCM16 convert  
+        const pcm16 = floatTo16BitPCM(downsampled);
         
-        if (average < 8 && max < 50) { // Daha güvenli threshold
-          if (!silenceTimer) {
-            silenceTimer = setTimeout(() => {
-              if (audioChunks.length > 0) {
-                console.log('🎤 Silence detected, stopping recording with', audioChunks.length, 'chunks');
-                recorder.stop();
-              }
-            }, 2500); // 2.5 saniye sessizlik 
-          }
-        } else {
-          if (silenceTimer) {
-            clearTimeout(silenceTimer);
-            silenceTimer = null;
-          }
+        // WebSocket ile binary data gönder
+        if (webSocket && webSocket.readyState === WebSocket.OPEN) {
+          webSocket.send(pcm16);
         }
         
-        if (recorder.state === 'recording') {
-          requestAnimationFrame(checkForSilence);
+        // Ses seviyesi monitoring (her 10 chunk'ta bir)
+        totalSamples += downsampled.length;
+        if (sampleCounter++ % 10 === 0) {
+          const average = downsampled.reduce((a, b) => a + Math.abs(b), 0) / downsampled.length;
+          console.log(`🎤 Audio Level: ${(average * 100).toFixed(1)}%, Total samples: ${totalSamples}`);
         }
       };
       
-      recorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          console.log('🎤 Audio chunk received:', event.data.size, 'bytes');
-          audioChunks.push(event.data);
-        }
+      sourceNode.connect(processor);
+      processor.connect(audioContext.destination);
+      
+      console.log('🎤 PCM16 streaming active - talk now!');
+      
+      // Cleanup function'ı store et
+      const cleanup = () => {
+        try { 
+          processor && processor.disconnect(); 
+          console.log('🔄 Processor disconnected');
+        } catch {}
+        try { 
+          sourceNode && sourceNode.disconnect(); 
+          console.log('🔄 Source disconnected');
+        } catch {}
+        try { 
+          audioContext && audioContext.close(); 
+          console.log('🔄 AudioContext closed');
+        } catch {}
+        try { 
+          stream && stream.getTracks().forEach(t => t.stop()); 
+          console.log('🔄 Stream stopped');
+        } catch {}
+        setIsProcessing(false);
       };
       
-      recorder.onstop = async () => {
-        if (silenceTimer) {
-          clearTimeout(silenceTimer);
-        }
-        
-        audioContext.close();
-        stream.getTracks().forEach(track => track.stop());
-        
-        console.log('🎤 Recording stopped with', audioChunks.length, 'chunks');
-        setIsProcessing(true);
-        
-        if (audioChunks.length === 0) {
-          console.warn('No audio chunks recorded');
-          setIsProcessing(false);
-          return;
-        }
-        
-        const audioBlob = new Blob(audioChunks, { type: mimeType });
-        console.log('🎤 Created audio blob:', audioBlob.size, 'bytes, type:', audioBlob.type);
-        
-        // Minimum ses dosyası boyutu kontrolü
-        if (audioBlob.size < 1000) {
-          console.warn('Audio blob çok küçük, muhtemelen boş ses');
-          setIsProcessing(false);
-          return;
-        }
-        
-        // Blob'u base64'e çevir
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const base64Audio = (reader.result as string).split(',')[1];
-          console.log('🎤 Sending audio data:', base64Audio.length, 'chars');
-          
-          if (webSocket && webSocket.readyState === WebSocket.OPEN) {
-            webSocket.send(JSON.stringify({
-              type: 'audio',
-              audioData: base64Audio,
-              audioFormat: mimeType
-            }));
-          }
-        };
-        reader.readAsDataURL(audioBlob);
-        
-        setMediaRecorder(null);
-      };
+      // Global cleanup store et
+      (window as any).currentAudioCleanup = cleanup;
       
-      setMediaRecorder(recorder);
-      recorder.start();
-      checkForSilence();
+      // 10 saniye sonra otomatik dur
+      setTimeout(() => {
+        console.log('🎤 Auto-stopping after 10 seconds');
+        cleanup();
+        if (webSocket && webSocket.readyState === WebSocket.OPEN) {
+          webSocket.send(JSON.stringify({ type: 'stop_listening' }));
+        }
+      }, 10000);
       
     } catch (error) {
-      console.error('Microphone access error:', error);
+      console.error('❌ Microphone access error:', error);
+      setIsProcessing(false);
     }
+  };
+
+  // Audio utility functions
+  const floatTo16BitPCM = (float32Array: Float32Array): Uint8Array => {
+    const buffer = new ArrayBuffer(float32Array.length * 2);
+    const view = new DataView(buffer);
+    let offset = 0;
+    for (let i = 0; i < float32Array.length; i++, offset += 2) {
+      let s = Math.max(-1, Math.min(1, float32Array[i]));
+      view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+    }
+    return new Uint8Array(buffer);
+  };
+
+  const downsampleBuffer = (buffer: Float32Array, inSampleRate: number, outSampleRate = 16000): Float32Array => {
+    if (outSampleRate === inSampleRate) return buffer;
+    const sampleRateRatio = inSampleRate / outSampleRate;
+    const newLength = Math.round(buffer.length / sampleRateRatio);
+    const result = new Float32Array(newLength);
+    let offsetResult = 0;
+    let offsetBuffer = 0;
+    while (offsetResult < result.length) {
+      const nextOffsetBuffer = Math.round((offsetResult + 1) * sampleRateRatio);
+      let accum = 0, count = 0;
+      for (let i = offsetBuffer; i < nextOffsetBuffer && i < buffer.length; i++) {
+        accum += buffer[i];
+        count++;
+      }
+      result[offsetResult] = accum / count;
+      offsetResult++;
+      offsetBuffer = nextOffsetBuffer;
+    }
+    return result;
   };
 
   // VAD (Voice Activity Detection) fonksiyonları
