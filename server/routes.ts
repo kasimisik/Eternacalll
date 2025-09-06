@@ -590,13 +590,104 @@ Sen meraklı, rehber, empatik ve mimar bir kişiliksin. Kullanıcıyla doğal ve
   wss.on('connection', (ws: WebSocket) => {
     console.log('🔌 WebSocket voice chat connection established');
     
-    // Her bağlantı için session state
+    // Session state with Azure Speech continuous recognition
     const session = {
+      id: Math.random().toString(36).substring(7),
       conversationHistory: [] as ConversationMessage[],
       isRecognizing: false,
       audioBuffer: Buffer.alloc(0),
-      isStreamingMode: false
+      isStreamingMode: false,
+      isProcessing: false,
+      pushStream: null as any,
+      recognizer: null as any
     };
+    
+    console.log(`📱 New session created: ${session.id}`);
+    
+    // Azure Speech Continuous Recognition Setup
+    const speechSdk = require('microsoft-cognitiveservices-speech-sdk');
+    
+    const initializeAzureSpeech = () => {
+      try {
+        // Create push stream for PCM16 16kHz mono audio
+        session.pushStream = speechSdk.AudioInputStream.createPushStream(
+          speechSdk.AudioStreamFormat.getWaveFormatPCM(16000, 16, 1)
+        );
+        
+        const speechConfig = speechSdk.SpeechConfig.fromSubscription(
+          process.env.AZURE_SPEECH_API_KEY, 
+          process.env.AZURE_SPEECH_REGION
+        );
+        speechConfig.speechRecognitionLanguage = 'tr-TR';
+        
+        const audioConfig = speechSdk.AudioConfig.fromStreamInput(session.pushStream);
+        session.recognizer = new speechSdk.SpeechRecognizer(speechConfig, audioConfig);
+        
+        // Continuous recognition event handlers
+        session.recognizer.recognizing = (s: any, e: any) => {
+          const partial = e.result?.text ?? '';
+          if (partial && ws.readyState === ws.OPEN) {
+            ws.send(JSON.stringify({ type: 'partial_transcript', text: partial }));
+            console.log(`🔄 Partial: "${partial}"`);
+          }
+        };
+        
+        session.recognizer.recognized = async (s: any, e: any) => {
+          if (!e.result || session.isProcessing) return;
+          
+          const text = e.result.text || '';
+          if (!text || text.trim().length === 0) return;
+          
+          console.log(`✅ Azure Speech recognized: "${text}"`);
+          session.isProcessing = true;
+          
+          if (ws.readyState === ws.OPEN) {
+            ws.send(JSON.stringify({ type: 'final_transcript', text }));
+          }
+          
+          // Process the full conversation pipeline
+          await processOptimizedAudioBuffer(Buffer.alloc(0), ws, session, text);
+        };
+        
+        session.recognizer.canceled = (s: any, e: any) => {
+          console.warn('❌ Azure Speech canceled:', e.errorDetails || e.reason);
+          if (ws.readyState === ws.OPEN) {
+            ws.send(JSON.stringify({ 
+              type: 'error', 
+              error: 'Speech recognition canceled: ' + (e.errorDetails || e.reason) 
+            }));
+          }
+        };
+        
+        // Start continuous recognition
+        session.recognizer.startContinuousRecognitionAsync(
+          () => {
+            console.log('✅ Azure Speech continuous recognition started');
+            if (ws.readyState === ws.OPEN) {
+              ws.send(JSON.stringify({ 
+                type: 'stream_ready', 
+                message: 'Ready for continuous conversation' 
+              }));
+            }
+          },
+          (error: any) => {
+            console.error('❌ Azure Speech start error:', error);
+            if (ws.readyState === ws.OPEN) {
+              ws.send(JSON.stringify({ type: 'error', error: 'Failed to start speech recognition' }));
+            }
+          }
+        );
+        
+      } catch (error) {
+        console.error('❌ Azure Speech setup error:', error);
+        if (ws.readyState === ws.OPEN) {
+          ws.send(JSON.stringify({ type: 'error', error: 'Speech service unavailable' }));
+        }
+      }
+    };
+    
+    // Initialize Azure Speech on connection
+    initializeAzureSpeech();
     
     ws.on('message', async (data: WebSocket.Data) => {
       try {
@@ -647,19 +738,22 @@ Sen meraklı, rehber, empatik ve mimar bir kişiliksin. Kullanıcıyla doğal ve
           }
         }
         
-        // Handle binary PCM16 audio stream - Optimize edilmiş
-        else if (session.isStreamingMode) {
+        // Handle binary PCM16 audio stream - Direct to Azure Speech push stream
+        else if (session.isStreamingMode && session.pushStream) {
           const audioChunk = data instanceof ArrayBuffer ? Buffer.from(data) : data as Buffer;
-          console.log(`🎵 PCM16 chunk: ${audioChunk.length} bytes`);
           
-          // Minimum chunk size check (avoid noise)
+          // Minimum chunk size check
           if (audioChunk.length < 64) {
-            console.log('⚠️ Chunk too small, ignoring');
             return;
           }
           
-          // Accumulate PCM16 chunks
-          session.audioBuffer = Buffer.concat([session.audioBuffer, audioChunk]);
+          // Direct push to Azure Speech stream (continuous recognition)
+          try {
+            session.pushStream.write(audioChunk);
+            console.log(`🎵 Pushed ${audioChunk.length} bytes to Azure Speech stream`);
+          } catch (error) {
+            console.error('❌ Push stream write error:', error);
+          }
           
           // Send partial transcript feedback (simulate)
           if (session.audioBuffer.length % 8000 === 0 && session.isRecognizing) {
@@ -694,6 +788,36 @@ Sen meraklı, rehber, empatik ve mimar bir kişiliksin. Kullanıcıyla doğal ve
 
     ws.on('close', () => {
       console.log('🔌 WebSocket voice chat connection closed');
+      
+      // Azure Speech cleanup
+      try {
+        if (session.recognizer) {
+          session.recognizer.stopContinuousRecognitionAsync(
+            () => {
+              console.log('✅ Azure Speech recognition stopped');
+              if (session.recognizer) {
+                session.recognizer.close();
+                session.recognizer = null;
+              }
+            },
+            (error: any) => {
+              console.error('❌ Error stopping Azure Speech recognition:', error);
+              if (session.recognizer) {
+                session.recognizer.close();
+                session.recognizer = null;
+              }
+            }
+          );
+        }
+        
+        if (session.pushStream) {
+          session.pushStream.close();
+          session.pushStream = null;
+          console.log('✅ Azure Speech push stream closed');
+        }
+      } catch (error) {
+        console.error('❌ Azure Speech cleanup error:', error);
+      }
     });
     
     ws.on('error', (error: Error) => {
@@ -702,31 +826,35 @@ Sen meraklı, rehber, empatik ve mimar bir kişiliksin. Kullanıcıyla doğal ve
   });
 
   // Optimize edilmiş session-based audio processing
-  async function processOptimizedAudioBuffer(audioBuffer: Buffer, ws: WebSocket, session: any) {
+  async function processOptimizedAudioBuffer(audioBuffer: Buffer, ws: WebSocket, session: any, recognizedText?: string) {
     try {
       console.log('🎤 Starting optimized audio processing...');
       
-      // 1. Speech-to-Text (Azure Speech)
-      let userText = '';
-      try {
-        console.log('🎤 Speech recognition starting:', audioBuffer.length, 'bytes');
-        userText = await azureSpeechService.speechToText(audioBuffer);
-        console.log('🎤 Speech recognition result:', userText ? `"${userText}"` : 'EMPTY');
-        
-        // Send final transcript
-        if (userText && userText.trim()) {
+      // 1. Speech-to-Text (Azure Speech) - Already done via continuous recognition
+      let userText = recognizedText || '';
+      
+      if (!userText || userText.trim() === '') {
+        // Fallback to old method if continuous recognition didn't provide text
+        try {
+          console.log('🎤 Fallback speech recognition starting:', audioBuffer.length, 'bytes');
+          userText = await azureSpeechService.speechToText(audioBuffer);
+          console.log('🎤 Fallback speech recognition result:', userText ? `"${userText}"` : 'EMPTY');
+          
+          // Send final transcript
+          if (userText && userText.trim()) {
+            ws.send(JSON.stringify({
+              type: 'final_transcript',
+              text: userText
+            }));
+          }
+        } catch (speechError: any) {
+          console.error('❌ Speech recognition error:', speechError);
           ws.send(JSON.stringify({
-            type: 'final_transcript',
-            text: userText
+            type: 'error',
+            error: 'Ses tanıma hatası: ' + (speechError.message || speechError)
           }));
+          return;
         }
-      } catch (speechError: any) {
-        console.error('❌ Speech recognition error:', speechError);
-        ws.send(JSON.stringify({
-          type: 'error',
-          error: 'Ses tanıma hatası: ' + (speechError.message || speechError)
-        }));
-        return;
       }
 
       if (!userText || userText.trim() === '') {
@@ -844,6 +972,7 @@ Asistan:`;
       }
 
       // Reset session for next interaction
+      session.isProcessing = false;
       session.isRecognizing = true;
       session.isStreamingMode = true;
       console.log('✅ Session ready for next interaction');
@@ -856,6 +985,7 @@ Asistan:`;
       }));
       
       // Reset session even on error
+      session.isProcessing = false;
       session.isRecognizing = true;
       session.isStreamingMode = true;
     }

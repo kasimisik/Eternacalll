@@ -1,0 +1,417 @@
+Tamam — aşağıda **kesintisiz (streaming) karşılıklı konuşma** yapan uçtan uca örnek kodu var:
+
+* Tarayıcı → WebSocket → Node.js sunucu → **Azure Speech (continuous STT)** → **Gemini (LLM)** → **ElevenLabs (TTS)** → ses tarayıcıda çalınır → ardından sunucu tekrar dinlemeye geçer.
+* Yani: kullanıcı konuşur → asistan cevap verir → tekrar dinler → döngü devam eder.
+
+Bu PoC production-grade hata/ölçek/kimlik doğrulama kontrolleri içermez fakat gerçek kullanım için doğrudan çalışacak şekilde tasarlandı.
+
+---
+
+## Gereksinimler / .env
+
+Node projesi kurulu olsun:
+
+```bash
+npm init -y
+npm i express ws microsoft-cognitiveservices-speech-sdk node-fetch dotenv @google/generative-ai
+```
+
+`.env` dosyası:
+
+```
+PORT=8080
+AZURE_SPEECH_KEY=YOUR_AZURE_KEY
+AZURE_SPEECH_REGION=YOUR_REGION   # örn: westeurope
+GEMINI_API_KEY=YOUR_GEMINI_KEY
+GEMINI_MODEL=gemini-1.5-pro
+ELEVENLABS_API_KEY=YOUR_ELEVENLABS_KEY
+ELEVENLABS_VOICE_ID=21m00Tcm4TlvDq8ikWAM
+```
+
+---
+
+## `server.js` (Node.js)
+
+```js
+// server.js
+require("dotenv").config();
+const fs = require("fs");
+const http = require("http");
+const express = require("express");
+const WebSocket = require("ws");
+const sdk = require("microsoft-cognitiveservices-speech-sdk");
+const fetch = require("node-fetch");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+
+const app = express();
+app.use(express.static("public"));
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
+
+const PORT = process.env.PORT || 8080;
+
+// Gemini init (assumes @google/generative-ai usage as in earlier examples)
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || "gemini-1.5-pro" });
+
+// Helper: Gemini (sync) response
+async function generateReplyWithGemini(userText, conversationHistory = []) {
+  // conversationHistory = [{role:"user"|"assistant", text: "..."}]
+  const promptParts = [
+    { role: "system", content: { text: "Sen Türkçe, kısa ve doğal cevaplar veren sesli asistansın." } },
+    ...conversationHistory.flatMap(m => [{ role: m.role, content: { text: m.text } }]),
+    { role: "user", content: { text: userText } }
+  ];
+  // Using generateContent path similar to earlier snippet:
+  const resp = await model.generateContent({ contents: [{ role: "user", parts: [{ text: userText }] }] });
+  // Fallback extracting text:
+  const out = resp.response?.text?.() ?? resp.response?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+  return out.trim();
+}
+
+// Helper: ElevenLabs TTS -> returns MP3 Buffer
+async function elevenlabsTTS(text) {
+  const url = `https://api.elevenlabs.io/v1/text-to-speech/${process.env.ELEVENLABS_VOICE_ID}`;
+  const body = {
+    text,
+    model_id: "eleven_multilingual_v2",
+    voice_settings: { stability: 0.4, similarity_boost: 0.7 }
+  };
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "xi-api-key": process.env.ELEVENLABS_API_KEY,
+      "Content-Type": "application/json",
+      "Accept": "audio/mpeg"
+    },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(`ElevenLabs TTS failed: ${res.status} ${txt}`);
+  }
+  return await res.arrayBuffer();
+}
+
+// Per-connection handler
+wss.on("connection", (ws, req) => {
+  console.log("🟢 Client connected");
+
+  // Create Azure push stream and recognizer
+  const pushStream = sdk.AudioInputStream.createPushStream(sdk.AudioStreamFormat.getWaveFormatPCM(16000, 16, 1));
+  const speechConfig = sdk.SpeechConfig.fromSubscription(process.env.AZURE_SPEECH_KEY, process.env.AZURE_SPEECH_REGION);
+  speechConfig.speechRecognitionLanguage = "tr-TR";
+  let audioConfig = sdk.AudioConfig.fromStreamInput(pushStream);
+  let recognizer = new sdk.SpeechRecognizer(speechConfig, audioConfig);
+
+  // Conversation history (very small buffer to keep context)
+  const convoHistory = [];
+
+  let isProcessing = false; // cevabı üretirken yeni final event'leri kısa devre et
+
+  function startRecognitionHandlers() {
+    recognizer.recognizing = (s, e) => {
+      const partial = e.result?.text ?? "";
+      if (partial) ws.send(JSON.stringify({ type: "partial", text: partial }));
+    };
+
+    recognizer.recognized = async (s, e) => {
+      if (!e.result) return;
+      const text = e.result.text || "";
+      const reason = e.result.reason;
+      // Eğer boşsa atla
+      if (!text || text.trim().length === 0) return;
+
+      // Ignore if we are already processing a previous final
+      if (isProcessing) return;
+
+      // Final result arrives
+      isProcessing = true;
+      ws.send(JSON.stringify({ type: "final", text }));
+
+      try {
+        // Add user utterance to history
+        convoHistory.push({ role: "user", text });
+
+        // Generate reply
+        const reply = await generateReplyWithGemini(text, convoHistory);
+        convoHistory.push({ role: "assistant", text: reply });
+
+        ws.send(JSON.stringify({ type: "reply", text: reply }));
+
+        // TTS (ElevenLabs)
+        const audioBuf = await elevenlabsTTS(reply); // ArrayBuffer
+        const base64 = Buffer.from(audioBuf).toString("base64");
+        // Send tts chunk (mp3)
+        ws.send(JSON.stringify({ type: "tts", format: "mp3", base64 }));
+
+        // small pause to ensure client plays audio, then resume recognition
+        setTimeout(() => {
+          isProcessing = false;
+        }, 300); // 300ms pause; adjust as needed
+      } catch (err) {
+        console.error("Pipeline error:", err);
+        ws.send(JSON.stringify({ type: "error", error: String(err) }));
+        isProcessing = false;
+      }
+    };
+
+    recognizer.canceled = (s, e) => {
+      console.warn("Azure canceled:", e);
+      ws.send(JSON.stringify({ type: "error", error: "Azure canceled: " + (e.errorDetails || e.reason) }));
+    };
+
+    recognizer.sessionStopped = () => {
+      console.log("Azure session stopped");
+    };
+  }
+
+  startRecognitionHandlers();
+  recognizer.startContinuousRecognitionAsync();
+
+  ws.on("message", (msg) => {
+    // We expect binary PCM16 chunks from browser
+    if (typeof msg === "string") {
+      // control messages can be JSON
+      try {
+        const data = JSON.parse(msg);
+        if (data && data.type === "control" && data.action === "end") {
+          // optionally close pushStream if client indicates end
+          try { pushStream.close(); } catch {}
+        }
+      } catch (e) {
+        // not JSON
+      }
+      return;
+    }
+
+    // binary -> pushStream.write
+    if (Buffer.isBuffer(msg) || msg instanceof ArrayBuffer) {
+      try {
+        // Convert to Node Buffer and write
+        const buf = Buffer.isBuffer(msg) ? msg : Buffer.from(msg);
+        pushStream.write(buf.slice()); // write chunk in PCM16LE 16kHz
+      } catch (err) {
+        console.error("pushStream write error:", err);
+      }
+    }
+  });
+
+  ws.on("close", () => {
+    console.log("Client disconnected");
+    try { recognizer.stopContinuousRecognitionAsync(() => recognizer.close(), () => {}); } catch {}
+    try { pushStream.close(); } catch {}
+  });
+
+  ws.on("error", (err) => {
+    console.error("WS error", err);
+  });
+});
+
+server.listen(PORT, () => {
+  console.log(`Server listening at http://localhost:${PORT}`);
+});
+```
+
+---
+
+## `public/index.html` (istemci — continuous streaming + otomatik tekrar dinleme)
+
+```html
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>Streaming Karşılıklı Sesli Asistan</title>
+  <style>
+    body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:20px}
+    button{padding:.6rem 1rem;margin-right:.5rem}
+    #status{margin-top:10px;font-weight:bold}
+    #transcript,#reply{border:1px solid #ddd;padding:10px;min-height:40px;margin-top:8px}
+  </style>
+</head>
+<body>
+  <h2>Streaming Karşılıklı Asistan</h2>
+  <button id="start">Başlat</button>
+  <button id="stop" disabled>Durdur</button>
+  <div id="status">Hazır</div>
+
+  <h3>Kullanıcı</h3>
+  <div id="transcript"></div>
+
+  <h3>Asistan</h3>
+  <div id="reply"></div>
+
+  <audio id="player" controls></audio>
+
+<script>
+const startBtn = document.getElementById("start");
+const stopBtn = document.getElementById("stop");
+const statusEl = document.getElementById("status");
+const transcriptEl = document.getElementById("transcript");
+const replyEl = document.getElementById("reply");
+const player = document.getElementById("player");
+
+let ws, audioCtx, mediaStream, sourceNode, processor;
+
+function logStatus(s){ statusEl.textContent = s; }
+
+function floatTo16BitPCM(float32Array){
+  const buffer = new ArrayBuffer(float32Array.length * 2);
+  const view = new DataView(buffer);
+  let offset = 0;
+  for (let i = 0; i < float32Array.length; i++, offset += 2) {
+    let s = Math.max(-1, Math.min(1, float32Array[i]));
+    view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+  }
+  return new Uint8Array(buffer);
+}
+
+function downsampleBuffer(buffer, inSampleRate, outSampleRate = 16000) {
+  if (outSampleRate === inSampleRate) return buffer;
+  const sampleRateRatio = inSampleRate / outSampleRate;
+  const newLength = Math.round(buffer.length / sampleRateRatio);
+  const result = new Float32Array(newLength);
+  let offsetResult = 0, offsetBuffer = 0;
+  while (offsetResult < result.length) {
+    const nextOffsetBuffer = Math.round((offsetResult + 1) * sampleRateRatio);
+    let accum = 0, count = 0;
+    for (let i = offsetBuffer; i < nextOffsetBuffer && i < buffer.length; i++) {
+      accum += buffer[i];
+      count++;
+    }
+    result[offsetResult] = accum / count;
+    offsetResult++;
+    offsetBuffer = nextOffsetBuffer;
+  }
+  return result;
+}
+
+// We will send chunk sizes that are multiples of 3200 bytes (1600 samples * 2 bytes)
+function sendPCMChunk(float32Array) {
+  const down = downsampleBuffer(float32Array, audioCtx.sampleRate, 16000);
+  const pcm16 = floatTo16BitPCM(down);
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    // Optionally slice into smaller frames (e.g., 3200 bytes)
+    const maxChunk = 3200; // bytes
+    for (let i = 0; i < pcm16.length; i += maxChunk) {
+      const chunk = pcm16.slice(i, i + maxChunk);
+      ws.send(chunk);
+    }
+  }
+}
+
+async function start() {
+  startBtn.disabled = true;
+  stopBtn.disabled = false;
+  transcriptEl.textContent = "";
+  replyEl.textContent = "";
+  player.src = "";
+  logStatus("Bağlanıyor...");
+
+  ws = new WebSocket(`ws://${location.host}`);
+  ws.binaryType = "arraybuffer";
+
+  ws.onopen = async () => {
+    logStatus("WS açık, mikrofon açılıyor...");
+    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
+    sourceNode = audioCtx.createMediaStreamSource(mediaStream);
+
+    // ScriptProcessor is deprecated but safe PoC; alternatives: AudioWorklet
+    processor = audioCtx.createScriptProcessor(4096, 1, 1);
+    processor.onaudioprocess = (e) => {
+      const input = e.inputBuffer.getChannelData(0);
+      sendPCMChunk(input);
+    };
+
+    sourceNode.connect(processor);
+    processor.connect(audioCtx.destination);
+
+    logStatus("Dinleniyor...");
+  };
+
+  ws.onmessage = (ev) => {
+    try {
+      const data = JSON.parse(ev.data);
+      if (data.type === "partial") {
+        transcriptEl.textContent = "⏳ " + data.text;
+      } else if (data.type === "final") {
+        transcriptEl.textContent = "🗣️ " + data.text;
+        logStatus("Cevap hazırlanıyor...");
+      } else if (data.type === "reply") {
+        replyEl.textContent = "💡 " + data.text;
+      } else if (data.type === "tts") {
+        const src = `data:audio/${data.format};base64,${data.base64}`;
+        player.src = src;
+        player.play().catch(e => console.warn("play error", e));
+        // After audio starts playing, status -> tekrar dinleyecek
+        player.onended = () => logStatus("Dinleniyor...");
+      } else if (data.type === "error") {
+        logStatus("Hata: " + data.error);
+      }
+    } catch(e){
+      // not JSON
+    }
+  };
+
+  ws.onclose = () => {
+    logStatus("WS kapandı.");
+    cleanup();
+  };
+  ws.onerror = (err) => {
+    console.error("WS error", err);
+    logStatus("WS hata");
+    cleanup();
+  };
+}
+
+function stop() {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: "control", action: "end" }));
+    ws.close();
+  }
+  cleanup();
+}
+
+function cleanup() {
+  startBtn.disabled = false;
+  stopBtn.disabled = true;
+  try { processor && processor.disconnect(); } catch {}
+  try { sourceNode && sourceNode.disconnect(); } catch {}
+  try { audioCtx && audioCtx.close(); } catch {}
+  try { mediaStream && mediaStream.getTracks().forEach(t => t.stop()); } catch {}
+  logStatus("Durduruldu");
+}
+
+startBtn.onclick = start;
+stopBtn.onclick = stop;
+</script>
+</body>
+</html>
+```
+
+---
+
+## Önemli notlar — neden işe yarar / olası hatalar ve çözümleri
+
+1. **Ses formatı kritik**: Tarayıcıdan gönderdiğimiz chunk’lar **PCM16LE, 16 kHz, mono** olmalı. İstemci kodunda bunu sağladık (downsample + int16 convert). Azure’a giden pushStream de WAV formatı beklentisine uygun `AudioInputStream` ile yazılıyor.
+
+2. **Chunk boyutu**: Loglarında `2730` gibi düzensiz uzunluk görmüştün — Azure bazen tam frame boundary bekleyebilir. İstemcide 3200 byte’lık adımlarla gönderme mantığı uyguladım (1600 sample \* 2 byte). Bu sayede daha stabil sonuç alırsın.
+
+3. **Dil ayarı**: `speechConfig.speechRecognitionLanguage = "tr-TR"` olarak ayarlandı — Türkçe ise gerekli.
+
+4. **Concurrency / isProcessing flag**: Sunucu, final event geldiğinde `isProcessing = true` yapıp yeni final'leri cevap üretimi sürerken yoksayar. Bu döngünün kararlılığını artırır.
+
+5. **UE / Play izinleri**: Tarayıcı otomatik çalma kısıtlamaları olabilir — kullanıcı ilk etkileşim ile `Başlat` butonuna tıklamalı (bunu sağladık).
+
+6. **Latency tuning**: Küçük beklemeler, chunk boyutları ve ElevenLabs dönüş süreleri gerçek deneyde ayarlanmalı.
+
+---
+
+Eğer istersen şimdiye kadar:
+
+* Bu kodu senin için tek bir GitHub Gist / zip haline getireyim (indirmeye hazır), **veya**
+* Azure tarafında hata alıyorsan senin önceki loglardaki spesifik `52494646...` header’lı örnekleri kullanarak debug yapalım — bana bir örnek WAV/PCM dosyası Base64 ya da hatalı chunk boyutlarını göster (ama özel gizli anahtar **gönderme**), ben potansiyel byte-alignment hatalarını göstereyim.
+
+Hangi adımı istersin? (İndirilebilir zip mi, yoksa bağlanıp debug mu?)
