@@ -586,12 +586,17 @@ Her etkileşimin nihai bir amacı olmalıdır: Konfigürasyonun bir sonraki mant
 
 Sen meraklı, rehber, empatik ve mimar bir kişiliksin. Kullanıcıyla doğal ve akıcı bir şekilde konuş, asla tekrarlanma, her mesajın bir amacı olsun.`;
 
-  // WebSocket bağlantıları için ses işleme
+  // WebSocket bağlantıları için ses işleme - Optimize edilmiş session management
   wss.on('connection', (ws: WebSocket) => {
     console.log('🔌 WebSocket voice chat connection established');
     
-    // Her bağlantı için conversation history
-    let conversationHistory: ConversationMessage[] = [];
+    // Her bağlantı için session state
+    const session = {
+      conversationHistory: [] as ConversationMessage[],
+      isRecognizing: false,
+      audioBuffer: Buffer.alloc(0),
+      isStreamingMode: false
+    };
     
     ws.on('message', async (data: WebSocket.Data) => {
       try {
@@ -614,28 +619,36 @@ Sen meraklı, rehber, empatik ve mimar bir kişiliksin. Kullanıcıyla doğal ve
           
           if (message.type === 'start_listening') {
             console.log('🎤 Starting PCM16 audio stream session');
-            // Initialize audio buffer for this connection
-            (ws as any).audioBuffer = Buffer.alloc(0);
-            (ws as any).isStreamingMode = true;
-            ws.send(JSON.stringify({ type: 'stream_ready' }));
+            // Initialize session için audio stream
+            session.audioBuffer = Buffer.alloc(0);
+            session.isStreamingMode = true;
+            session.isRecognizing = true;
+            ws.send(JSON.stringify({ 
+              type: 'stream_ready',
+              message: 'Konuşabilirsiniz...'
+            }));
             return;
           } else if (message.type === 'stop_listening') {
             console.log('🛑 Stopping audio stream session');
-            (ws as any).isStreamingMode = false;
-            ws.send(JSON.stringify({ type: 'stream_stopped' }));
+            session.isStreamingMode = false;
+            session.isRecognizing = false;
+            ws.send(JSON.stringify({ 
+              type: 'stream_stopped',
+              message: 'Dinleme durduruldu'
+            }));
             return;
           } else if (message.type === 'audio') {
             // Legacy Base64 audio handling (keep for backward compatibility)
             console.log('🎤 Received legacy audio data via WebSocket');
             let audioBuffer = Buffer.from(message.audioData, 'base64');
             // Continue with legacy processing...
-            await processAudioBuffer(audioBuffer, ws, conversationHistory);
+            await processAudioBuffer(audioBuffer, ws, session.conversationHistory);
             return;
           }
         }
         
-        // Handle binary PCM16 audio stream
-        else if ((ws as any).isStreamingMode) {
+        // Handle binary PCM16 audio stream - Optimize edilmiş
+        else if (session.isStreamingMode) {
           const audioChunk = data instanceof ArrayBuffer ? Buffer.from(data) : data as Buffer;
           console.log(`🎵 PCM16 chunk: ${audioChunk.length} bytes`);
           
@@ -646,20 +659,26 @@ Sen meraklı, rehber, empatik ve mimar bir kişiliksin. Kullanıcıyla doğal ve
           }
           
           // Accumulate PCM16 chunks
-          if (!(ws as any).audioBuffer) {
-            (ws as any).audioBuffer = Buffer.alloc(0);
+          session.audioBuffer = Buffer.concat([session.audioBuffer, audioChunk]);
+          
+          // Send partial transcript feedback (simulate)
+          if (session.audioBuffer.length % 8000 === 0 && session.isRecognizing) {
+            ws.send(JSON.stringify({ 
+              type: 'partial_transcript', 
+              text: '...' 
+            }));
           }
-          (ws as any).audioBuffer = Buffer.concat([(ws as any).audioBuffer, audioChunk]);
           
           // Process when we have enough data (32KB = ~1 second of 16kHz PCM16)
-          if ((ws as any).audioBuffer.length >= 32000) {
-            console.log(`🎤 Processing accumulated PCM16: ${(ws as any).audioBuffer.length} bytes`);
-            const audioToProcess = (ws as any).audioBuffer;
-            (ws as any).audioBuffer = Buffer.alloc(0); // Reset buffer
+          if (session.audioBuffer.length >= 32000) {
+            console.log(`🎤 Processing accumulated PCM16: ${session.audioBuffer.length} bytes`);
+            const audioToProcess = session.audioBuffer;
+            session.audioBuffer = Buffer.alloc(0); // Reset buffer
+            session.isRecognizing = false;
             
             // Create WAV header for Azure Speech (16kHz, 16-bit, mono)
             const wavBuffer = createWAVBuffer(audioToProcess);
-            await processAudioBuffer(wavBuffer, ws, conversationHistory);
+            await processOptimizedAudioBuffer(wavBuffer, ws, session);
           }
           return;
         }
@@ -681,6 +700,166 @@ Sen meraklı, rehber, empatik ve mimar bir kişiliksin. Kullanıcıyla doğal ve
       console.error('WebSocket error:', error);
     });
   });
+
+  // Optimize edilmiş session-based audio processing
+  async function processOptimizedAudioBuffer(audioBuffer: Buffer, ws: WebSocket, session: any) {
+    try {
+      console.log('🎤 Starting optimized audio processing...');
+      
+      // 1. Speech-to-Text (Azure Speech)
+      let userText = '';
+      try {
+        console.log('🎤 Speech recognition starting:', audioBuffer.length, 'bytes');
+        userText = await azureSpeechService.speechToText(audioBuffer);
+        console.log('🎤 Speech recognition result:', userText ? `"${userText}"` : 'EMPTY');
+        
+        // Send final transcript
+        if (userText && userText.trim()) {
+          ws.send(JSON.stringify({
+            type: 'final_transcript',
+            text: userText
+          }));
+        }
+      } catch (speechError: any) {
+        console.error('❌ Speech recognition error:', speechError);
+        ws.send(JSON.stringify({
+          type: 'error',
+          error: 'Ses tanıma hatası: ' + (speechError.message || speechError)
+        }));
+        return;
+      }
+
+      if (!userText || userText.trim() === '') {
+        ws.send(JSON.stringify({
+          type: 'info',
+          message: 'Ses tanınamadı, lütfen tekrar konuşun.'
+        }));
+        // Restart listening
+        session.isRecognizing = true;
+        session.isStreamingMode = true;
+        return;
+      }
+
+      console.log(`👤 User said: "${userText}"`);
+
+      // 2. Conversation history update
+      session.conversationHistory.push({
+        role: 'user',
+        content: userText
+      });
+
+      // 3. AI Response Generation (Gemini)
+      let aiResponse = 'Merhaba! Size nasıl yardımcı olabilirim?';
+      
+      try {
+        console.log('🤖 Generating AI response...');
+        
+        const prompt = `
+${ETERNA_SYSTEM_PROMPT}
+
+Konuşma geçmişi:
+${session.conversationHistory.map((msg: any) => `${msg.role}: ${msg.content}`).join('\n')}
+
+Kullanıcı: ${userText}
+Asistan:`;
+
+        const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{ text: prompt }]
+            }]
+          })
+        });
+
+        if (geminiResponse.ok) {
+          const geminiData = await geminiResponse.json();
+          if (geminiData.candidates && geminiData.candidates[0] && geminiData.candidates[0].content) {
+            aiResponse = geminiData.candidates[0].content.parts[0].text;
+          }
+        }
+      } catch (geminiError) {
+        console.log('Gemini API error:', geminiError);
+        aiResponse = `Anladım, "${userText}" dediniz. Size nasıl yardımcı olabilirim?`;
+      }
+
+      console.log(`🤖 AI Response: "${aiResponse}"`);
+
+      // Send LLM reply
+      ws.send(JSON.stringify({
+        type: 'llm_reply',
+        text: aiResponse
+      }));
+
+      // Update conversation history
+      session.conversationHistory.push({
+        role: 'assistant',
+        content: aiResponse
+      });
+
+      // Keep history manageable (last 10 messages)
+      if (session.conversationHistory.length > 10) {
+        session.conversationHistory = session.conversationHistory.slice(-10);
+      }
+
+      // 4. Text-to-Speech (ElevenLabs primary, Azure fallback)
+      try {
+        console.log('🔊 Generating TTS audio...');
+        let audioBuffer;
+        let audioFormat = 'mp3';
+
+        try {
+          // Try ElevenLabs first
+          audioBuffer = await elevenLabsTTSService.generateTurkishFemaleVoice(aiResponse);
+          audioFormat = 'mp3';
+          console.log('✅ ElevenLabs TTS successful');
+        } catch (elevenLabsError) {
+          console.log('⚠️ ElevenLabs failed, trying Azure Speech:', elevenLabsError);
+          // Fallback to Azure Speech
+          audioBuffer = await azureSpeechService.textToSpeech(aiResponse);
+          audioFormat = 'wav';
+          console.log('✅ Azure Speech TTS successful');
+        }
+
+        const base64Audio = audioBuffer.toString('base64');
+        
+        // Send TTS audio
+        ws.send(JSON.stringify({
+          type: 'tts_audio',
+          format: audioFormat,
+          base64: base64Audio
+        }));
+
+        console.log('🔊 Audio response sent successfully');
+
+      } catch (ttsError) {
+        console.error('❌ All TTS services failed:', ttsError);
+        ws.send(JSON.stringify({
+          type: 'error',
+          error: 'Ses üretimi başarısız oldu'
+        }));
+      }
+
+      // Reset session for next interaction
+      session.isRecognizing = true;
+      session.isStreamingMode = true;
+      console.log('✅ Session ready for next interaction');
+
+    } catch (error: any) {
+      console.error('❌ Optimized audio processing error:', error);
+      ws.send(JSON.stringify({
+        type: 'error',
+        error: 'Ses işleme hatası: ' + (error.message || error)
+      }));
+      
+      // Reset session even on error
+      session.isRecognizing = true;
+      session.isStreamingMode = true;
+    }
+  }
 
   // Helper function to create WAV buffer from PCM16 data
   function createWAVBuffer(pcmData: Buffer): Buffer {

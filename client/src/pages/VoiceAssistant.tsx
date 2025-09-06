@@ -49,6 +49,11 @@ export default function VoiceAssistant() {
   const [isListening, setIsListening] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [webSocket, setWebSocket] = useState<WebSocket | null>(null);
+  const [partialTranscript, setPartialTranscript] = useState<string>('');
+  const [finalTranscript, setFinalTranscript] = useState<string>('');
+  const [aiResponse, setAiResponse] = useState<string>('');
+  const [isGeneratingResponse, setIsGeneratingResponse] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [isVADActive, setIsVADActive] = useState(false);
   const [isHandsfreeMode, setIsHandsfreeMode] = useState(false);
@@ -117,141 +122,66 @@ export default function VoiceAssistant() {
       
       ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        console.log('📩 WebSocket message received:', data.type, 'audioData length:', data.audioData ? data.audioData.length : 'none');
+        console.log('📩 WebSocket message received:', data.type);
         
-        if (data.type === 'response') {
-          setIsProcessing(false);
-          
-          // Agresif otomatik yeniden başlatma - response aldıktan hemen sonra
-          setTimeout(() => {
-            if (isListening && !isProcessing) {
-              console.log('🔄 Aggressive auto-restart - immediately after response');
-              startListening();
-            }
-          }, 800);
-          
-          // Backup fallback timer
-          const restartFallback = setTimeout(() => {
-            if (isListening && !isProcessing) {
-              console.log('🔄 Backup fallback restart triggered');
-              startListening();
-            }
-          }, 1500);
-          
-          // Sesli cevabı oynat
-          if (data.audioData) {
-            try {
-              console.log('🔊 Processing audio response, size:', data.audioData.length);
-              
-              // Audio decode
-              const audioData = Uint8Array.from(atob(data.audioData), c => c.charCodeAt(0));
-              console.log('🔊 Decoded audio data size:', audioData.length, 'bytes');
-              
-              const audioBlob = new Blob([audioData], { type: 'audio/mpeg' });
-              const audioUrl = URL.createObjectURL(audioBlob);
-              console.log('🔊 Created audio URL:', audioUrl);
-              
-              const audio = new Audio(audioUrl);
-              
-              audio.addEventListener('loadstart', () => {
-                console.log('🔊 Audio started loading');
-              });
-              
-              audio.addEventListener('canplay', () => {
-                console.log('🔊 Audio can play');
-              });
-              
-              audio.addEventListener('play', () => {
-                console.log('🔊 Audio started playing');
-              });
-              
-              audio.addEventListener('ended', () => {
-                console.log('🔊 Audio finished playing');
-                URL.revokeObjectURL(audioUrl);
-                clearTimeout(restartFallback);
-                // Cevap bittikten sonra tekrar dinlemeye başla
-                console.log('🔊 Auto-restarting listening...');
-                setTimeout(() => {
-                  if (isListening && !isProcessing) {
-                    console.log('🎤 Restarting continuous listening...');
-                    startListening();
-                  } else {
-                    console.log('🎤 Cannot restart: isListening=', isListening, 'isProcessing=', isProcessing);
-                  }
-                }, 500);
-              });
-              
-              audio.addEventListener('error', (error) => {
-                console.error('🔊 Audio play error:', error);
-                console.error('🔊 Audio error details:', audio.error);
-                URL.revokeObjectURL(audioUrl);
-                clearTimeout(restartFallback);
-                // Ses oynatma hatası olursa da tekrar dinlemeye başla
-                console.log('🔊 Audio error - restarting listening...');
-                setTimeout(() => {
-                  if (isListening && !isProcessing) {
-                    console.log('🎤 Restarting listening after audio error...');
-                    startListening();
-                  }
-                }, 500);
-              });
-              
-              console.log('🔊 Starting audio playback...');
-              const playPromise = audio.play();
-              
-              if (playPromise !== undefined) {
-                playPromise
-                  .then(() => {
-                    console.log('🔊 Audio playback started successfully');
-                  })
-                  .catch(error => {
-                    console.error('🔊 Audio playback failed:', error);
-                    URL.revokeObjectURL(audioUrl);
-                    clearTimeout(restartFallback);
-                    // Playback başlatma hatası olursa da tekrar dinlemeye başla
-                    console.log('🔊 Playback failed - restarting listening...');
-                    setTimeout(() => {
-                      if (isListening && !isProcessing) {
-                        console.log('🎤 Restarting listening after playback error...');
-                        startListening();
-                      }
-                    }, 500);
-                  });
-              }
-              
-            } catch (error) {
-              console.error('🔊 Audio processing error:', error);
-              clearTimeout(restartFallback);
-              // Audio processing hatası olursa da tekrar dinlemeye başla
-              setTimeout(() => {
-                if (isListening && !isProcessing) {
-                  console.log('🎤 Restarting listening after audio processing error...');
-                  startListening();
-                }
-              }, 500);
-            }
-          } else {
-            // Ses verisi yoksa direkt yeniden başla
-            clearTimeout(restartFallback);
-            console.log('🔊 No audio data - restarting listening...');
+        switch (data.type) {
+          case 'stream_ready':
+            console.log('✅ Stream ready:', data.message);
+            setIsProcessing(true);
+            break;
+            
+          case 'partial_transcript':
+            console.log('📋 Partial transcript:', data.text);
+            setPartialTranscript(data.text);
+            break;
+            
+          case 'final_transcript':
+            console.log('✅ Final transcript:', data.text);
+            setFinalTranscript(data.text);
+            setPartialTranscript('');
+            setIsGeneratingResponse(true);
+            break;
+            
+          case 'llm_reply':
+            console.log('🤖 AI Response:', data.text);
+            setAiResponse(data.text);
+            setIsGeneratingResponse(false);
+            break;
+            
+          case 'tts_audio':
+            console.log('🔊 Received TTS audio:', data.format);
+            setIsSpeaking(true);
+            playOptimizedAudio(data.base64, data.format);
+            break;
+            
+          case 'info':
+            console.log('ℹ️ Info:', data.message);
+            // Session is ready for next interaction
+            setIsProcessing(false);
             setTimeout(() => {
-              if (isListening && !isProcessing) {
-                console.log('🎤 Restarting listening - no audio response...');
-                startListening();
+              if (isListening) {
+                console.log('🔄 Restarting after info message');
+                startOptimizedListening();
               }
-            }, 500);
-          }
-        } else if (data.type === 'error') {
-          setIsProcessing(false);
-          console.error('Voice chat error:', data.message);
-          // Hata durumunda da tekrar dinlemeye başla
-          console.log('🔊 WebSocket error - restarting listening...');
-          setTimeout(() => {
-            if (isListening && !isProcessing) {
-              console.log('🎤 Restarting listening after WebSocket error...');
-              startListening();
-            }
-          }, 1500);
+            }, 1000);
+            break;
+            
+          case 'error':
+            console.error('❌ Error:', data.error);
+            setIsProcessing(false);
+            setIsGeneratingResponse(false);
+            setIsSpeaking(false);
+            // Restart listening after error
+            setTimeout(() => {
+              if (isListening) {
+                console.log('🔄 Restarting after error');
+                startOptimizedListening();
+              }
+            }, 2000);
+            break;
+            
+          default:
+            console.log('❓ Unknown message type:', data.type);
         }
       };
       
@@ -278,13 +208,19 @@ export default function VoiceAssistant() {
     };
   }, []);
 
-  // PCM16 Audio Streaming (Azure Speech için optimize)
-  const startListening = async () => {
+  // Optimize edilmiş PCM16 Audio Streaming
+  const startOptimizedListening = async () => {
     if (!isConnected || !webSocket || isProcessing) return;
     
     try {
-      console.log('🎤 Starting PCM16 audio streaming');
-      setIsProcessing(true);
+      console.log('🎤 Starting optimized PCM16 audio streaming');
+      
+      // Clear previous states
+      setPartialTranscript('');
+      setFinalTranscript('');
+      setAiResponse('');
+      setIsGeneratingResponse(false);
+      setIsSpeaking(false);
       
       // WebSocket'e kontrol mesajı gönder
       webSocket.send(JSON.stringify({ type: 'start_listening' }));
@@ -293,7 +229,9 @@ export default function VoiceAssistant() {
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
-          autoGainControl: true
+          autoGainControl: true,
+          sampleRate: 16000,
+          channelCount: 1
         } 
       });
       
@@ -307,7 +245,6 @@ export default function VoiceAssistant() {
       const processor = audioContext.createScriptProcessor(4096, 1, 1);
       
       let sampleCounter = 0;
-      let totalSamples = 0;
       
       processor.onaudioprocess = (e) => {
         const input = e.inputBuffer.getChannelData(0); // mono
@@ -322,18 +259,17 @@ export default function VoiceAssistant() {
           webSocket.send(pcm16);
         }
         
-        // Ses seviyesi monitoring (her 10 chunk'ta bir)
-        totalSamples += downsampled.length;
-        if (sampleCounter++ % 10 === 0) {
+        // Minimal monitoring
+        if (sampleCounter++ % 20 === 0) {
           const average = downsampled.reduce((a, b) => a + Math.abs(b), 0) / downsampled.length;
-          console.log(`🎤 Audio Level: ${(average * 100).toFixed(1)}%, Total samples: ${totalSamples}`);
+          console.log(`🎤 Audio Level: ${(average * 100).toFixed(1)}%`);
         }
       };
       
       sourceNode.connect(processor);
       processor.connect(audioContext.destination);
       
-      console.log('🎤 PCM16 streaming active - talk now!');
+      console.log('🎤 Optimized PCM16 streaming active!');
       
       // Cleanup function'ı store et
       const cleanup = () => {
@@ -353,20 +289,19 @@ export default function VoiceAssistant() {
           stream && stream.getTracks().forEach(t => t.stop()); 
           console.log('🔄 Stream stopped');
         } catch {}
-        setIsProcessing(false);
       };
       
       // Global cleanup store et
-      (window as any).currentAudioCleanup = cleanup;
+      (window as any).currentOptimizedCleanup = cleanup;
       
-      // 10 saniye sonra otomatik dur
+      // 8 saniye sonra otomatik dur (daha kısa session)
       setTimeout(() => {
-        console.log('🎤 Auto-stopping after 10 seconds');
+        console.log('🎤 Auto-stopping after 8 seconds');
         cleanup();
         if (webSocket && webSocket.readyState === WebSocket.OPEN) {
           webSocket.send(JSON.stringify({ type: 'stop_listening' }));
         }
-      }, 10000);
+      }, 8000);
       
     } catch (error) {
       console.error('❌ Microphone access error:', error);
@@ -438,7 +373,7 @@ export default function VoiceAssistant() {
           console.log('🗣️ Konuşma başladı - kayıt başlatılıyor');
           if (!isProcessing && isConnected && webSocket) {
             setIsListening(true);
-            startListening();
+            startOptimizedListening();
           }
         },
         onSpeechEnd: () => {
@@ -501,18 +436,88 @@ export default function VoiceAssistant() {
     };
   }, []);
 
-  // Ana mikrofon butonu
-  const toggleVoiceChat = () => {
+  // Optimize edilmiş audio playback
+  const playOptimizedAudio = async (base64Audio: string, format: string) => {
+    try {
+      // Base64'ü blob'a dönüştür
+      const audioData = atob(base64Audio);
+      const audioArray = new Uint8Array(audioData.length);
+      for (let i = 0; i < audioData.length; i++) {
+        audioArray[i] = audioData.charCodeAt(i);
+      }
+      
+      const mimeType = format === 'mp3' ? 'audio/mpeg' : 'audio/wav';
+      const audioBlob = new Blob([audioArray], { type: mimeType });
+      const audioUrl = URL.createObjectURL(audioBlob);
+      
+      const audio = new Audio(audioUrl);
+      
+      audio.onended = () => {
+        setIsSpeaking(false);
+        URL.revokeObjectURL(audioUrl);
+        console.log('🔊 Audio finished - ready for next interaction');
+        
+        // Auto-restart listening after audio ends
+        setTimeout(() => {
+          if (isListening) {
+            console.log('🔄 Auto-restarting listening after audio');
+            startOptimizedListening();
+          }
+        }, 1000);
+      };
+      
+      audio.onerror = () => {
+        setIsSpeaking(false);
+        URL.revokeObjectURL(audioUrl);
+        console.error('❌ Audio playback error');
+        
+        // Restart even on error
+        setTimeout(() => {
+          if (isListening) {
+            console.log('🔄 Restarting after audio error');
+            startOptimizedListening();
+          }
+        }, 1500);
+      };
+      
+      await audio.play();
+      console.log('🔊 Playing optimized audio response');
+      
+    } catch (err) {
+      setIsSpeaking(false);
+      console.error('❌ Audio processing error:', err);
+      
+      // Restart on processing error
+      setTimeout(() => {
+        if (isListening) {
+          console.log('🔄 Restarting after processing error');
+          startOptimizedListening();
+        }
+      }, 1500);
+    }
+  };
+
+  // Ana mikrofon butonu - Optimize edilmiş
+  const toggleOptimizedVoiceChat = () => {
     if (isListening) {
       // Dinlemeyi durdur
       setIsListening(false);
-      if (mediaRecorder && mediaRecorder.state === 'recording') {
-        mediaRecorder.stop();
+      setIsProcessing(false);
+      setIsGeneratingResponse(false);
+      setIsSpeaking(false);
+      
+      // Cleanup current session
+      if ((window as any).currentOptimizedCleanup) {
+        (window as any).currentOptimizedCleanup();
+      }
+      
+      if (webSocket && webSocket.readyState === WebSocket.OPEN) {
+        webSocket.send(JSON.stringify({ type: 'stop_listening' }));
       }
     } else {
       // Dinlemeye başla
       setIsListening(true);
-      startListening();
+      startOptimizedListening();
     }
   };
 
@@ -644,7 +649,7 @@ export default function VoiceAssistant() {
             {/* Voice Chat Toggle Button in center of Siri Orb */}
             <div className="absolute inset-0 flex items-center justify-center">
               <button
-                onClick={toggleVoiceChat}
+                onClick={toggleOptimizedVoiceChat}
                 disabled={!isConnected || isHandsfreeMode}
                 className={`
                   transition-all duration-200
@@ -709,6 +714,54 @@ export default function VoiceAssistant() {
                 </div>
               </div>
             </div>
+            
+            {/* Optimize edilmiş Real-time Status Panel */}
+            {(partialTranscript || finalTranscript || aiResponse || isGeneratingResponse || isSpeaking) && (
+              <div className="absolute bottom-44 left-1/2 transform -translate-x-1/2 z-20 w-full max-w-md px-4">
+                <div className="bg-black/30 backdrop-blur-md rounded-2xl p-4 border border-white/10 space-y-3">
+                  
+                  {partialTranscript && (
+                    <div className="bg-blue-500/20 backdrop-blur-sm rounded-lg p-3 border border-blue-400/30">
+                      <p className="text-xs font-medium text-blue-200 mb-1">Dinleniyor...</p>
+                      <p className="text-sm text-blue-100">{partialTranscript}</p>
+                    </div>
+                  )}
+                  
+                  {finalTranscript && (
+                    <div className="bg-green-500/20 backdrop-blur-sm rounded-lg p-3 border border-green-400/30">
+                      <p className="text-xs font-medium text-green-200 mb-1">Siz:</p>
+                      <p className="text-sm text-green-100">{finalTranscript}</p>
+                    </div>
+                  )}
+                  
+                  {isGeneratingResponse && (
+                    <div className="bg-yellow-500/20 backdrop-blur-sm rounded-lg p-3 border border-yellow-400/30">
+                      <p className="text-sm font-medium text-yellow-200 flex items-center">
+                        <span className="animate-spin mr-2">🤖</span>
+                        AI yanıt üretiyor...
+                      </p>
+                    </div>
+                  )}
+                  
+                  {aiResponse && (
+                    <div className="bg-purple-500/20 backdrop-blur-sm rounded-lg p-3 border border-purple-400/30">
+                      <p className="text-xs font-medium text-purple-200 mb-1">AI:</p>
+                      <p className="text-sm text-purple-100">{aiResponse}</p>
+                    </div>
+                  )}
+                  
+                  {isSpeaking && (
+                    <div className="bg-orange-500/20 backdrop-blur-sm rounded-lg p-3 border border-orange-400/30">
+                      <p className="text-sm font-medium text-orange-200 flex items-center">
+                        <span className="animate-pulse mr-2">🔊</span>
+                        Sesli yanıt oynuyor...
+                      </p>
+                    </div>
+                  )}
+                  
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </SidebarInset>
