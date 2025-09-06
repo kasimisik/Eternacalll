@@ -8,7 +8,7 @@ export class AzureSpeechService {
   private isEnabled: boolean;
 
   constructor() {
-    const speechKey = process.env.AZURE_SPEECH_KEY;
+    const speechKey = process.env.AZURE_SPEECH_API_KEY;
     const speechRegion = process.env.AZURE_SPEECH_REGION;
 
     if (!speechKey || !speechRegion) {
