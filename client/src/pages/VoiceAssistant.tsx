@@ -144,16 +144,29 @@ export default function VoiceAssistant() {
                 console.log('🔊 Audio finished playing');
                 URL.revokeObjectURL(audioUrl);
                 // Cevap bittikten sonra tekrar dinlemeye başla
+                console.log('🔊 Auto-restarting listening...');
                 setTimeout(() => {
                   if (isListening && !isProcessing) {
+                    console.log('🎤 Restarting continuous listening...');
                     startListening();
+                  } else {
+                    console.log('🎤 Cannot restart: isListening=', isListening, 'isProcessing=', isProcessing);
                   }
-                }, 500);
+                }, 1000);
               });
               
               audio.addEventListener('error', (error) => {
                 console.error('🔊 Audio play error:', error);
                 console.error('🔊 Audio error details:', audio.error);
+                URL.revokeObjectURL(audioUrl);
+                // Ses oynatma hatası olursa da tekrar dinlemeye başla
+                console.log('🔊 Audio error - restarting listening...');
+                setTimeout(() => {
+                  if (isListening && !isProcessing) {
+                    console.log('🎤 Restarting listening after audio error...');
+                    startListening();
+                  }
+                }, 1000);
               });
               
               console.log('🔊 Starting audio playback...');
@@ -166,6 +179,15 @@ export default function VoiceAssistant() {
                   })
                   .catch(error => {
                     console.error('🔊 Audio playback failed:', error);
+                    URL.revokeObjectURL(audioUrl);
+                    // Playback başlatma hatası olursa da tekrar dinlemeye başla
+                    console.log('🔊 Playback failed - restarting listening...');
+                    setTimeout(() => {
+                      if (isListening && !isProcessing) {
+                        console.log('🎤 Restarting listening after playback error...');
+                        startListening();
+                      }
+                    }, 1000);
                   });
               }
               
@@ -176,6 +198,14 @@ export default function VoiceAssistant() {
         } else if (data.type === 'error') {
           setIsProcessing(false);
           console.error('Voice chat error:', data.message);
+          // Hata durumunda da tekrar dinlemeye başla
+          console.log('🔊 WebSocket error - restarting listening...');
+          setTimeout(() => {
+            if (isListening && !isProcessing) {
+              console.log('🎤 Restarting listening after WebSocket error...');
+              startListening();
+            }
+          }, 1500);
         }
       };
       
