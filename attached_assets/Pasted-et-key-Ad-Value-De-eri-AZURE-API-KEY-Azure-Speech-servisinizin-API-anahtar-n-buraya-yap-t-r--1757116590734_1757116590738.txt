@@ -1,0 +1,159 @@
+et key (Adı)	Value (Değeri)
+AZURE_API_KEY	Azure Speech servisinizin API anahtarını buraya yapıştırın.
+AZURE_REGION	Azure servisinizin bölgesini yazın (örn: westeurope).
+GEMINI_API_KEY	Google AI Studio'dan aldığınız Gemini API anahtarını buraya yapıştırın.
+ELEVENLABS_API_KEY	ElevenLabs API anahtarınızı buraya yapıştırın.
+ELEVENLABS_VOICE_ID	Kullanmak istediğiniz sesin ID'sini buraya yapıştırın (örn: 21m00Tcm4TlvDq8ikWAM).
+Replit bu "Secret"ları otomatik olarak projenizin ortam değişkenlerine (process.env) yükleyecektir.
+ADIM 2: Gerekli Kütüphaneyi Yüklemek
+API'lere kolayca istek atmak için axios kütüphanesini kullanacağız.
+Replit'te sol menüden "Shell" sekmesini açın.
+Komut satırına şunu yazın ve Enter'a basın:
+code
+Bash
+npm install axios
+ADIM 3: "Ses Motoru" Kodunu Güncellemek (server.js)
+Şimdi, server.js dosyanızın içeriğini tamamen silin ve aşağıdaki gerçek, çalışan kodu yapıştırın.
+code
+JavaScript
+// --- EternaCall Voice Engine (server.js) - Üretim Sürümü ---
+
+const express = require('express');
+const http = require('http');
+const WebSocket = require('ws');
+const axios = require('axios'); // API istekleri için
+
+const app = express();
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
+
+// --- API Fonksiyonları ---
+
+/**
+ * Gelen ses verisini Azure'a gönderip metne çevirir.
+ * @param {Buffer} audioBuffer - İstemciden gelen ses verisi.
+ * @returns {Promise<string>} - Konuşulan metin.
+ */
+async function callAzureSTT(audioBuffer) {
+  const url = `https://{process.env.AZURE_REGION}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=tr-TR`;
+  
+  try {
+    const response = await axios.post(url, audioBuffer, {
+      headers: {
+        'Ocp-Apim-Subscription-Key': process.env.AZURE_API_KEY,
+        'Content-Type': 'audio/webm; codecs=opus', // Tarayıcıdan gelen format
+      },
+    });
+    console.log("Azure STT Cevabı:", response.data);
+    return response.data.DisplayText || "";
+  } catch (error) {
+    console.error("Azure STT Hatası:", error.response ? error.response.data : error.message);
+    return ""; // Hata durumunda boş metin döndür
+  }
+}
+
+/**
+ * Metni Gemini'ye gönderip AI cevabını alır.
+ * @param {string} userText - Kullanıcının söylediği metin.
+ * @returns {Promise<string>} - AI'ın ürettiği metin cevap.
+ */
+async function callGemini(userText) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${process.env.GEMINI_API_KEY}`;
+  
+  // NOT: Buraya sohbet geçmişini (history) de ekleyerek hafızalı bir yapı kurabilirsiniz.
+  const requestBody = {
+    "contents": [{
+      "parts": [{
+        "text": userText 
+      }]
+    }]
+    // System Prompt'u buraya "system_instruction" olarak ekleyebilirsiniz.
+  };
+
+  try {
+    const response = await axios.post(url, requestBody, {
+      headers: { 'Content-Type': 'application/json' },
+    });
+    return response.data.candidates[0].content.parts[0].text;
+  } catch (error) {
+    console.error("Gemini Hatası:", error.response ? error.response.data : error.message);
+    return "Üzgünüm, bir sorunla karşılaştım.";
+  }
+}
+
+/**
+ * Metni ElevenLabs'e gönderip ses verisini alır.
+ * @param {string} aiText - Gemini'nin ürettiği metin.
+ * @returns {Promise<Buffer>} - Üretilen ses verisi (MP3).
+ */
+async function callElevenLabsTTS(aiText) {
+  const url = `https://api.elevenlabs.io/v1/text-to-speech/${process.env.ELEVENLABS_VOICE_ID}`;
+  
+  const requestBody = {
+    text: aiText,
+    model_id: "eleven_multilingual_v2",
+    voice_settings: {
+      stability: 0.5,
+      similarity_boost: 0.75,
+    },
+  };
+
+  try {
+    const response = await axios.post(url, requestBody, {
+      headers: {
+        'xi-api-key': process.env.ELEVENLABS_API_KEY,
+        'Content-Type': 'application/json',
+      },
+      responseType: 'arraybuffer' // ÇOK ÖNEMLİ: Cevabın binary ses dosyası olduğunu belirtir.
+    });
+    return response.data;
+  } catch (error) {
+    console.error("ElevenLabs Hatası:", error.response ? error.response.data : error.message);
+    return null;
+  }
+}
+
+
+// --- WebSocket Sunucu Mantığı ---
+
+wss.on('connection', (ws) => {
+  console.log('Frontend bağlandı!');
+
+  ws.on('message', async (message) => {
+    // ADIM 1: Gelen ses verisini (Blob/Buffer) al.
+    console.log('Ses verisi alındı, işleniyor...');
+
+    try {
+      // ADIM 2: Sesi Azure Speech-to-Text'e gönder ve metni al.
+      const userText = await callAzureSTT(message);
+      console.log('Kullanıcı dedi ki:', userText);
+
+      if (userText) {
+        // ADIM 3: Metni Gemini'ye gönder, cevabı al.
+        const aiTextResponse = await callGemini(userText);
+        console.log('AI cevap veriyor:', aiTextResponse);
+
+        // ADIM 4: AI metnini ElevenLabs TTS'e gönder, sesi al.
+        const aiAudioResponse = await callElevenLabsTTS(aiTextResponse);
+        
+        if (aiAudioResponse) {
+          console.log('Sesli cevap oluşturuldu ve geri gönderiliyor.');
+          // ADIM 5: Üretilen sesi WebSocket üzerinden istemciye geri gönder.
+          ws.send(aiAudioResponse);
+        }
+      }
+    } catch (error) {
+      console.error('Tüm ses işleme zincirinde bir hata oluştu:', error);
+    }
+  });
+
+  ws.on('close', () => {
+    console.log('Frontend bağlantısı koptu.');
+  });
+});
+
+
+const port = 3000;
+server.listen(port, () => {
+  console.log(`Ses Motoru ${port} portunda dinlemede ve API'lere bağlanmaya hazır...`);
+});

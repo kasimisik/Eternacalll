@@ -44,6 +44,8 @@ export default function VoiceAssistant() {
     createdAt?: string;
   } | null>(null);
   const [loadingSubscription, setLoadingSubscription] = useState(true);
+  const [voiceStatus, setVoiceStatus] = useState<string>('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const data = {
     navMain: [
@@ -88,6 +90,85 @@ export default function VoiceAssistant() {
 
     checkSubscription();
   }, [user?.id]);
+
+  // Sesli konuşma işlemi
+  const handleVoiceRecording = async (duration: number, audioBlob?: Blob) => {
+    if (!audioBlob) {
+      setVoiceStatus('Ses kaydı alınamadı');
+      return;
+    }
+
+    if (isProcessing) {
+      setVoiceStatus('Zaten bir ses işleniyor, lütfen bekleyin...');
+      return;
+    }
+
+    setIsProcessing(true);
+    setVoiceStatus('Sesiniz işleniyor...');
+
+    try {
+      // FormData oluştur
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'voice-recording.webm');
+      formData.append('sessionId', `user_${user?.id}` || 'guest');
+
+      console.log('🎤 Sending voice recording to server...');
+
+      // Tam sesli konuşma API'sine gönder
+      const response = await fetch('/api/voice/conversation', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setVoiceStatus(`AI: ${result.aiResponse || 'Cevap alındı'}`);
+        
+        // Gelen ses verisini oynat
+        if (result.audioData) {
+          try {
+            const audioData = Uint8Array.from(atob(result.audioData), c => c.charCodeAt(0));
+            const audioBlob = new Blob([audioData], { type: 'audio/mpeg' });
+            const audioUrl = URL.createObjectURL(audioBlob);
+            
+            const audio = new Audio(audioUrl);
+            audio.play().then(() => {
+              console.log('✅ AI response audio playing');
+            }).catch(err => {
+              console.error('Audio play error:', err);
+              setVoiceStatus('Ses çalınamadı ama metin cevap alındı');
+            });
+            
+            // Cleanup
+            audio.addEventListener('ended', () => {
+              URL.revokeObjectURL(audioUrl);
+              setTimeout(() => setVoiceStatus(''), 5000);
+            });
+          } catch (audioError) {
+            console.error('Audio processing error:', audioError);
+            setTimeout(() => setVoiceStatus(''), 5000);
+          }
+        } else {
+          setTimeout(() => setVoiceStatus(''), 5000);
+        }
+      } else {
+        setVoiceStatus(`Hata: ${result.message || 'Bilinmeyen hata'}`);
+        setTimeout(() => setVoiceStatus(''), 5000);
+      }
+
+    } catch (error) {
+      console.error('Voice conversation error:', error);
+      setVoiceStatus('Bağlantı hatası. Lütfen tekrar deneyin.');
+      setTimeout(() => setVoiceStatus(''), 5000);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   const getInitials = (firstName?: string, lastName?: string) => {
     return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
@@ -217,11 +298,18 @@ export default function VoiceAssistant() {
             <div className="mt-8">
               <AIVoiceInput 
                 onStart={() => console.log('Voice recording started')}
-                onStop={(duration) => console.log('Voice recording stopped, duration:', duration)}
+                onStop={handleVoiceRecording}
                 visualizerBars={48}
                 className="text-white"
               />
             </div>
+            
+            {/* Voice Status Display */}
+            {voiceStatus && (
+              <div className="mt-4 text-center text-white bg-black/30 backdrop-blur-sm rounded-lg p-4 max-w-md">
+                <p className="text-sm opacity-80">{voiceStatus}</p>
+              </div>
+            )}
           </div>
         </div>
       </SidebarInset>

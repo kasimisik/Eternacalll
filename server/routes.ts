@@ -705,9 +705,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`✅ User said: "${userText}"`);
 
-      // 2. AI yanıt üretimi - Disabled (using n8n webhook instead)
-      console.log('Step 2: AI Response Generation (Mock)...');
-      const aiResponse = 'Merhaba! Sesli asistan şu anda n8n webhook entegrasyonu kullanıyor. Dashboard chat kısmını kullanabilirsiniz.';
+      // 2. AI yanıt üretimi (Gemini API)
+      console.log('Step 2: AI Response Generation...');
+      let aiResponse = 'Merhaba! Size nasıl yardımcı olabilirim?';
+      
+      try {
+        const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{
+                text: `Sen Türkçe konuşan yardımcı bir AI asistansın. Kullanıcı sana şunu söyledi: "${userText}". Kısa ve yararlı bir cevap ver.`
+              }]
+            }],
+            generationConfig: {
+              temperature: 0.7,
+              maxOutputTokens: 200,
+            }
+          }),
+        });
+
+        if (geminiResponse.ok) {
+          const geminiData = await geminiResponse.json();
+          if (geminiData.candidates && geminiData.candidates[0] && geminiData.candidates[0].content) {
+            aiResponse = geminiData.candidates[0].content.parts[0].text;
+          }
+        } else {
+          console.log('Gemini API error:', geminiResponse.status);
+        }
+      } catch (geminiError) {
+        console.log('Gemini API failed:', geminiError);
+        aiResponse = `Anladım, "${userText}" dediniz. Size nasıl yardımcı olabilirim?`;
+      }
       
       console.log(`✅ AI Response: "${aiResponse.substring(0, 100)}..."`);
 
