@@ -288,7 +288,8 @@ export default function VoiceAssistant() {
           sampleRate: 16000,
           channelCount: 1,
           echoCancellation: true,
-          noiseSuppression: true
+          noiseSuppression: true,
+          autoGainControl: true
         } 
       });
       
@@ -322,15 +323,18 @@ export default function VoiceAssistant() {
       const checkForSilence = () => {
         analyser.getByteFrequencyData(dataArray);
         const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
+        const max = Math.max(...dataArray);
         
-        if (average < 5) { // Daha hassas sessizlik threshold
+        console.log(`🎤 Audio Level - Average: ${average.toFixed(1)}, Max: ${max}, Chunks: ${audioChunks.length}`);
+        
+        if (average < 8 && max < 50) { // Daha güvenli threshold
           if (!silenceTimer) {
             silenceTimer = setTimeout(() => {
               if (audioChunks.length > 0) {
                 console.log('🎤 Silence detected, stopping recording with', audioChunks.length, 'chunks');
                 recorder.stop();
               }
-            }, 2000); // 2 saniye sessizlik sonrası dur (daha uzun)
+            }, 2500); // 2.5 saniye sessizlik 
           }
         } else {
           if (silenceTimer) {

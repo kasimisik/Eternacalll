@@ -45,6 +45,9 @@ export class AzureSpeechService {
       url.searchParams.set('language', 'tr-TR');
       url.searchParams.set('format', 'detailed');
       url.searchParams.set('profanity', 'raw');
+      url.searchParams.set('cid', '00000000-0000-0000-0000-000000000000');
+      url.searchParams.set('initialSilenceTimeoutMs', '3000');
+      url.searchParams.set('endSilenceTimeoutMs', '500');
 
       console.log(`🎤 Azure Speech REST: Processing ${audioBuffer.length} bytes of ${contentType}`);
       
