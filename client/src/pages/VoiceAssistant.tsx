@@ -115,6 +115,14 @@ export default function VoiceAssistant() {
         if (data.type === 'response') {
           setIsProcessing(false);
           
+          // Her durumda yeniden başlatmak için fallback timer
+          const restartFallback = setTimeout(() => {
+            if (isListening && !isProcessing) {
+              console.log('🔄 Fallback restart - no audio event detected');
+              startListening();
+            }
+          }, 3000);
+          
           // Sesli cevabı oynat
           if (data.audioData) {
             try {
@@ -143,6 +151,7 @@ export default function VoiceAssistant() {
               audio.addEventListener('ended', () => {
                 console.log('🔊 Audio finished playing');
                 URL.revokeObjectURL(audioUrl);
+                clearTimeout(restartFallback);
                 // Cevap bittikten sonra tekrar dinlemeye başla
                 console.log('🔊 Auto-restarting listening...');
                 setTimeout(() => {
@@ -152,13 +161,14 @@ export default function VoiceAssistant() {
                   } else {
                     console.log('🎤 Cannot restart: isListening=', isListening, 'isProcessing=', isProcessing);
                   }
-                }, 1000);
+                }, 500);
               });
               
               audio.addEventListener('error', (error) => {
                 console.error('🔊 Audio play error:', error);
                 console.error('🔊 Audio error details:', audio.error);
                 URL.revokeObjectURL(audioUrl);
+                clearTimeout(restartFallback);
                 // Ses oynatma hatası olursa da tekrar dinlemeye başla
                 console.log('🔊 Audio error - restarting listening...');
                 setTimeout(() => {
@@ -166,7 +176,7 @@ export default function VoiceAssistant() {
                     console.log('🎤 Restarting listening after audio error...');
                     startListening();
                   }
-                }, 1000);
+                }, 500);
               });
               
               console.log('🔊 Starting audio playback...');
@@ -193,7 +203,25 @@ export default function VoiceAssistant() {
               
             } catch (error) {
               console.error('🔊 Audio processing error:', error);
+              clearTimeout(restartFallback);
+              // Audio processing hatası olursa da tekrar dinlemeye başla
+              setTimeout(() => {
+                if (isListening && !isProcessing) {
+                  console.log('🎤 Restarting listening after audio processing error...');
+                  startListening();
+                }
+              }, 500);
             }
+          } else {
+            // Ses verisi yoksa direkt yeniden başla
+            clearTimeout(restartFallback);
+            console.log('🔊 No audio data - restarting listening...');
+            setTimeout(() => {
+              if (isListening && !isProcessing) {
+                console.log('🎤 Restarting listening - no audio response...');
+                startListening();
+              }
+            }, 500);
           }
         } else if (data.type === 'error') {
           setIsProcessing(false);
