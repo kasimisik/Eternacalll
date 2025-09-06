@@ -16,8 +16,8 @@ export class ElevenLabsTTSService {
   private baseUrl = 'https://api.elevenlabs.io/v1';
   private isEnabled: boolean;
   
-  // Türkçe kadın sesi için voice ID'ler (Bu ID'ler ElevenLabs'den alınmalı)
-  private turkishFemaleVoiceId = 'pNInz6obpgDQGcFmaJgB'; // Adam (varsayılan, gerçek Türkçe kadın sesi ID'si ile değiştirilecek)
+  // Türkçe kadın sesi için voice ID
+  private turkishFemaleVoiceId = 'xyqF3vGMQlPk3e7yA4DI';
 
   constructor() {
     this.apiKey = process.env.ELEVENLABS_API_KEY || '';

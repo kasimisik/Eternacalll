@@ -296,19 +296,15 @@ export default function VoiceAssistant() {
                 onClick={isProcessing ? undefined : handleVoiceButtonClick}
                 disabled={isProcessing}
                 className={`
-                  w-16 h-16 rounded-full border-2 transition-all duration-200
-                  ${isRecording 
-                    ? 'bg-red-500 border-red-400 animate-pulse' 
-                    : 'bg-white/10 border-white/30 hover:bg-white/20 backdrop-blur-sm'
-                  }
-                  ${isProcessing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                  transition-all duration-200
+                  ${isProcessing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-110'}
                   flex items-center justify-center
                 `}
               >
                 <Mic 
                   className={`
-                    w-8 h-8 transition-colors duration-200
-                    ${isRecording ? 'text-white' : 'text-white/80'}
+                    w-6 h-6 transition-all duration-200
+                    ${isRecording ? 'text-red-400 animate-pulse scale-125' : 'text-white/80'}
                   `} 
                 />
               </button>
