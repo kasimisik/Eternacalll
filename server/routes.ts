@@ -10,6 +10,13 @@ import { azureSpeechService } from './azure-speech';
 import { elevenLabsTTSService } from './elevenlabs-tts';
 import multer from 'multer';
 import WebSocket, { WebSocketServer } from 'ws';
+import ffmpeg from 'fluent-ffmpeg';
+import * as fs from 'fs';
+import * as path from 'path';
+import { promisify } from 'util';
+
+const writeFile = promisify(fs.writeFile);
+const unlink = promisify(fs.unlink);
 
 // Multer konfigürasyonu ses dosyaları için
 const upload = multer({
@@ -850,11 +857,53 @@ Sen meraklı, rehber, empatik ve mimar bir kişiliksin. Kullanıcıyla doğal ve
 
       console.log(`🎤 Starting voice conversation, session: ${sessionId || 'default'}`);
       
-      // 1. Ses tanıma (Speech-to-Text)
-      console.log('Step 1: Speech Recognition...');
+      // 1. Audio conversion (WebM to WAV if needed)
+      console.log('Step 1: Audio conversion check...');
+      let processedAudioBuffer = req.file.buffer;
+      
+      // Check if audio is WebM format and convert to WAV
+      const headerHex = processedAudioBuffer.slice(0, 12).toString('hex');
+      if (headerHex.startsWith('1a45dfa3')) { // WebM header
+        console.log('🔄 Converting WebM to WAV for better Azure Speech compatibility...');
+        try {
+          const tempDir = '/tmp';
+          const inputPath = path.join(tempDir, `input_${Date.now()}.webm`);
+          const outputPath = path.join(tempDir, `output_${Date.now()}.wav`);
+          
+          // Write WebM file to disk
+          await writeFile(inputPath, processedAudioBuffer);
+          
+          // Convert WebM to WAV using ffmpeg
+          await new Promise<void>((resolve, reject) => {
+            ffmpeg()
+              .input(inputPath)
+              .toFormat('wav')
+              .audioCodec('pcm_s16le')  // 16-bit PCM
+              .audioChannels(1)         // Mono
+              .audioFrequency(16000)    // 16kHz for Azure Speech
+              .save(outputPath)
+              .on('end', () => resolve())
+              .on('error', reject);
+          });
+          
+          // Read converted WAV file
+          processedAudioBuffer = await fs.promises.readFile(outputPath);
+          console.log(`✅ Converted WebM (${req.file.buffer.length} bytes) to WAV (${processedAudioBuffer.length} bytes)`);
+          
+          // Clean up temp files
+          await Promise.all([unlink(inputPath), unlink(outputPath)]);
+          
+        } catch (conversionError) {
+          console.warn('⚠️ WebM to WAV conversion failed, using original:', conversionError);
+          processedAudioBuffer = req.file.buffer;
+        }
+      }
+
+      // 2. Ses tanıma (Speech-to-Text)
+      console.log('Step 2: Speech Recognition...');
       let userText;
       try {
-        userText = await azureSpeechService.speechToText(req.file.buffer);
+        userText = await azureSpeechService.speechToText(processedAudioBuffer);
       } catch (speechError) {
         console.log('⚠️ Speech recognition failed, using mock:', speechError);
         userText = 'Merhaba, ses tanıma geçici olarak çalışmıyor. Test mesajı.';
@@ -871,8 +920,8 @@ Sen meraklı, rehber, empatik ve mimar bir kişiliksin. Kullanıcıyla doğal ve
 
       console.log(`✅ User said: "${userText}"`);
 
-      // 2. AI yanıt üretimi (Gemini API)
-      console.log('Step 2: AI Response Generation...');
+      // 3. AI yanıt üretimi (Gemini API)
+      console.log('Step 3: AI Response Generation...');
       let aiResponse = 'Merhaba! Size nasıl yardımcı olabilirim?';
       
       try {
