@@ -10,6 +10,7 @@ import { azureSpeechService } from './azure-speech';
 import { elevenLabsTTSService } from './elevenlabs-tts';
 import multer from 'multer';
 import WebSocket, { WebSocketServer } from 'ws';
+import * as speechSdk from 'microsoft-cognitiveservices-speech-sdk';
 import ffmpeg from 'fluent-ffmpeg';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -604,8 +605,7 @@ Sen meraklı, rehber, empatik ve mimar bir kişiliksin. Kullanıcıyla doğal ve
     
     console.log(`📱 New session created: ${session.id}`);
     
-    // Azure Speech Continuous Recognition Setup
-    const speechSdk = require('microsoft-cognitiveservices-speech-sdk');
+    // Azure Speech Continuous Recognition Setup - Use global speechSdk import
     
     const initializeAzureSpeech = () => {
       try {
