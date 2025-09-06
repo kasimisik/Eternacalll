@@ -685,7 +685,7 @@ Sen meraklı, rehber, empatik ve mimar bir kişiliksin. Kullanıcıyla doğal ve
               }))
             ];
             
-            const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+            const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -963,7 +963,7 @@ Sen meraklı, rehber, empatik ve mimar bir kişiliksin. Kullanıcıyla doğal ve
       let aiResponse = 'Merhaba! Size nasıl yardımcı olabilirim?';
       
       try {
-        const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+        const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
