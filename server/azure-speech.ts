@@ -104,30 +104,12 @@ export class AzureSpeechService {
     }
   }
 
-  // Ses dosyasını metne dönüştürme (SDK fallback)
+  // Ses dosyasını metne dönüştürme (gerçek API)
   async speechToText(audioBuffer: Buffer): Promise<string> {
     if (!this.isEnabled) {
       throw new Error('Azure Speech service is not available. API credentials not configured.');
     }
 
-    // GEÇICI: Azure servisi rate limit yüzünden mock response dön
-    console.log('⚠️ Azure Speech temporarily disabled due to rate limits - using mock response');
-    console.log(`🎤 Mock processing ${audioBuffer.length} bytes of audio`);
-    
-    // Simüle edilmiş gecikme
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    const mockResponses = [
-      'Merhaba, nasılsın?',
-      'Test mesajı, ses tanıma çalışıyor.',
-      'Sesli asistan özelliği test ediliyor.',
-      'Azure servisi geçici olarak mock modunda.',
-    ];
-    
-    return mockResponses[Math.floor(Math.random() * mockResponses.length)];
-
-    // Orjinal kod - rate limit sorunu çözününce aktif edilecek
-    /*
     // Önce REST API'yi dene (WebM/Opus desteği için)
     try {
       return await this.speechToTextREST(audioBuffer, 'audio/webm; codecs=opus');
@@ -185,7 +167,6 @@ export class AzureSpeechService {
         }
       });
     }
-    */
   }
 
   // Gerçek zamanlı konuşma tanıma için WebSocket desteği

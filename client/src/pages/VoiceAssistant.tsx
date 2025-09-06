@@ -44,8 +44,9 @@ export default function VoiceAssistant() {
     createdAt?: string;
   } | null>(null);
   const [loadingSubscription, setLoadingSubscription] = useState(true);
-  const [voiceStatus, setVoiceStatus] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
 
   const data = {
     navMain: [
@@ -92,81 +93,76 @@ export default function VoiceAssistant() {
   }, [user?.id]);
 
   // Sesli konuşma işlemi
-  const handleVoiceRecording = async (duration: number, audioBlob?: Blob) => {
-    if (!audioBlob) {
-      setVoiceStatus('Ses kaydı alınamadı');
-      return;
-    }
-
-    if (isProcessing) {
-      setVoiceStatus('Zaten bir ses işleniyor, lütfen bekleyin...');
-      return;
-    }
-
-    setIsProcessing(true);
-    setVoiceStatus('Sesiniz işleniyor...');
-
-    try {
-      // FormData oluştur
-      const formData = new FormData();
-      formData.append('audio', audioBlob, 'voice-recording.webm');
-      formData.append('sessionId', `user_${user?.id}` || 'guest');
-
-      console.log('🎤 Sending voice recording to server...');
-
-      // Tam sesli konuşma API'sine gönder
-      const response = await fetch('/api/voice/conversation', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error(`Server error: ${response.status}`);
+  const handleVoiceButtonClick = async () => {
+    if (isRecording) {
+      // Kaydı durdur
+      if (mediaRecorder) {
+        mediaRecorder.stop();
       }
-
-      const result = await response.json();
-      
-      if (result.success) {
-        setVoiceStatus(`AI: ${result.aiResponse || 'Cevap alındı'}`);
+    } else {
+      // Kaydı başlat
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
         
-        // Gelen ses verisini oynat
-        if (result.audioData) {
+        const audioChunks: Blob[] = [];
+        
+        recorder.ondataavailable = (event) => {
+          audioChunks.push(event.data);
+        };
+        
+        recorder.onstop = async () => {
+          setIsRecording(false);
+          setIsProcessing(true);
+          
+          const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+          
           try {
-            const audioData = Uint8Array.from(atob(result.audioData), c => c.charCodeAt(0));
-            const audioBlob = new Blob([audioData], { type: 'audio/mpeg' });
-            const audioUrl = URL.createObjectURL(audioBlob);
-            
-            const audio = new Audio(audioUrl);
-            audio.play().then(() => {
-              console.log('✅ AI response audio playing');
-            }).catch(err => {
-              console.error('Audio play error:', err);
-              setVoiceStatus('Ses çalınamadı ama metin cevap alındı');
-            });
-            
-            // Cleanup
-            audio.addEventListener('ended', () => {
-              URL.revokeObjectURL(audioUrl);
-              setTimeout(() => setVoiceStatus(''), 5000);
-            });
-          } catch (audioError) {
-            console.error('Audio processing error:', audioError);
-            setTimeout(() => setVoiceStatus(''), 5000);
-          }
-        } else {
-          setTimeout(() => setVoiceStatus(''), 5000);
-        }
-      } else {
-        setVoiceStatus(`Hata: ${result.message || 'Bilinmeyen hata'}`);
-        setTimeout(() => setVoiceStatus(''), 5000);
-      }
+            // FormData oluştur
+            const formData = new FormData();
+            formData.append('audio', audioBlob, 'voice-recording.webm');
+            formData.append('sessionId', `user_${user?.id}` || 'guest');
 
-    } catch (error) {
-      console.error('Voice conversation error:', error);
-      setVoiceStatus('Bağlantı hatası. Lütfen tekrar deneyin.');
-      setTimeout(() => setVoiceStatus(''), 5000);
-    } finally {
-      setIsProcessing(false);
+            // Tam sesli konuşma API'sine gönder
+            const response = await fetch('/api/voice/conversation', {
+              method: 'POST',
+              body: formData,
+            });
+
+            if (response.ok) {
+              const result = await response.json();
+              
+              if (result.success && result.audioData) {
+                // Gelen ses verisini oynat
+                const audioData = Uint8Array.from(atob(result.audioData), c => c.charCodeAt(0));
+                const responseAudioBlob = new Blob([audioData], { type: 'audio/mpeg' });
+                const audioUrl = URL.createObjectURL(responseAudioBlob);
+                
+                const audio = new Audio(audioUrl);
+                audio.play();
+                
+                // Cleanup
+                audio.addEventListener('ended', () => {
+                  URL.revokeObjectURL(audioUrl);
+                });
+              }
+            }
+          } catch (error) {
+            console.error('Voice conversation error:', error);
+          } finally {
+            setIsProcessing(false);
+          }
+          
+          // Stream'i kapat
+          stream.getTracks().forEach(track => track.stop());
+        };
+        
+        setMediaRecorder(recorder);
+        setIsRecording(true);
+        recorder.start();
+      } catch (error) {
+        console.error('Microphone access error:', error);
+      }
     }
   };
 
@@ -294,22 +290,29 @@ export default function VoiceAssistant() {
               className="drop-shadow-2xl"
             />
             
-            {/* AI Voice Input below Siri Orb */}
-            <div className="mt-8">
-              <AIVoiceInput 
-                onStart={() => console.log('Voice recording started')}
-                onStop={handleVoiceRecording}
-                visualizerBars={48}
-                className="text-white"
-              />
+            {/* Simple Voice Button in center of Siri Orb */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <button
+                onClick={isProcessing ? undefined : handleVoiceButtonClick}
+                disabled={isProcessing}
+                className={`
+                  w-16 h-16 rounded-full border-2 transition-all duration-200
+                  ${isRecording 
+                    ? 'bg-red-500 border-red-400 animate-pulse' 
+                    : 'bg-white/10 border-white/30 hover:bg-white/20 backdrop-blur-sm'
+                  }
+                  ${isProcessing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                  flex items-center justify-center
+                `}
+              >
+                <Mic 
+                  className={`
+                    w-8 h-8 transition-colors duration-200
+                    ${isRecording ? 'text-white' : 'text-white/80'}
+                  `} 
+                />
+              </button>
             </div>
-            
-            {/* Voice Status Display */}
-            {voiceStatus && (
-              <div className="mt-4 text-center text-white bg-black/30 backdrop-blur-sm rounded-lg p-4 max-w-md">
-                <p className="text-sm opacity-80">{voiceStatus}</p>
-              </div>
-            )}
           </div>
         </div>
       </SidebarInset>
