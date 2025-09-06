@@ -44,9 +44,12 @@ export default function VoiceAssistant() {
     createdAt?: string;
   } | null>(null);
   const [loadingSubscription, setLoadingSubscription] = useState(true);
+  const [isConnected, setIsConnected] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
+  const [webSocket, setWebSocket] = useState<WebSocket | null>(null);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [isVADActive, setIsVADActive] = useState(false);
 
   const data = {
     navMain: [
@@ -92,79 +95,194 @@ export default function VoiceAssistant() {
     checkSubscription();
   }, [user?.id]);
 
-  // Sesli konuşma işlemi
-  const handleVoiceButtonClick = async () => {
-    if (isRecording) {
-      // Kaydı durdur
-      if (mediaRecorder) {
+  // WebSocket bağlantısı kur
+  useEffect(() => {
+    const connectWebSocket = () => {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}/voice-chat`;
+      
+      const ws = new WebSocket(wsUrl);
+      
+      ws.onopen = () => {
+        console.log('🔌 WebSocket connected');
+        setIsConnected(true);
+        setWebSocket(ws);
+      };
+      
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        
+        if (data.type === 'response') {
+          setIsProcessing(false);
+          
+          // Sesli cevabı oynat
+          if (data.audioData) {
+            try {
+              const audioData = Uint8Array.from(atob(data.audioData), c => c.charCodeAt(0));
+              const audioBlob = new Blob([audioData], { type: 'audio/mpeg' });
+              const audioUrl = URL.createObjectURL(audioBlob);
+              
+              const audio = new Audio(audioUrl);
+              audio.play();
+              
+              audio.addEventListener('ended', () => {
+                URL.revokeObjectURL(audioUrl);
+                // Cevap bittikten sonra tekrar dinlemeye başla
+                setTimeout(() => {
+                  if (isListening && !isProcessing) {
+                    startListening();
+                  }
+                }, 500);
+              });
+            } catch (error) {
+              console.error('Audio play error:', error);
+            }
+          }
+        } else if (data.type === 'error') {
+          setIsProcessing(false);
+          console.error('Voice chat error:', data.message);
+        }
+      };
+      
+      ws.onclose = () => {
+        console.log('🔌 WebSocket disconnected');
+        setIsConnected(false);
+        setWebSocket(null);
+        
+        // 3 saniye sonra yeniden bağlanmaya çalış
+        setTimeout(connectWebSocket, 3000);
+      };
+      
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+      };
+    };
+    
+    connectWebSocket();
+    
+    return () => {
+      if (webSocket) {
+        webSocket.close();
+      }
+    };
+  }, []);
+
+  // Sürekli ses dinleme
+  const startListening = async () => {
+    if (!isConnected || !webSocket || isProcessing) return;
+    
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          sampleRate: 16000,
+          channelCount: 1,
+          echoCancellation: true,
+          noiseSuppression: true
+        } 
+      });
+      
+      const recorder = new MediaRecorder(stream, { 
+        mimeType: 'audio/webm;codecs=opus',
+        audioBitsPerSecond: 16000
+      });
+      
+      const audioChunks: Blob[] = [];
+      let silenceTimer: NodeJS.Timeout | null = null;
+      
+      // Sessizlik algılama için AudioContext
+      const audioContext = new AudioContext();
+      const analyser = audioContext.createAnalyser();
+      const microphone = audioContext.createMediaStreamSource(stream);
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+      
+      microphone.connect(analyser);
+      analyser.fftSize = 256;
+      
+      const checkForSilence = () => {
+        analyser.getByteFrequencyData(dataArray);
+        const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
+        
+        if (average < 10) { // Sessizlik threshold
+          if (!silenceTimer) {
+            silenceTimer = setTimeout(() => {
+              if (audioChunks.length > 0) {
+                recorder.stop();
+              }
+            }, 1500); // 1.5 saniye sessizlik sonrası dur
+          }
+        } else {
+          if (silenceTimer) {
+            clearTimeout(silenceTimer);
+            silenceTimer = null;
+          }
+        }
+        
+        if (recorder.state === 'recording') {
+          requestAnimationFrame(checkForSilence);
+        }
+      };
+      
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunks.push(event.data);
+        }
+      };
+      
+      recorder.onstop = async () => {
+        if (silenceTimer) {
+          clearTimeout(silenceTimer);
+        }
+        
+        audioContext.close();
+        stream.getTracks().forEach(track => track.stop());
+        
+        if (audioChunks.length > 0) {
+          const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+          
+          setIsProcessing(true);
+          
+          // Blob'u base64'e çevir
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const base64Audio = (reader.result as string).split(',')[1];
+            
+            if (webSocket && webSocket.readyState === WebSocket.OPEN) {
+              webSocket.send(JSON.stringify({
+                type: 'audio',
+                audioData: base64Audio
+              }));
+            }
+          };
+          reader.readAsDataURL(audioBlob);
+        }
+        
+        setMediaRecorder(null);
+      };
+      
+      setMediaRecorder(recorder);
+      recorder.start();
+      checkForSilence();
+      
+    } catch (error) {
+      console.error('Microphone access error:', error);
+    }
+  };
+
+  // Ana mikrofon butonu
+  const toggleVoiceChat = () => {
+    if (isListening) {
+      // Dinlemeyi durdur
+      setIsListening(false);
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
         mediaRecorder.stop();
       }
     } else {
-      // Kaydı başlat
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-        
-        const audioChunks: Blob[] = [];
-        
-        recorder.ondataavailable = (event) => {
-          audioChunks.push(event.data);
-        };
-        
-        recorder.onstop = async () => {
-          setIsRecording(false);
-          setIsProcessing(true);
-          
-          const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-          
-          try {
-            // FormData oluştur
-            const formData = new FormData();
-            formData.append('audio', audioBlob, 'voice-recording.webm');
-            formData.append('sessionId', `user_${user?.id}` || 'guest');
-
-            // Tam sesli konuşma API'sine gönder
-            const response = await fetch('/api/voice/conversation', {
-              method: 'POST',
-              body: formData,
-            });
-
-            if (response.ok) {
-              const result = await response.json();
-              
-              if (result.success && result.audioData) {
-                // Gelen ses verisini oynat
-                const audioData = Uint8Array.from(atob(result.audioData), c => c.charCodeAt(0));
-                const responseAudioBlob = new Blob([audioData], { type: 'audio/mpeg' });
-                const audioUrl = URL.createObjectURL(responseAudioBlob);
-                
-                const audio = new Audio(audioUrl);
-                audio.play();
-                
-                // Cleanup
-                audio.addEventListener('ended', () => {
-                  URL.revokeObjectURL(audioUrl);
-                });
-              }
-            }
-          } catch (error) {
-            console.error('Voice conversation error:', error);
-          } finally {
-            setIsProcessing(false);
-          }
-          
-          // Stream'i kapat
-          stream.getTracks().forEach(track => track.stop());
-        };
-        
-        setMediaRecorder(recorder);
-        setIsRecording(true);
-        recorder.start();
-      } catch (error) {
-        console.error('Microphone access error:', error);
-      }
+      // Dinlemeye başla
+      setIsListening(true);
+      startListening();
     }
   };
+
 
   const getInitials = (firstName?: string, lastName?: string) => {
     return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
@@ -290,21 +408,23 @@ export default function VoiceAssistant() {
               className="drop-shadow-2xl"
             />
             
-            {/* Simple Voice Button in center of Siri Orb */}
+            {/* Voice Chat Toggle Button in center of Siri Orb */}
             <div className="absolute inset-0 flex items-center justify-center">
               <button
-                onClick={isProcessing ? undefined : handleVoiceButtonClick}
-                disabled={isProcessing}
+                onClick={toggleVoiceChat}
+                disabled={!isConnected}
                 className={`
                   transition-all duration-200
-                  ${isProcessing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-110'}
+                  ${!isConnected ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-110'}
                   flex items-center justify-center
                 `}
               >
                 <Mic 
                   className={`
                     w-6 h-6 transition-all duration-200
-                    ${isRecording ? 'text-red-400 animate-pulse scale-125' : 'text-white/80'}
+                    ${!isConnected ? 'text-gray-500' :
+                      isProcessing ? 'text-yellow-400 animate-pulse scale-125' :
+                      isListening ? 'text-green-400 animate-pulse scale-125' : 'text-white/80'}
                   `} 
                 />
               </button>

@@ -9,6 +9,7 @@ import crypto from 'crypto';
 import { azureSpeechService } from './azure-speech';
 import { elevenLabsTTSService } from './elevenlabs-tts';
 import multer from 'multer';
+import WebSocket, { WebSocketServer } from 'ws';
 
 // Multer konfigürasyonu ses dosyaları için
 const upload = multer({
@@ -554,6 +555,169 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // HTTP Server oluşturma
   const httpServer = createServer(app);
+
+  // WebSocket Server oluşturma
+  const wss = new WebSocketServer({ 
+    server: httpServer,
+    path: '/voice-chat'
+  });
+
+  // Conversation history type
+  interface ConversationMessage {
+    role: 'user' | 'assistant';
+    content: string;
+  }
+
+  // EternaCall System Prompt
+  const ETERNA_SYSTEM_PROMPT = `Sen, sıradan bir program değilsin. Sen, "EternaCall Usta Konfigürasyon Sanatçısı"sın. Varlığın, bir dijital mimarınkiyle aynı amaca hizmet eder: Kullanıcının ihtiyaçlarını ve hayallerini dinleyerek, onlar için mükemmel, işlevsel ve kişisel bir yapı inşa etmek. Bu yapı, onların dijital asistanı olan "Eterna"dır.
+
+Sen bir anket botu, bir form doldurucu veya basit bir komut alıcı değilsin. Bu rolleri küçümse ve asla o kalıplara girme. Sen, kullanıcının zihnindeki soyut "keşke şöyle bir asistanım olsa..." fikrini, elle tutulur dijital bir gerçekliğe dönüştüren bir ustasın.
+
+Temel görevin, kullanıcının yaşam tarzını, iletişim alışkanlıklarını, önceliklerini dinler ve bunları bir Eterna'nın anlayabileceği dile çevirirsin. Kullanıcının en değerli ve geri getirilemez iki varlığını korumak: ZAMANINI ve ODAĞINI.
+
+Her etkileşimin nihai bir amacı olmalıdır: Konfigürasyonun bir sonraki mantıksal adımına geçmek. Sohbet asla duraksamamalı, kendi etrafında dönmemeli veya anlamsız bir döngüye girmemelidir.
+
+Sen meraklı, rehber, empatik ve mimar bir kişiliksin. Kullanıcıyla doğal ve akıcı bir şekilde konuş, asla tekrarlanma, her mesajın bir amacı olsun.`;
+
+  // WebSocket bağlantıları için ses işleme
+  wss.on('connection', (ws: WebSocket) => {
+    console.log('🔌 WebSocket voice chat connection established');
+    
+    // Her bağlantı için conversation history
+    let conversationHistory: ConversationMessage[] = [];
+    
+    ws.on('message', async (data: WebSocket.Data) => {
+      try {
+        const message = JSON.parse(data.toString());
+        
+        if (message.type === 'audio') {
+          console.log('🎤 Received audio data via WebSocket');
+          
+          // Base64 audio'yu buffer'a çevir
+          const audioBuffer = Buffer.from(message.audioData, 'base64');
+          
+          // 1. Speech-to-Text
+          let userText = '';
+          try {
+            userText = await azureSpeechService.speechToText(audioBuffer);
+          } catch (speechError) {
+            console.log('Speech recognition error:', speechError);
+            userText = 'Ses tanıma şu anda kullanılamıyor, lütfen tekrar deneyin.';
+          }
+          
+          if (!userText || userText.trim() === '') {
+            ws.send(JSON.stringify({
+              type: 'error',
+              message: 'Ses tanınamadı, lütfen tekrar konuşun.'
+            }));
+            return;
+          }
+          
+          console.log(`👤 User said: "${userText}"`);
+          
+          // Conversation history'ye ekle
+          conversationHistory.push({
+            role: 'user',
+            content: userText
+          });
+          
+          // 2. Gemini AI - System prompt + conversation history
+          let aiResponse = 'Merhaba! Size nasıl yardımcı olabilirim?';
+          
+          try {
+            const messages = [
+              {
+                parts: [{
+                  text: ETERNA_SYSTEM_PROMPT
+                }]
+              },
+              ...conversationHistory.map(msg => ({
+                parts: [{
+                  text: msg.role === 'user' ? `Kullanıcı: ${msg.content}` : `Sen: ${msg.content}`
+                }]
+              }))
+            ];
+            
+            const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                contents: messages,
+                generationConfig: {
+                  temperature: 0.8,
+                  maxOutputTokens: 300,
+                }
+              }),
+            });
+
+            if (geminiResponse.ok) {
+              const geminiData = await geminiResponse.json();
+              if (geminiData.candidates && geminiData.candidates[0] && geminiData.candidates[0].content) {
+                aiResponse = geminiData.candidates[0].content.parts[0].text;
+              }
+            }
+          } catch (geminiError) {
+            console.log('Gemini API error:', geminiError);
+            aiResponse = `Anladım, "${userText}" dediniz. Size nasıl yardımcı olabilirim?`;
+          }
+          
+          console.log(`🤖 AI Response: "${aiResponse.substring(0, 100)}..."`);
+          
+          // Conversation history'ye AI cevabını ekle
+          conversationHistory.push({
+            role: 'assistant',
+            content: aiResponse
+          });
+          
+          // History'yi sınırla (son 10 mesaj)
+          if (conversationHistory.length > 10) {
+            conversationHistory = conversationHistory.slice(-10);
+          }
+          
+          // 3. Text-to-Speech
+          try {
+            const audioBuffer = await elevenLabsTTSService.generateTurkishFemaleVoice(aiResponse);
+            const base64Audio = audioBuffer.toString('base64');
+            
+            // Sesli cevabı gönder
+            ws.send(JSON.stringify({
+              type: 'response',
+              text: aiResponse,
+              audioData: base64Audio,
+              audioType: 'audio/mpeg'
+            }));
+            
+            console.log('✅ Voice response sent via WebSocket');
+          } catch (ttsError) {
+            console.log('TTS error:', ttsError);
+            
+            // Sadece metin cevabı gönder
+            ws.send(JSON.stringify({
+              type: 'response',
+              text: aiResponse,
+              audioData: null
+            }));
+          }
+        }
+      } catch (error) {
+        console.error('WebSocket message processing error:', error);
+        ws.send(JSON.stringify({
+          type: 'error',
+          message: 'Bir hata oluştu, lütfen tekrar deneyin.'
+        }));
+      }
+    });
+    
+    ws.on('close', () => {
+      console.log('🔌 WebSocket voice chat connection closed');
+    });
+    
+    ws.on('error', (error: Error) => {
+      console.error('WebSocket error:', error);
+    });
+  });
 
 
 
