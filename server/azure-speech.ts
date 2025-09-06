@@ -110,19 +110,30 @@ export class AzureSpeechService {
       throw new Error('Azure Speech service is not available. API credentials not configured.');
     }
 
-    // Önce REST API'yi dene (WebM/Opus desteği için)
-    try {
-      return await this.speechToTextREST(audioBuffer, 'audio/webm; codecs=opus');
-    } catch (restError) {
-      console.warn('REST API failed:', restError);
-      
-      // Rate limit durumunda hızlıca mock response döndür
-      if (restError instanceof Error && restError.message.includes('429')) {
-        console.log('⚠️ Azure Speech rate limit - returning mock transcription');
-        return 'Merhaba, ses tanıma servisi geçici olarak meşgul. Test mesajı.';
+    // Farklı formatları dene
+    const formats = [
+      'audio/ogg; codecs=opus',
+      'audio/webm; codecs=opus', 
+      'audio/wav'
+    ];
+
+    for (const format of formats) {
+      try {
+        console.log(`🎤 Trying Azure Speech with format: ${format}`);
+        const result = await this.speechToTextREST(audioBuffer, format);
+        if (result) {
+          return result;
+        }
+      } catch (error) {
+        console.warn(`Format ${format} failed:`, error);
+        continue;
       }
-      
+    }
+
+    // Hiçbir format çalışmazsa SDK'yı dene
+    try {
       // SDK fallback (PCM formatları için)
+      console.log('⚠️ All REST formats failed, trying SDK fallback...');
       return new Promise((resolve, reject) => {
         const timeout = setTimeout(() => {
           reject(new Error('Speech recognition timeout (30 seconds)'));
@@ -166,6 +177,9 @@ export class AzureSpeechService {
           reject(error);
         }
       });
+    } catch (sdkError) {
+      console.error('Azure Speech SDK Error:', sdkError);
+      throw new Error('Speech recognition failed with all methods');
     }
   }
 

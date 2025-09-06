@@ -181,8 +181,18 @@ export default function VoiceAssistant() {
         } 
       });
       
+      // Azure Speech ile uyumlu format seçimi
+      let mimeType = 'audio/webm;codecs=opus';
+      if (MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')) {
+        mimeType = 'audio/ogg;codecs=opus';
+      } else if (MediaRecorder.isTypeSupported('audio/wav')) {
+        mimeType = 'audio/wav';
+      }
+      
+      console.log('🎤 Recording with format:', mimeType);
+      
       const recorder = new MediaRecorder(stream, { 
-        mimeType: 'audio/webm;codecs=opus',
+        mimeType: mimeType,
         audioBitsPerSecond: 16000
       });
       
